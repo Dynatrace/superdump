@@ -1,0 +1,35 @@
+﻿@model SuperDumpService.ViewModels.ReportViewModel
+
+@if (Model.Result.SystemContext.AppDomains.Any()) {
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#domains">
+					<span class="fa fa-plus"></span> Application Domains
+				</a>
+			</h4>
+		</div>
+		<div id="domains" class="panel-collapse in">
+			<div class="panel-body">
+				<table class="table table-condensed">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Address</th>
+							<th>Name</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var domain in Model.Result.SystemContext.AppDomains) {
+							<tr>
+								<td>@domain.Id</td>
+								<td>@domain.Address.ToString("X")</td>
+								<td>@domain.Name</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+}

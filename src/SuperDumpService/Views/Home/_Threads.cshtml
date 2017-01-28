@@ -1,0 +1,149 @@
+﻿@model SuperDumpService.ViewModels.ReportViewModel
+@using SuperDumpService.Helpers;
+
+<div class="panel panel-primary">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#thread-report">
+				Thread report
+			</a>
+		</h4>
+	</div>
+	<div id="thread-report" class="panel-collapse in">
+		<div class="panel-body">
+			<button class="btn btn-success" id="openall">Open all</button>
+			<button class="btn btn-success" id="closeall">Close all</button>
+			<span style="display: inline-block; width:16px">&nbsp;</span>
+			@foreach (var tag in Model.ThreadTags.OrderByDescending(t => t.Importance)) {
+				<button class="btn btn-primary" onclick="openTabs('@tag.Name')"><span class="tag tag-@tag.Name">@tag.Name</span></button>
+			}
+
+			<div class="list-group">
+				@foreach (var thread in Model.Result.ThreadInformation.Values.OrderByDescending(t => t.Tags.Count == 0 ? 0 : t.Tags.Max(x => x.Importance)).ThenBy(t => t.EngineId)) {
+					<a id="@thread.OsId" class="list-group-item thread-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#thread-@thread.OsId">
+						<strong>EngineId: @thread.EngineId</strong> (0x<span>@thread.EngineId.ToString("X")</span>), OsId: @thread.OsId (0x<span>@thread.OsId.ToString("X")</span>)
+						@if (!string.IsNullOrEmpty(thread.State)) {
+							<span>, ThreadState: @thread.State</span>
+						}
+						@Html.Partial("Tags", @thread.Tags)
+					</a>
+					<div id="thread-@thread.OsId" class="thread-div collapse @string.Join(" ", thread.Tags)">
+						<!--general information-->
+						<table style="width: 100%;">
+							<tr>
+								<td>
+									<dl class="dl-horizontal">
+										<dt>Engine thread ID:</dt>
+										<dd>@thread.EngineId (0x<span>@thread.EngineId.ToString("X")</span>)</dd>
+
+										<dt>OS thread ID:</dt>
+										<dd>@thread.OsId (0x<span>@thread.OsId.ToString("X")</span>)</dd>
+
+										@if (@thread.IsManagedThread) {
+											<dt>Managed thread ID:</dt>
+											<dd>@thread.ManagedThreadId (0x<span>@thread.ManagedThreadId.ToString("X")</span>)</dd>
+
+											<dt>Thread name:</dt>
+											<dd>@thread.ThreadName</dd>
+										}
+
+										@if (!string.IsNullOrEmpty(thread.State)) {
+											<dt>State(s):</dt>
+											<dd>@thread.State</dd>
+										}
+
+										@if (thread.CreationTime > 0) {
+											<dt>Creation time:</dt>
+											<dd>@Utility.ConvertWindowsTimeStamp(thread.CreationTime)</dd>
+										}
+
+										@if (thread.KernelTime > 0) {
+											<dt>Kernel mode time:</dt>
+											<dd>@Utility.ConvertWindowsTimeSpan(thread.KernelTime)</dd>
+										}
+
+										@if (thread.UserTime > 0) {
+											<dt>User mode time:</dt>
+											<dd>@Utility.ConvertWindowsTimeSpan(thread.UserTime)</dd>
+										}
+
+										@if (thread.LastException != null) {
+											<dt>Exception Type:</dt>
+											<dd>@thread.LastException.Type</dd>
+											<dt>Exception Message:</dt>
+											<dd>@thread.LastException.Message</dd>
+											<dt>Exception Stack:</dt>
+											<dd>@Html.Partial("StacktracePlain", @thread.LastException.StackTrace)</dd>
+										}
+									</dl>
+								</td>
+								<td class="thread-toolbox">
+									<ul class="flat">
+										<li class="text-nowrap"><a href="#@thread.OsId">Permalink</a></li>
+										<li class="text-nowrap"><a data-clipboard-target="#thread-@thread.OsId-stacktrace-div" class="copyButton">Copy stack</a> (<a data-clipboard-target="#thread-@thread.OsId-stacktrace-div" class="copyButtonForJira">for JIRA</a>)</li>
+										<li class="text-nowrap"><label><input type="checkbox" class="showaddresses" name="@thread.OsId" checked />show addresses</label></li>
+										<li class="text-nowrap"><label><input type="checkbox" class="showsourceinfo" name="@thread.OsId" checked />show sourceinfo</label></li>
+										<li class="text-nowrap"><label><input type="checkbox" class="showstackptroffset" name="@thread.OsId" />show stackptr offsets</label></li>
+									</ul>
+								</td>
+							</tr>
+						</table>
+						<!--stacktraces-->
+						<div id="thread-@thread.OsId-stacktrace-div">
+							<div class="hidden-stacktrace-hack">
+								{noformat}
+							</div>
+							<table class="table table-stacktrace" id="thread-@thread.OsId-stacktrace">
+								<thead>
+									<tr>
+										<th class="nobreak stacktype" style="width: 55px">Type</th>
+										<th class="nobreak stackptr" style="width: 79px">StackPtr</th>
+										<th class="nobreak stackptroffset">StackPtr.Offset</th>
+										<th class="nobreak stackinstructionptr" style="width: 79px">Instruct.Ptr</th>
+										<th class="nobreak stackreturnaddr" style="width: 79px">Ret.Addr.</th>
+										<th class="nobreak stackmethodname">Module/Method name</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach (var frame in thread.StackTrace) {
+										string frameType = string.Empty;
+										string rowClass = string.Empty;
+										if (frame.Type == SuperDump.Models.StackFrameType.Native) {
+											rowClass = "custom-native";
+										} else if (frame.Type == SuperDump.Models.StackFrameType.Managed) {
+											rowClass = "custom-managed";
+										} else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
+											rowClass = "custom-special";
+										}
+										<tr class="@rowClass">
+											<td class="nobreak stacktype">@frame.Type.ToString()</td>
+											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
+											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
+											<td class="nobreak stackinstructionptr">@frame.InstructionPointer.ToString("x" + Model.PointerSize)</td>
+											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
+											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
+												<td class="nobreak stackmethodname">[@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
+											} else {
+												string tagclasses = "";
+												if (frame.Tags.Count > 0) {
+													tagclasses = "inline-tag " + string.Join(" ", frame.Tags.Select(x => "tag-" + x.Name));
+												}
+												<td class="nobreak stackmethodname">
+													<span class="@tagclasses">@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x")</span>
+													@if (frame.SourceInfo != null) {
+														<span class="sourceinfo">@frame.SourceInfo.File:@frame.SourceInfo.Line</span>
+													}
+												</td>
+											}
+										</tr>
+									}
+								</tbody>
+							</table>
+							<div class="hidden-stacktrace-hack">{noformat}</div>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+</div>

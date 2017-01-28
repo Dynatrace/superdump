@@ -1,0 +1,11 @@
+﻿@model SuperDumpService.ViewModels.ReportViewModel
+@{
+	ViewData["Title"] = "Rerun triggered";
+}
+<h1>You've re-triggered analysis</h1>
+<p>You'll be redirected to the report in 3 seconds...</p>
+<script>
+	setTimeout(function () {
+		window.location.replace("/Home/Report?bundleId=@Model.BundleId&dumpId=@Model.Id");
+	}, 3000);
+</script>

@@ -1,0 +1,68 @@
+﻿@model SuperDumpService.ViewModels.ReportViewModel
+
+<div class="panel panel-primary">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#system-info">
+				<span class="fa fa-plus"></span> System Information
+			</a>
+		</h4>
+	</div>
+	<div id="system-info" class="panel-collapse in">
+		<div class="panel-body">
+			<dl class="dl-horizontal">
+				<dt>OS version:</dt>
+				<dd>@Model.Result.SystemContext.OSVersion</dd>
+
+				<dt>Architecture:</dt>
+				<dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+
+				@foreach (var clr in Model.Result.SystemContext.ClrVersions) {
+					<dt>.NET CLR:</dt>
+					<dd>@clr.Version (@clr.ClrFlavor)</dd>
+				}
+
+				<dt>Process up-time:</dt>
+				<dd>@Model.Result.SystemContext.ProcessUpTime</dd>
+
+				<dt>System up-time:</dt>
+				<dd>@Model.Result.SystemContext.SystemUpTime</dd>
+
+				<dt># of logical processors:</dt>
+				<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
+			</dl>
+			<dl class="dl-horizontal">
+				<dt># of modules:</dt>
+				<dd>@Model.Result.SystemContext.Modules.Count</dd>
+				@{
+					var moduleTags = Model.Result.SystemContext.Modules.SelectMany(x => x.Tags).Distinct();
+					@foreach (var moduleTag in moduleTags.OrderByDescending(x => x.Importance)) {
+						<dt><span class="tag tag-@moduleTag">@moduleTag</span>-modules:</dt>
+						var matchingModules = Model.Result.SystemContext.Modules.Where(x => x.Tags.Contains(moduleTag));
+						<dd>@matchingModules.Select(x => $"{x.FileName} ({x.Version})").Aggregate((i, j) => i + ", " + j)</dd>
+					}
+				}
+			</dl>
+			<dl class="dl-horizontal">
+
+				<dt># of threads:</dt>
+				<dd>@Model.Result.ThreadInformation.Count</dd>
+
+				@foreach (var moduleTag in Model.Result.ThreadInformation.Values.SelectMany(x => x.Tags).Distinct().OrderByDescending(x => x.Importance)) {
+					<dt><span class="tag tag-@moduleTag">@moduleTag</span>-threads:</dt>
+					<dd>
+						@{
+							var threads = Model.Result.ThreadInformation.Values.Where(x => x.Tags.Contains(moduleTag));
+							<span>
+								@threads.Count()
+								[@foreach (var t in threads) {
+									<a href="#@t.OsId">#@t.EngineId</a>
+								}]
+							</span>
+						}
+					</dd>
+				}
+			</dl>
+		</div>
+	</div>
+</div>

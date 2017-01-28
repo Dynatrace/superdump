@@ -1,0 +1,7 @@
+﻿@model SuperDump.Models.SDCombinedStackTrace
+
+<ul>
+	@foreach (var frame in Model) {
+		<li>@frame.ModuleName!@frame.Type . @frame.MethodName</li>
+	}
+</ul>

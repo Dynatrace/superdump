@@ -1,0 +1,70 @@
+﻿using Microsoft.Diagnostics.Runtime;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SuperDump.Models {
+	[Serializable]
+	public class SDClrException : IEquatable<SDClrException>, ISerializableJson {
+		public ulong OSThreadId { get; set; }
+		public string Type { get; set; }
+		public ulong Address { get; set; }
+		public int HResult { get; set; }
+		public SDClrException InnerException { get; set; }
+		public string Message { get; set; } = "";
+		public SDCombinedStackTrace StackTrace { get; set; } = new SDCombinedStackTrace(new List<SDCombinedStackFrame>());
+
+		public SDClrException() { }
+
+		public SDClrException(ClrException clrException) {
+			if (clrException != null) {
+				this.Address = clrException.Address;
+				this.Type = clrException.Type.Name;
+				//this.HResult = clrException.HResult;
+
+				if (this.InnerException != null) {
+					this.InnerException = new SDClrException(clrException.Inner);
+				}
+
+				this.Message = clrException.GetExceptionMessageSafe();
+
+				var frames = new List<SDCombinedStackFrame>();
+				foreach (ClrStackFrame clrFrame in clrException.StackTrace) {
+					this.StackTrace.Add(new SDCombinedStackFrame(clrFrame));
+				}
+				this.StackTrace = new SDCombinedStackTrace(frames);
+			}
+		}
+
+		public override int GetHashCode() {
+			return base.GetHashCode();
+		}
+
+		public override bool Equals(object obj) {
+			if (obj is SDClrException) {
+				var exception = obj as SDClrException;
+				return this.Equals(exception);
+			}
+			return false;
+		}
+
+		public bool Equals(SDClrException other) {
+			bool equals = false;
+			if (this.Address.Equals(other.Address)
+				&& this.HResult.Equals(other.HResult)
+				&& this.InnerException.Equals(InnerException)
+				&& this.Message.Equals(other.Message)
+				&& this.StackTrace.SequenceEqual(other.StackTrace)) {
+				equals = true;
+			}
+			return equals;
+		}
+
+		public string SerializeToJSON() {
+			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
+				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+			});
+		}
+	}
+}

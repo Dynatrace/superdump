@@ -1,0 +1,114 @@
+﻿@model SuperDumpService.ViewModels.ReportViewModel
+
+@if (Model.Result.MemoryInformation.Any()) {
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#memory-report">
+					<span class="fa fa-plus"></span> Memory report
+				</a>
+			</h4>
+		</div>
+		<div id="memory-report" class="panel-collapse collapse">
+			@if (Model.Result.MemoryInformation.Values.Count > 0) {
+				<ul id="memory-tabs" class="nav nav-tabs">
+					<li class="active"><a href="#div-chart" data-toggle="tab">Memory Chart</a></li>
+					<li><a href="#stats" data-toggle="tab">Stats</a></li>
+				</ul>
+				<div class="tab-content">
+					<div id="div-chart" class="tab-pane active">
+						<canvas id="memoryChart" width="400" height="400"></canvas>
+						<script>
+							var types = [];
+							var sizes = [];
+							var myChart;
+
+							@foreach (var item in Model.Result.MemoryInformation.Values.OrderByDescending(i => i.Size).Take(10)) {
+													@:types.push("@item.Type");
+																				@:sizes.push(@item.Size);
+																	}
+
+							$('#memory-report').on('hidden.bs.collapse', function () {
+								myChart.destroy();
+							});
+							$('#memory-report').on('shown.bs.collapse', function () {
+								var ctx = document.getElementById("memoryChart");
+								myChart = new Chart(ctx, {
+									type: 'pie',
+									data: {
+										labels: types,
+										datasets: [{
+											label: '@Model.Id',
+											data: sizes,
+											backgroundColor: [
+												'rgba(255, 99, 132, 0.4)',
+												'rgba(54, 162, 235, 0.4)',
+												'rgba(255, 206, 86, 0.4)',
+												'rgba(75, 192, 192, 0.4)',
+												'rgba(153, 102, 255, 0.4)',
+												'rgba(255, 159, 64, 0.4)',
+												'rgba(178, 59, 200, 0.4)',
+												'rgba(23, 150, 64, 0.4)',
+												'rgba(90, 159, 34, 0.4)',
+												'rgba(200, 56, 156, 0.4)'
+											],
+											borderColor: [
+												'rgba(255,99,132,1)',
+												'rgba(54, 162, 235, 1)',
+												'rgba(255, 206, 86, 1)',
+												'rgba(75, 192, 192, 1)',
+												'rgba(153, 102, 255, 1)',
+												'rgba(255, 159, 64, 1)',
+												'rgba(255, 159, 64, 1)',
+												'rgba(178, 59, 200, 1)',
+												'rgba(23, 150, 64, 1)',
+												'rgba(90, 159, 34, 1)',
+												'rgba(200, 56, 156, 1)'
+											],
+											borderWidth: 1.5
+										}]
+									},
+									options: {
+										tooltips: {
+											callbacks: {
+												label: function (tooltipItem, data) {
+													var type = data.labels[tooltipItem.index];
+													var bytes = data.datasets[0].data[tooltipItem.index];
+													return type + " " + formatBytes(bytes);
+												}
+											}
+										}
+									}
+
+								});
+							});
+
+						</script>
+					</div>
+					<div id="stats" class="tab-pane">
+						<table id="table-stats" class="table table-condensed">
+							<thead>
+								<tr>
+									<th>Type</th>
+									<th>Count</th>
+									<th>Allocated space</th>
+								</tr>
+							</thead>
+							<tbody>
+								@foreach (var item in Model.Result.MemoryInformation.Values.OrderByDescending(v => v.Size)) {
+									<tr>
+										<td class="table-memory-type">@item.Type</td>
+										<td class="table-left">@item.Count</td>
+										<td class="table-left">@Model.SizeSuffix(item.Size)</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			} else {
+				<h4>No heap information avaliable.</h4>
+			}
+		</div>
+	</div>
+}

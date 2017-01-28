@@ -1,0 +1,35 @@
+﻿@model SuperDumpService.ViewModels.BundleViewModel
+@{
+	ViewData["Title"] = "Created";
+}
+
+@if (Model.Bundle == null || (Model.Bundle != null && !Model.Bundle.DownloadCompleted)) {
+	<h3>Analysis ID <strong>@Model.Id</strong></h3>
+	<h4>..hang tight, bundle gets created..</h4>
+	<script>
+	setTimeout(function () {
+		window.location.reload(1);
+	}, 2000);
+	</script>
+} else if (Model.Bundle != null && Model.Bundle.DownloadCompleted) {
+	if (Model.Bundle.DumpItems.Count == 1) {
+		var item = Model.Bundle.DumpItems.First().Value;
+		<h3>
+		Dump with id <strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.BundleId" asp-route-dumpId="@item.Id">@item.Id</a></strong> successfully created.</h3>
+
+		<p>You'll be redirected to the report...</p>
+		<script>
+			window.location.replace("/Home/Report?bundleId=@item.BundleId&dumpId=@item.Id");
+		</script>
+	} else {
+	<h3>You uploaded a zip file with several dumps.</h3>
+	<h4>Analysis ID <strong>@Model.Id</strong></h4>
+	<ul>
+		@foreach (var item in Model.Bundle.DumpItems.Values) {
+			<li>Dump with id <strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.BundleId" asp-route-dumpId="@item.Id">@item.Id</a></strong> successfully created. (@System.IO.Path.GetFileName(item.Path))</li>
+		}
+	</ul>
+	}
+} else {
+	<h3>Something went wrong here...</h3>
+}

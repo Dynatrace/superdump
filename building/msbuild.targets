@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project DefaultTargets="Rebuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+
+	<PropertyGroup>
+		<RootFolder>$(MSBuildProjectDirectory)\..</RootFolder>
+		<DeployFolder>$(RootFolder)\bin</DeployFolder>
+		<Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+	</PropertyGroup>
+	
+	<Target Name="Rebuild">
+		<CallTarget Targets="BuildAll"/>
+	</Target>
+	
+	<Target Name="BuildAll">
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpModels\SuperDumpModels.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build"/>
+		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
+		
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.xproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.xproj" Properties="DeployOnBuild=true;PublishProfile=publish-profile" />
+	</Target>
+</Project>

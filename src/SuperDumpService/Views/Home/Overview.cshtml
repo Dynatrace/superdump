@@ -1,0 +1,47 @@
+﻿@model IEnumerable<SuperDumpService.Models.DumpBundle>
+@{
+	ViewData["Title"] = "Overview";
+}
+<h2>Overview of all dumps found on server</h2>
+<hr />
+<h3>(view in progress)</h3>
+<div class="container">
+	<ul class="legend">
+		<li><span class="anomalies"></span> Anomalies detected in dump (see summary)</li>
+	</ul>
+	<br />
+	<table class="table table-striped table-word-break">
+		<thead>
+			<tr>
+				<th style="width: 20%;">Bundle ID</th>
+				<th style="width: 33%;">Dumps</th>
+				<th style="width: 12%;">JIRA</th>
+				<th style="width: 12%;">Job name</th>
+				<th style="width: 10%;">Complete</th>
+				<th style="width: 16%;">On server since</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var bundle in @Model.OrderByDescending(bundle => bundle.TimeStamp)) {
+				<tr>
+					<td>@bundle.Id</td>
+					<td>
+						<ul>
+							@foreach (var dump in bundle.DumpItems.Values) {
+								var styleClass = string.Empty;
+								if (dump.AnomaliesDetected) {
+									styleClass = "anomalies-detected";
+								}
+								<li class="@styleClass">@Html.ActionLink(dump.FileName + "(" + dump.Id + ")","Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.Id })</li>
+							}
+						</ul>
+					</td>
+					<td>@bundle.JiraIssue</td>
+					<td>@bundle.FriendlyName</td>
+					<td>@bundle.IsAnalysisComplete</td>
+					<td>@bundle.TimeStamp</td>
+				</tr>}
+		</tbody>
+
+	</table>
+</div>

@@ -1,0 +1,24 @@
+﻿@{
+	ViewData["Title"] = "Report for Dump";
+}
+
+
+<h2>@ViewData["Title"]</h2>
+
+<p>Enter dump file id to get analysis data.</p>
+
+<div class="panel panel-default">
+	<div class="panel-heading">@ViewData["Message"]</div>
+	<div class="panel-body">
+		@using (Html.BeginForm("Report", "Home", FormMethod.Get)) {
+			<div class="form-group">
+				<label for="dumpId">ID</label>
+				<input required class="form-control" type="text" name="dumpId" id="get-report-input" placeholder="Provide ID">
+			</div>
+
+			<button class="btn btn-default" id="get-report-button" type="submit">
+				<span class="glyphicon glyphicon-download"></span> Go!
+			</button>
+		}
+	</div>
+</div>
