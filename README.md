@@ -1,14 +1,17 @@
 SuperDump
 =========
 
-SuperDump is a service for *automated Windows crash-dump analysis*. 
+*SuperDump* is a service for *automated Windows crash-dump analysis*. 
 
 SuperDumps was made with these goals in mind:
  * Make crash-dump analysis easy for people who are unexperienced with it, or don't have the necessary tools installed.
- * Speed up first assessment of a crash-dump by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
+ * Speed up first assessment of a crash-dump, by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
 
- Features
- ========
+ What SuperDump is not:
+  * A replacement for in-depth analysis tools such as WinDbg.
+
+Features
+========
   * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
   * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
   * .zip files, containing multiple crash-dumps are also supported.
@@ -27,15 +30,23 @@ Technologies
 ============
  * [CLRMD] for analysis.
  * [ASP.NET Core] and [Razor] for web-frontend and api.
+ * [Hangfire] for task scheduling.
  
  [CLRMD]: https://github.com/Microsoft/clrmd
  [ASP.NET Core]: https://github.com/aspnet/Home
  [Razor]: https://github.com/aspnet/Razor
+ [Hangfire]: https://github.com/HangfireIO/Hangfire
 
 Build
 =====
 
-TBD
+ * Prerequisites:
+   * Visual Studio 2015 Update 3
+   * .NET Core Tooling Preview 2
+   * .NET Framework 4.6
+   * LocalDB
+ * Build via `building/build.cmd`
+ * Run via `build/runsuperdump.cmd` (defaults to port 5000)
 
 State of the project
 ====================
