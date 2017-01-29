@@ -1,1 +1,61 @@
-# superdump
+SuperDump
+=========
+
+SuperDump is a service for *automated Windows crash-dump analysis*. 
+
+SuperDumps was made with these goals in mind:
+ * Make crash-dump analysis easy for people who are unexperienced with it, or don't have the necessary tools installed.
+ * Speed up first assessment of a crash-dump by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
+
+ Features
+ ========
+  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
+  * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
+  * .zip files, containing multiple crash-dumps are also supported.
+  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
+  * SuperDump report shows
+    * Basic information (bitness, system/process uptime, lastevent, ...)
+    * Loaded modules and versions
+    * Stacktraces of all threads (native and .NET frames)
+    * AppDomains
+    * Basic memory analyis (number of bytes used by .NET types)
+ * SuperDump detects exceptions (native and managed) and marks the responsible threads.
+ * Deadlock detection.
+ * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
+
+Technologies
+============
+ * [CLRMD] for analysis.
+ * [ASP.NET Core] and [Razor] for web-frontend and api.
+ 
+ [CLRMD]: https://github.com/Microsoft/clrmd
+ [ASP.NET Core]: https://github.com/aspnet/Home
+ [Razor]: https://github.com/aspnet/Razor
+
+Build
+=====
+
+TBD
+
+State of the project
+====================
+SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful, so we thought it might be useful for others too. Thus we decided to opensource it.
+
+Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
+ * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously these are not in source control. We'd need some binary-store, a prepare/download step, ect to make those run.
+ * Some stuff is tailored for our needs at Dynatrace. E.g. There is a field to link analysis to Jira-issues, which obviously will not fit for everyone. Also, we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
+ * There is currently no data retention stuff implemented. Every crash-dump is stored forever. Cleanup needs to be done manually.
+ * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can highly security critical.
+
+Credit
+======
+Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by folks at [Dynatrace].
+
+[Andreas Lobmaier]: https://github.com/alobmaier
+[Dynatrace]: https://www.dynatrace.com
+
+License
+=======
+[MIT]
+
+[MIT]: https://github.com/Dynatrace/superdump/blob/master/LICENSE
