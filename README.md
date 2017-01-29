@@ -7,24 +7,29 @@ SuperDumps was made with these goals in mind:
  * Make crash-dump analysis easy for people who are unexperienced with it, or don't have the necessary tools installed.
  * Speed up first assessment of a crash-dump, by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
 
- What SuperDump is not:
+What SuperDump is not:
   * A replacement for in-depth analysis tools such as WinDbg.
 
 Features
 ========
-  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
-  * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
-  * .zip files, containing multiple crash-dumps are also supported.
-  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
-  * SuperDump report shows
-    * Basic information (bitness, system/process uptime, lastevent, ...)
-    * Loaded modules and versions
-    * Stacktraces of all threads (native and .NET frames)
-    * AppDomains
-    * Basic memory analyis (number of bytes used by .NET types)
+ * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
+ * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
+ * .zip files, containing multiple crash-dumps are also supported.
+ * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
+ * SuperDump report shows:
+   * Basic information (bitness, system/process uptime, lastevent, ...)
+   * Loaded modules and versions
+   * Stacktraces of all threads (native and .NET frames)
+   * AppDomains
+   * Basic memory analyis (number of bytes used by .NET types)
  * SuperDump detects exceptions (native and managed) and marks the responsible threads.
  * Deadlock detection.
  * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
+
+<a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
+<a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
+<a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
+<a href="doc/img/managedexception.png"><img src="doc/img/managedexception.png" title="managed exception" width="200"/></a>
 
 Technologies
 ============
@@ -58,11 +63,16 @@ Though it currently works great for us at Dynatrace, there are areas that need t
  * There is currently no data retention stuff implemented. Every crash-dump is stored forever. Cleanup needs to be done manually.
  * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can highly security critical.
 
+Future
+======
+We've open sourced SuperDump, because we believe it can be helpful for others. Anyone is welcome to help improve SuperDump. In small ways, or in ways we have not thought about yet. PR's are welcome as well as github tickets.
+
 Credit
 ======
-Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by folks at [Dynatrace].
+Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace].
 
 [Andreas Lobmaier]: https://github.com/alobmaier
+[Christoph Neumüller]: https://github.com/discostu105
 [Dynatrace]: https://www.dynatrace.com
 
 License
