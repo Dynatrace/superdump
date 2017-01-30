@@ -14,7 +14,7 @@ Features
 ========
  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
  * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
- * .zip files, containing multiple crash-dumps are also supported.
+ * .zip files containing multiple crash-dumps are also supported.
  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
  * SuperDump report shows:
    * Basic information (bitness, system/process uptime, lastevent, ...)
@@ -55,10 +55,10 @@ Build
 
 State of the project
 ====================
-SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful, so we thought it might be useful for others too. Thus we decided to opensource it.
+SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it.
 
 Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
- * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously these are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
+ * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
  * Some stuff is tailored for our needs at Dynatrace. E.g. There is a field to link analysis to Jira-issues, which obviously will not fit for everyone. Also, we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
  * There is currently no data retention stuff implemented. Every crash-dump is stored forever. Cleanup needs to be done manually.
  * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
