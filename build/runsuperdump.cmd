@@ -2,7 +2,7 @@ REM adapt port
 SET ASPNETCORE_URLS=http://*:5000
 
 REM adapt asp.netcore environment. "Development" yields better error pages, "Production" is recommended otherwise.
-SET ASPNETCORE_ENVIRONMENT=Production
+SET ASPNETCORE_ENVIRONMENT=Development
 
 REM adapt _NT_SYMBOL_PATH here to include internal symbol servers
 REM be aware that CLRMD is buggy parsing more than two symbolpaths. (see https://github.com/Microsoft/clrmd/issues/52)
