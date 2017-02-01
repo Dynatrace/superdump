@@ -3,10 +3,10 @@ using System.IO;
 
 namespace SuperDumpService.Helpers {
 	public static class PathHelper {
-		private static string workingDir = Path.Combine(Environment.CurrentDirectory, @"..\..\data\dumps\");
-		private static string uploadsDir = Path.Combine(Environment.CurrentDirectory, @"..\..\data\uploads\");
-		private static string hangfireDbDir = Path.Combine(Environment.CurrentDirectory, @"..\..\data\hangfire\");
-		private static string confDir = Path.Combine(Environment.CurrentDirectory, @"..\..\conf\");
+		private static string workingDir = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\data\dumps\");
+		private static string uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\data\uploads\");
+		private static string hangfireDbDir = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\data\hangfire\");
+		private static string confDir = Path.Combine(Directory.GetCurrentDirectory(), @"..\..\conf\");
 
 		internal static string GetHangfireDBDir() {
 			return hangfireDbDir;
@@ -54,10 +54,10 @@ namespace SuperDumpService.Helpers {
 		}
 
 		public static string GetDumpSelectorPath() {
-			string dumpselector = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\SuperDumpSelector\bin\SuperDumpSelector.exe"));
+			string dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\bin\SuperDumpSelector.exe"));
 			if (!File.Exists(dumpselector)) {
 				// deployment case
-				dumpselector = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\SuperDumpSelector\SuperDumpSelector.exe"));
+				dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\SuperDumpSelector.exe"));
 			}
 			return dumpselector;
 		}

@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <AssemblyName>SuperDumpService</AssemblyName>
-    <OutputType>Exe</OutputType>
     <PackageId>SuperDumpService</PackageId>
     <DocumentationFile>$(Configuration)\$(TargetFramework)\SuperDumpService.xml</DocumentationFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RestorePackages>true</RestorePackages>
     <OutputPath>
     </OutputPath>
+    <OutputTypeEx>exe</OutputTypeEx>
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />

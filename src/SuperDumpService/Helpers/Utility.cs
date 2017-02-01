@@ -99,13 +99,10 @@ namespace SuperDumpService.Helpers {
 		}
 
 		public static string ConvertWindowsTimeStamp(ulong time) {
-			DateTime dateTime = new DateTime(1601, 1, 1);
+			var dateTime = new DateTime(1601, 1, 1);
 			dateTime = dateTime.AddSeconds(time / (double)10000000);
-			TimeZone timeZone = TimeZone.CurrentTimeZone;
-			TimeZoneInfo info = TimeZoneInfo.Local;
-			DateTime localTime = timeZone.ToLocalTime(dateTime);
-
-			return localTime.ToString() + " UTC " + ((info.BaseUtcOffset >= TimeSpan.Zero) ? "+" : "-") + timeZone.GetUtcOffset(localTime);
+			DateTime localTime = dateTime.ToLocalTime();
+			return localTime.ToString() + " UTC";
 		}
 
 		public static string ConvertWindowsTimeSpan(ulong time) {

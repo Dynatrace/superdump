@@ -8,7 +8,6 @@ using System.IO;
 using SuperDumpService.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
-using System.Net.Mime;
 using System.Text;
 
 namespace SuperDumpService.Controllers {
@@ -19,7 +18,7 @@ namespace SuperDumpService.Controllers {
 		public HomeController(IHostingEnvironment environment, IDumpRepository dumps) {
 			this.environment = environment;
 			this.Dumps = dumps;
-			Console.WriteLine(Environment.CurrentDirectory);
+			Console.WriteLine(Directory.GetCurrentDirectory());
 			PathHelper.PrepareDirectories();
 		}
 
@@ -156,7 +155,7 @@ namespace SuperDumpService.Controllers {
 				return Content(sb.ToString());
 			}
 			byte[] fileBytes = System.IO.File.ReadAllBytes(file.FullName);
-			return File(fileBytes, MediaTypeNames.Application.Octet, file.Name);
+			return File(fileBytes, "application/octet-stream", file.Name);
 		}
 
 		[HttpPost]

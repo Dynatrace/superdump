@@ -10,6 +10,8 @@ using System.Diagnostics;
 using Hangfire;
 using SuperDumpService.Helpers;
 using Microsoft.Extensions.Options;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace SuperDumpService.Models {
 	public class DumpRepository : IDumpRepository {
@@ -50,7 +52,7 @@ namespace SuperDumpService.Models {
 						if (resultIsThere) {
 							// load result and get information
 							string json;
-							using (StreamReader reader = new StreamReader(jsonResult)) {
+							using (StreamReader reader = new StreamReader(File.OpenRead(jsonResult))) {
 								json = reader.ReadToEnd();
 							}
 							SDResult res = JsonConvert.DeserializeObject<SDResult>(json);
@@ -86,7 +88,7 @@ namespace SuperDumpService.Models {
 			}
 		}
 
-		public void AddBundle(IJobCancellationToken token, DumpBundle bundle) {
+		public async Task AddBundle(IJobCancellationToken token, DumpBundle bundle) {
 			try {
 				dumpBundles[bundle.Id] = bundle;
 				Uri uri = new Uri(bundle.Url); // should not throw an exception due to validation before!
@@ -94,8 +96,15 @@ namespace SuperDumpService.Models {
 				if (!Utility.IsLocalFile(bundle.Url)) {
 					// download
 					dumpBundles[bundle.Id].Path = Path.Combine(FindUniqueFilename(PathHelper.GetBundleDownloadPath(bundle.UrlFilename)));
-					WebClient client = new WebClient();
-					client.DownloadFile(uri, dumpBundles[bundle.Id].Path);
+					using (var client = new HttpClient()) {
+						using (var download = await client.GetAsync(uri)) {
+							using (var stream = await download.Content.ReadAsStreamAsync()) {
+								using (var outfile = File.OpenWrite(dumpBundles[bundle.Id].Path)) {
+									await stream.CopyToAsync(outfile);
+								}
+							}
+						}
+					}
 				} else {
 					dumpBundles[bundle.Id].Path = bundle.Url;
 				}
@@ -241,7 +250,7 @@ namespace SuperDumpService.Models {
 
 				// load result and add own information
 				string json;
-				using (StreamReader reader = new StreamReader(dumpBundles[bundleId].DumpItems[id].ResultPath)) {
+				using (StreamReader reader = new StreamReader(File.OpenRead(dumpBundles[bundleId].DumpItems[id].ResultPath))) {
 					json = reader.ReadToEnd();
 				}
 				// deserialize and store own information
@@ -280,7 +289,7 @@ namespace SuperDumpService.Models {
 				&& dumpBundles[bundleId].DumpItems[id].ResultPath != null
 				&& dumpBundles[bundleId].DumpItems[id].IsAnalysisComplete) {
 				string json;
-				using (StreamReader reader = new StreamReader(dumpBundles[bundleId].DumpItems[id].ResultPath)) {
+				using (StreamReader reader = new StreamReader(File.OpenRead(dumpBundles[bundleId].DumpItems[id].ResultPath))) {
 					json = reader.ReadToEnd();
 				}
 				return JsonConvert.DeserializeObject<SDResult>(json);
