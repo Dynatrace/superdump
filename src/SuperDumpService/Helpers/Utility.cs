@@ -6,8 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using SuperDumpService.Models;
 using Hangfire;
-using ICSharpCode.SharpZipLib.Zip;
-using ICSharpCode.SharpZipLib.Core;
+using System.IO.Compression;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -56,31 +55,20 @@ namespace SuperDumpService.Helpers {
 		}
 
 		public static List<string> UnzipDumpZip(string zipPath) {
-			List<string> urls = new List<string>();
+			var urls = new List<string>();
+			var zipFileName = Path.GetFileNameWithoutExtension(zipPath);
 
-			using (ZipFile zip = new ZipFile(new FileStream(zipPath, FileMode.Open,
-								FileAccess.Read))) {
-				zip.IsStreamOwner = true;
-
-				foreach (ZipEntry entry in zip) {
-					if (entry.IsDirectory) {
-						continue;
-					}
-					// else
+			using (var zip = System.IO.Compression.ZipFile.OpenRead(zipPath)) {
+				foreach (var entry in zip.Entries) {
 					if (entry.Name.ToLower().EndsWith(".dmp") || entry.Name.ToLower().EndsWith(".pdb")) {
-						// unpack and store
-						Stream stream = zip.GetInputStream(entry);
 
-						string output = Path.Combine(PathHelper.GetUploadsDir(), Path.GetFileNameWithoutExtension(zip.Name), Path.GetFileName(entry.Name));
+						string output = Path.Combine(PathHelper.GetUploadsDir(), Path.GetFileNameWithoutExtension(zipFileName), Path.GetFileName(entry.Name));
 						string dir = Path.GetDirectoryName(output);
 						if (!Directory.Exists(dir)) {
 							Directory.CreateDirectory(dir);
 						}
+						entry.ExtractToFile(output);
 
-						byte[] buffer = new byte[4096]; // 4K
-						using (FileStream fs = System.IO.File.Create(output)) {
-							StreamUtils.Copy(stream, fs, buffer);
-						}
 						Console.WriteLine("unzipped {0} to {1}", entry.Name, output);
 						urls.Add(output);
 					}
@@ -111,13 +99,10 @@ namespace SuperDumpService.Helpers {
 		}
 
 		public static string ConvertWindowsTimeStamp(ulong time) {
-			DateTime dateTime = new DateTime(1601, 1, 1);
+			var dateTime = new DateTime(1601, 1, 1);
 			dateTime = dateTime.AddSeconds(time / (double)10000000);
-			TimeZone timeZone = TimeZone.CurrentTimeZone;
-			TimeZoneInfo info = TimeZoneInfo.Local;
-			DateTime localTime = timeZone.ToLocalTime(dateTime);
-
-			return localTime.ToString() + " UTC " + ((info.BaseUtcOffset >= TimeSpan.Zero) ? "+" : "-") + timeZone.GetUtcOffset(localTime);
+			DateTime localTime = dateTime.ToLocalTime();
+			return localTime.ToString() + " UTC";
 		}
 
 		public static string ConvertWindowsTimeSpan(ulong time) {

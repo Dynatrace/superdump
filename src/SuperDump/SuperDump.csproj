@@ -122,6 +122,7 @@
     <Compile Include="BasePrinter.cs" />
     <Compile Include="ClrMdExtensions.cs" />
     <Compile Include="CombinedStackTrace.cs" />
+    <Compile Include="ModelHelpers\ModelHelpers.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="NativeStructs.cs" />
     <Compile Include="Printers\ConsolePrinter.cs" />
@@ -147,12 +148,6 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SuperDumpmodels\SuperDumpModels.csproj">
-      <Project>{bb6ec51d-3acc-4ade-b09c-4217b4ad3c58}</Project>
-      <Name>SuperDumpModels</Name>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup Condition=" '$(Platform)' == 'x86'">
     <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\*.dll" />
     <None Include="@(NativeLibs)">
@@ -166,6 +161,12 @@
       <Link>%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SuperDumpmodels\SuperDumpModels.csproj">
+      <Project>{bb6ec51d-3acc-4ade-b09c-4217b4ad3c58}</Project>
+      <Name>SuperDumpModels</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

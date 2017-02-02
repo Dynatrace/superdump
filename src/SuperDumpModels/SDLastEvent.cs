@@ -2,7 +2,6 @@
 using System;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDLastEvent : IEquatable<SDLastEvent>, ISerializableJson {
 		public string Type { get; set; } = "";
 		public string Description { get; set; } = "";

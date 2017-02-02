@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using SuperDump.ModelHelpers;
 
 namespace SuperDump.Analyzers {
 	public class SystemAnalyzer {
@@ -52,7 +53,7 @@ namespace SuperDump.Analyzers {
 
 		private SDAppDomain GetSharedDomain() {
 			if (this.context.Runtime != null) {
-				return new SDAppDomain(this.context.Runtime.SharedDomain);
+				return this.context.Runtime.SharedDomain.ToSDModel();
 			} else {
 				return null;
 			}
@@ -60,7 +61,7 @@ namespace SuperDump.Analyzers {
 
 		private SDAppDomain GetSystemDomain() {
 			if (this.context.Runtime != null) {
-				return new SDAppDomain(this.context.Runtime.SystemDomain);
+				return this.context.Runtime.SystemDomain.ToSDModel();
 			} else {
 				return null;
 			}
@@ -94,7 +95,7 @@ namespace SuperDump.Analyzers {
 			var domains = new List<SDAppDomain>();
 			if (context.Runtime != null) {
 				foreach (ClrAppDomain clrDomain in this.context.Runtime.AppDomains) {
-					var domain = new SDAppDomain(clrDomain);
+					var domain = clrDomain.ToSDModel();
 					domains.Add(domain);
 				}
 			}
@@ -104,7 +105,7 @@ namespace SuperDump.Analyzers {
 		private IList<SDClrVersion> GetClrVersions() {
 			var versions = new List<SDClrVersion>();
 			foreach (ClrInfo info in this.context.Target.ClrVersions) {
-				var clrVersion = new SDClrVersion(info);
+				var clrVersion = info.ToSDModel();
 				versions.Add(clrVersion);
 			}
 			return versions;
@@ -114,7 +115,7 @@ namespace SuperDump.Analyzers {
 			var moduleList = new List<SDModule>();
 			foreach (ModuleInfo m in context.Target.EnumerateModules()) {
 				// TODO fill systeminfo.modules with information
-				var module = new SDModule(m);
+				var module = m.ToSDModel();
 				moduleList.Add(module);
 			}
 			return moduleList;

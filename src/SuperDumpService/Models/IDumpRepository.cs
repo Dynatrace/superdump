@@ -2,11 +2,12 @@
 using SuperDump.Models;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SuperDumpService.Models {
 	public interface IDumpRepository {
 		[Queue("bundles", Order = 1)]
-		void AddBundle(IJobCancellationToken token, DumpBundle bundle);
+		Task AddBundle(IJobCancellationToken token, DumpBundle bundle);
 		[Queue("analysis", Order = 2)]
 		void AddDump(IJobCancellationToken token, DumpAnalysisItem item);
 		IEnumerable<DumpBundle> GetAll();

@@ -1,5 +1,4 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using SuperDumpModels;
 using System;
@@ -42,32 +41,17 @@ namespace SuperDump.Models {
 			this.StackPointerOffset = spOffset;
 			this.SourceInfo = sourceInfo;
 		}
-
-		public SDCombinedStackFrame(ClrStackFrame frame) {
-			if (frame.Kind == ClrStackFrameType.ManagedMethod)
-				Type = StackFrameType.Managed;
-			if (frame.Kind == ClrStackFrameType.Runtime)
-				Type = StackFrameType.Special;
-
-			InstructionPointer = frame.InstructionPointer;
-			StackPointer = frame.StackPointer;
-
-			if (frame.Method == null) {
-				MethodName = frame.DisplayString; //for example GCFrame
-				return;
-			}
-
-			MethodName = frame.Method.GetFullSignature();
-			if (frame.Method.Type != null) {
-				ModuleName = Path.GetFileNameWithoutExtension(frame.Method.Type.Module.Name);
-				if (string.IsNullOrEmpty(ModuleName)) {
-					ModuleName = "UNKNOWN";
-				}
-			}
-
+		
+		public SDCombinedStackFrame(StackFrameType type, ulong instructionPointer, ulong stackPointer, string methodName, string moduleName, ulong nativeCode) {
+			Type = type;
+			InstructionPointer = instructionPointer;
+			StackPointer = stackPointer;
+			MethodName = methodName;
+			ModuleName = moduleName;
+			
 			// calculate IL offset with instruction pointer of frame and instruction pointer 
 			// in the target dump file of the start of the method's assembly
-			OffsetInMethod = InstructionPointer - frame.Method.NativeCode;
+			OffsetInMethod = InstructionPointer - nativeCode;
 		}
 
 		[JsonConstructor]

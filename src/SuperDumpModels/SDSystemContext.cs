@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDSystemContext : IEquatable<SDSystemContext>, ISerializableJson {
 		public string ProcessArchitecture { get; set; } = "";
 		public string SystemArchitecture { get; set; } = "";

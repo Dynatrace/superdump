@@ -6,7 +6,6 @@ using System.IO;
 namespace SuperDump.Models {
 	// SDResult identifies the whole result of the dump analysis
 	// contains all thread information, system information etc.
-	[Serializable]
 	public class SDResult : ISerializableJson {
 		public bool IsManagedProcess { get; set; }
 		public uint LastExecutedThread { get; set; }

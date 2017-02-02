@@ -7,8 +7,6 @@ namespace SuperDump.Models {
 	/// represents information about a deadlock, that means locked thread
 	/// and objects that are locked on
 	/// </summary>
-
-	[Serializable]
 	public class SDDeadlockContext : IEquatable<SDDeadlockContext>, ISerializableJson {
 		public HashSet<uint> pathToDeadlock = new HashSet<uint>();
 		public uint lastThreadId;
