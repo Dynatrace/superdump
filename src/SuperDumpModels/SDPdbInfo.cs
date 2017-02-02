@@ -2,7 +2,6 @@
 using System;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDPdbInfo : IEquatable<SDPdbInfo>, ISerializableJson {
 		public string FileName { get; set; } = "";
 		public int Revision { get; set; }

@@ -16,7 +16,6 @@
     <Content Update="wwwroot\**\*;Views\**\*;Areas\**\Views;appsettings.json;web.config">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <ProjectReference Include="..\SuperDumpmodels\SuperDumpModels.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ByteSize" Version="1.3.0" />
@@ -44,5 +43,8 @@
   </Target>
   <ItemGroup>
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.2.301" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SuperDumpmodels\SuperDumpModels.csproj" />
   </ItemGroup>
 </Project>

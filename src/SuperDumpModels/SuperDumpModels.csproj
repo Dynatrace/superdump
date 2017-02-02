@@ -2,15 +2,25 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <DebugType>portable</DebugType>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFrameworks>netcoreapp1.1;net46</TargetFrameworks>
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <AssemblyName>SuperDumpModels</AssemblyName>
     <PackageId>SuperDumpModels</PackageId>
     <RestorePackages>true</RestorePackages>
     <OutputTypeEx>library</OutputTypeEx>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
+    <PackageReference Include="Microsoft.NETCore.App">
+      <Version>1.1.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="0.8.31-beta" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="NETStandard.Library" Version="1.6.0" />
   </ItemGroup>
 </Project>

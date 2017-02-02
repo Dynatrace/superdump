@@ -1,5 +1,4 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
@@ -37,8 +36,7 @@ namespace SuperDump.Models {
 		Timer = 23,
 		MemorySection = 24
 	}
-
-	[Serializable]
+	
 	public class SDBlockingObject : ISerializableJson {
 		[JsonConverter(typeof(StringEnumConverter))]
 		public UnifiedBlockingReason Reason { get; set; }
@@ -49,20 +47,6 @@ namespace SuperDump.Models {
 		public ulong ManagedObjectAddress { get; set; }
 
 		public SDBlockingObject() { }
-
-		public SDBlockingObject(BlockingObject obj) {
-			foreach (ClrThread waiter in obj.Waiters?.Where(t => t != null) ?? new ClrThread[0]) {
-				this.WaiterOSThreadIds.Add(waiter.OSThreadId);
-			}
-			foreach (ClrThread owner in obj.Owners?.Where(t => t != null) ?? new ClrThread[0]) {
-				this.OwnerOSThreadIds.Add(owner.OSThreadId);
-			}
-
-			// convert reason to int, so it can be case to our UnifiedBlockingReason
-			Reason = (UnifiedBlockingReason)((int)obj.Reason);
-			RecursionCount = obj.RecursionCount;
-			ManagedObjectAddress = obj.Object;
-		}
 
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {

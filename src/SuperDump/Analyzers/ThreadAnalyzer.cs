@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using SuperDumpModels;
+using SuperDump.ModelHelpers;
 
 namespace SuperDump.Analyzers {
 	public class ThreadAnalyzer {
@@ -41,8 +42,9 @@ namespace SuperDump.Analyzers {
 			if (this.context.Runtime != null && this.context.Heap != null && this.context.Heap.CanWalkHeap) {
 				foreach (ClrThread thread in context.Runtime.Threads) {
 					foreach (BlockingObject obj in thread.BlockingObjects) {
-						if (obj != null)
-							this.threads[thread.OSThreadId].BlockingObjects.Add(new SDBlockingObject(obj));
+						if (obj != null) {
+							this.threads[thread.OSThreadId].BlockingObjects.Add(obj.ToSDModel());
+						}
 					}
 				}
 			} else {
@@ -244,7 +246,7 @@ namespace SuperDump.Analyzers {
 				foreach (ClrThread thread in this.context.Runtime.Threads) {
 					if (thread.CurrentException != null) {
 						if (this.threads[thread.OSThreadId] != null) {
-							var ex = new SDClrException(thread.CurrentException);
+							var ex = thread.CurrentException.ToSDModel();
 							ex.OSThreadId = thread.OSThreadId;
 							this.threads[thread.OSThreadId].LastException = ex;
 							this.exceptions.Add(ex);

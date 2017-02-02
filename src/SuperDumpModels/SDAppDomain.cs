@@ -1,11 +1,9 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDAppDomain : IEquatable<SDAppDomain>, ISerializableJson {
 		public ulong Address { get; set; }
 		public string ApplicationBase { get; set; } = "";
@@ -15,18 +13,6 @@ namespace SuperDump.Models {
 		public SDClrVersion Runtime { get; set; }
 
 		public SDAppDomain() { }
-
-		public SDAppDomain(ClrAppDomain domain) {
-			this.Address = domain.Address;
-			this.ApplicationBase = domain.ApplicationBase;
-			this.Id = domain.Id;
-			this.Name = domain.Name;
-			this.Modules = new List<SDClrModule>();
-			foreach (ClrModule clrModule in domain.Modules) {
-				this.Modules.Add(new SDClrModule(clrModule));
-			}
-			this.Runtime = new SDClrVersion(domain.Runtime.ClrInfo);
-		}
 
 		public override int GetHashCode() {
 			return base.GetHashCode();

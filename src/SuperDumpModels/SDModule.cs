@@ -1,11 +1,9 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDModule : IEquatable<SDModule>, ISerializableJson, ITaggableItem {
 		public string Version { get; set; }
 		public ulong ImageBase { get; set; }
@@ -30,21 +28,6 @@ namespace SuperDump.Models {
 
 		public SDModule() {
 			this.PdbInfo = new SDPdbInfo();
-		}
-
-		public SDModule(ModuleInfo info) {
-			this.FilePath = info.FileName;
-			this.FileSize = info.FileSize;
-			this.ImageBase = info.ImageBase;
-			this.IsManaged = info.IsManaged;
-			this.TimeStamp = info.TimeStamp;
-			this.Version = info.Version.ToString();
-			this.PdbInfo = new SDPdbInfo();
-			if (info.Pdb != null) {
-				this.PdbInfo.FileName = info.Pdb.FileName;
-				this.PdbInfo.Guid = info.Pdb.Guid.ToString();
-				this.PdbInfo.Revision = info.Pdb.Revision;
-			}
 		}
 
 		public override int GetHashCode() {
