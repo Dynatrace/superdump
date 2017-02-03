@@ -7,4 +7,4 @@ set msb="C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuil
 
 REM ugly hack for a bug in VS2017 (SuperDumpService.xml documentation not included in publishing)
 REM missing SuperDumpService.xml breaks swashbuckle
-copy "..\src\SuperDumpService\bin\Release\net46\SuperDumpService.xml" "..\build\bin\SuperDumpService\SuperDumpService.xml"
+copy "..\src\SuperDumpService\bin\Release\netcoreapp1.1\SuperDumpService.xml" "..\build\bin\SuperDumpService\SuperDumpService.xml"
