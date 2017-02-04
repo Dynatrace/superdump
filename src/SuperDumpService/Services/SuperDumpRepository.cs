@@ -10,9 +10,10 @@ using System.Diagnostics;
 using Hangfire;
 using SuperDumpService.Helpers;
 using Microsoft.Extensions.Options;
+using SuperDumpService.Models;
 
-namespace SuperDumpService.Models {
-	public class DumpRepository : IDumpRepository {
+namespace SuperDumpService.Services {
+	public class SuperDumpRepository : ISuperDumpRepository {
 		// collection that holds information about all dump bundles and their dumps
 		private static ConcurrentDictionary<string, DumpBundle> dumpBundles = new ConcurrentDictionary<string, DumpBundle>();
 		private static ConcurrentDictionary<string, DumpAnalysisItem> dumpItems = new ConcurrentDictionary<string, DumpAnalysisItem>();
@@ -20,7 +21,7 @@ namespace SuperDumpService.Models {
 		private IOptions<SuperDumpSettings> settings;
 		private SymStoreHelper symStoreHelper;
 
-		public DumpRepository(IOptions<SuperDumpSettings> settings) {
+		public SuperDumpRepository(IOptions<SuperDumpSettings> settings) {
 			this.settings = settings;
 			this.symStoreHelper = new SymStoreHelper(settings.Value.LocalSymbolCache, settings.Value.SymStoreExex64, settings.Value.SymStoreExex86);
 			PathHelper.PrepareDirectories();
@@ -131,7 +132,7 @@ namespace SuperDumpService.Models {
 						//File.Copy(path, PathHelper.GetDumpfilePath(bundle.Id, newItem.Id));
 
 						// start analysis
-						BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, newItem));
+						BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, newItem));
 					}
 					bundle.DownloadCompleted = true;
 				} else if (CanBePutInSymbolStore(dumpBundles[bundle.Id].Path)) {
@@ -147,7 +148,7 @@ namespace SuperDumpService.Models {
 					}
 					// copy file to dumps directory
 					//File.Copy(newItem.Path, PathHelper.GetDumpfilePath(bundle.Id, newItem.Id));
-					BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, bundle.DumpItems[newItem.Id]));
+					BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, bundle.DumpItems[newItem.Id]));
 					bundle.DownloadCompleted = true;
 				}
 			} catch (NoDumpInZipException) {

@@ -61,5 +61,13 @@ namespace SuperDumpService.Helpers {
 			}
 			return dumpselector;
 		}
+
+		internal static string GetBundleMetadataPath(string bundleId) {
+			return Path.Combine(GetBundleDirectory(bundleId), "bundleinfo.json");
+		}
+
+		internal static string GetDumpMetadataPath(string bundleId, string dumpId) {
+			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "dumpinfo.json");
+		}
 	}
 }

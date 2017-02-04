@@ -4,14 +4,15 @@ using SuperDumpService.Models;
 using SuperDumpService.Helpers;
 using SuperDump.Models;
 using Newtonsoft.Json;
+using SuperDumpService.Services;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace SuperDumpService.Controllers.Api {
 	[Route("api/[controller]")]
 	public class DumpsController : Controller {
-		public IDumpRepository Dumps { get; set; }
-		public DumpsController(IDumpRepository dumps) {
+		public ISuperDumpRepository Dumps { get; set; }
+		public DumpsController(ISuperDumpRepository dumps) {
 			this.Dumps = dumps;
 		}
 

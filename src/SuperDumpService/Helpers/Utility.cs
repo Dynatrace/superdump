@@ -8,6 +8,7 @@ using SuperDumpService.Models;
 using Hangfire;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Core;
+using SuperDumpService.Services;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -99,7 +100,7 @@ namespace SuperDumpService.Helpers {
 				Directory.CreateDirectory(Path.Combine(workingDir, bundle.Id, item.Id));
 			}
 			// enqueue bundle
-			BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddBundle(JobCancellationToken.Null, bundle));
+			BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddBundle(JobCancellationToken.Null, bundle));
 		}
 
 		public static void RerunAnalysis(string bundleId, string dumpId) {
@@ -107,7 +108,7 @@ namespace SuperDumpService.Helpers {
 				Path = PathHelper.GetDumpfilePath(bundleId, dumpId)
 			};
 			// enqueue bundle
-			BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, dumpAnalysisItem));
+			BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, dumpAnalysisItem));
 		}
 
 		public static string ConvertWindowsTimeStamp(ulong time) {

@@ -1,10 +1,11 @@
 ﻿using Hangfire;
 using SuperDump.Models;
+using SuperDumpService.Models;
 using System.Collections.Generic;
 using System.IO;
 
-namespace SuperDumpService.Models {
-	public interface IDumpRepository {
+namespace SuperDumpService.Services {
+	public interface ISuperDumpRepository {
 		[Queue("bundles", Order = 1)]
 		void AddBundle(IJobCancellationToken token, DumpBundle bundle);
 		[Queue("analysis", Order = 2)]

@@ -10,15 +10,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.Net.Mime;
 using System.Text;
+using SuperDumpService.Services;
+using System.Linq;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
 		private IHostingEnvironment environment;
-		public IDumpRepository Dumps { get; set; }
+		public ISuperDumpRepository superDumpRepo { get; set; }
+		public BundleRepository bundleRepo { get; private set; }
+		public DumpRepository dumpRepo { get; private set; }
 
-		public HomeController(IHostingEnvironment environment, IDumpRepository dumps) {
+		public HomeController(IHostingEnvironment environment, ISuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo) {
 			this.environment = environment;
-			this.Dumps = dumps;
+			this.superDumpRepo = superDumpRepo;
+			this.bundleRepo = bundleRepo;
+			this.dumpRepo = dumpRepo;
 			Console.WriteLine(Environment.CurrentDirectory);
 			PathHelper.PrepareDirectories();
 		}
@@ -58,7 +64,7 @@ namespace SuperDumpService.Controllers {
 						return BadRequest("Provided URI is invalid or cannot be reached.");
 					}
 				} catch {
-					Dumps.DeleteBundle(bundle.Id);
+					superDumpRepo.DeleteBundle(bundle.Id);
 					return BadRequest("Error while processing. SuperDump was not able to process it.");
 				}
 			} else {
@@ -67,10 +73,10 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult BundleCreated(string bundleId) {
-			if (Dumps.ContainsBundle(bundleId)) {
-				return View(new BundleViewModel(Dumps.GetBundle(bundleId)));
+			if (superDumpRepo.ContainsBundle(bundleId)) {
+				return View(new BundleViewModel(bundleRepo.Get(bundleId), dumpRepo.Get(bundleId)));
 			}
-			return View(new BundleViewModel(bundleId));
+			return null; // View(new BundleViewModel(BundleRepo.Create(bundleId)));
 		}
 
 		[HttpPost]
@@ -91,7 +97,7 @@ namespace SuperDumpService.Controllers {
 					using (var fileStream = new FileStream(filePath, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpBundle { Id = Dumps.CreateUniqueBundleId(), Url = filePath, Path = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					var bundle = new DumpBundle { Id = superDumpRepo.CreateUniqueBundleId(), Url = filePath, Path = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
@@ -101,7 +107,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult Overview() {
-			return View(Dumps.GetAll());
+			return View(bundleRepo.GetAll().Select(r => new BundleViewModel(r, dumpRepo.Get(r.BundleId))));
 		}
 
 		public IActionResult GetReport() {
@@ -114,14 +120,14 @@ namespace SuperDumpService.Controllers {
 			ViewData["Message"] = "Get Report";
 
 			// get dump result from repository
-			DumpAnalysisItem item = Dumps.GetDump(bundleId, dumpId);
+			DumpAnalysisItem item = superDumpRepo.GetDump(bundleId, dumpId);
 			if (item == null) {
 				return View(null);
 			}
 
 			SDResult res;
 			try {
-				res = Dumps.GetResult(bundleId, dumpId);
+				res = superDumpRepo.GetResult(bundleId, dumpId);
 			} catch (Exception e) {
 				res = null;
 				Console.WriteLine(e.Message);
@@ -141,7 +147,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult DownloadFile(string bundleId, string dumpId, string filename) {
-			var file = Dumps.GetReportFile(bundleId, dumpId, filename);
+			var file = superDumpRepo.GetReportFile(bundleId, dumpId, filename);
 			if (file == null) throw new ArgumentException("could not find file");
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"
@@ -162,7 +168,7 @@ namespace SuperDumpService.Controllers {
 		[HttpPost]
 		public IActionResult Rerun(string bundleId, string dumpId) {
 			// delete all files except dump
-			Dumps.WipeAllExceptDump(bundleId, dumpId);
+			superDumpRepo.WipeAllExceptDump(bundleId, dumpId);
 
 			Utility.RerunAnalysis(bundleId, dumpId);
 			return View(new ReportViewModel(bundleId, dumpId));

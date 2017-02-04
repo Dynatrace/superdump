@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SuperDumpService.Models.DumpBundle>
+﻿@model IEnumerable<SuperDumpService.ViewModels.BundleViewModel>
 @{
 	ViewData["Title"] = "Overview";
 }
@@ -13,33 +13,38 @@
 	<table class="table table-striped table-word-break">
 		<thead>
 			<tr>
-				<th style="width: 20%;">Bundle ID</th>
-				<th style="width: 33%;">Dumps</th>
-				<th style="width: 12%;">JIRA</th>
-				<th style="width: 12%;">Job name</th>
-				<th style="width: 10%;">Complete</th>
-				<th style="width: 16%;">On server since</th>
+				<th style="width: 100px;">Bundle ID</th>
+				<th style="width: 200px;">Dumps</th>
+				<th style="width: 100px;">Status</th>
+				<th style="width: 150px;">Created</th>
+				<th style="">Properties</th>
 			</tr>
 		</thead>
 		<tbody>
-			@foreach (var bundle in @Model.OrderByDescending(bundle => bundle.TimeStamp)) {
+			@foreach (var bundle in @Model.OrderByDescending(bundle => bundle.Created)) {
 				<tr>
-					<td>@bundle.Id</td>
+					<td>@bundle.BundleId</td>
 					<td>
 						<ul>
-							@foreach (var dump in bundle.DumpItems.Values) {
-								var styleClass = string.Empty;
-								if (dump.AnomaliesDetected) {
-									styleClass = "anomalies-detected";
-								}
-								<li class="@styleClass">@Html.ActionLink(dump.FileName + "(" + dump.Id + ")","Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.Id })</li>
+							@foreach (var dump in bundle.DumpInfos) {
+								<li>@Html.ActionLink("(" + dump.DumpId + ")", "Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.DumpId })</li>
 							}
 						</ul>
 					</td>
-					<td>@bundle.JiraIssue</td>
-					<td>@bundle.FriendlyName</td>
-					<td>@bundle.IsAnalysisComplete</td>
-					<td>@bundle.TimeStamp</td>
+					<td>@bundle.Status.ToString()</td>
+					<td>@bundle.Created</td>
+					<td>
+						@foreach (var customProp in bundle.CustomProperties) {
+							<span>
+								@customProp.Key:
+								@if (@customProp.Value.StartsWith("http")) {
+									<a href="@customProp.Value">@customProp.Value</a>
+								} else {
+									@customProp.Value
+								}
+							</span>
+						}
+					</td>
 				</tr>}
 		</tbody>
 
