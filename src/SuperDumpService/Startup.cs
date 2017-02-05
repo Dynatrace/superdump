@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Hangfire;
-using SuperDumpService.Models;
 using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.Swagger.Model;
 using Hangfire.Logging;
@@ -73,12 +72,15 @@ namespace SuperDumpService {
 			});
 
 			// register repository as singleton
-			services.AddSingleton<ISuperDumpRepository, SuperDumpRepository>();
+			services.AddSingleton<SuperDumpRepository>();
 
 			services.AddSingleton<BundleRepository>();
 			services.AddSingleton<BundleStorageFilebased>();
 			services.AddSingleton<DumpRepository>();
 			services.AddSingleton<DumpStorageFilebased>();
+			services.AddSingleton<AnalysisService>();
+			services.AddSingleton<DownloadService>();
+			services.AddSingleton<SymStoreService>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -94,7 +96,7 @@ namespace SuperDumpService {
 			});
 
 			app.UseHangfireServer(new BackgroundJobServerOptions {
-				Queues = new[] { "bundles" },
+				Queues = new[] { "download" },
 				WorkerCount = settings.Value.MaxConcurrentBundleExtraction
 			});
 			app.UseHangfireServer(new BackgroundJobServerOptions {

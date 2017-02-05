@@ -78,27 +78,6 @@ namespace SuperDumpService.Helpers {
 			return urls;
 		}
 
-		public static void ScheduleBundleAnalysis(string workingDir, DumpBundle bundle) {
-			// create folder for bundle
-			Directory.CreateDirectory(Path.Combine(workingDir, bundle.Id));
-			bundle.TimeStamp = DateTime.Now;
-
-			foreach (var item in bundle.DumpItems.Values) {
-				//create folders for dumps
-				Directory.CreateDirectory(Path.Combine(workingDir, bundle.Id, item.Id));
-			}
-			// enqueue bundle
-			BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddBundle(JobCancellationToken.Null, bundle));
-		}
-
-		public static void RerunAnalysis(string bundleId, string dumpId) {
-			var dumpAnalysisItem = new DumpAnalysisItem(bundleId, dumpId) {
-				Path = PathHelper.GetDumpfilePath(bundleId, dumpId)
-			};
-			// enqueue bundle
-			BackgroundJob.Enqueue<ISuperDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, dumpAnalysisItem));
-		}
-
 		public static string ConvertWindowsTimeStamp(ulong time) {
 			var dateTime = new DateTime(1601, 1, 1);
 			dateTime = dateTime.AddSeconds(time / (double)10000000);

@@ -13,7 +13,7 @@ namespace SuperDumpService.Services {
 	/// this implementation uses simple filebased storage
 	/// </summary>
 	public class BundleStorageFilebased {
-		private DumpStorageFilebased dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
+		private readonly DumpStorageFilebased dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
 
 		public BundleStorageFilebased(DumpStorageFilebased dumpStorage) {
 			this.dumpStorage = dumpStorage;
@@ -32,9 +32,14 @@ namespace SuperDumpService.Services {
 				yield return ReadMetainfoFile(metainfoFilename);
 			}
 		}
-
+		
 		private static BundleMetainfo ReadMetainfoFile(string filename) {
 			return JsonConvert.DeserializeObject<BundleMetainfo>(File.ReadAllText(filename));
+		}
+
+		internal void Store(BundleMetainfo bundleInfo) {
+			Directory.CreateDirectory(PathHelper.GetBundleDirectory(bundleInfo.BundleId));
+			WriteMetainfoFile(bundleInfo, PathHelper.GetBundleMetadataPath(bundleInfo.BundleId));
 		}
 
 		private static void WriteMetainfoFile(BundleMetainfo metaInfo, string filename) {
@@ -55,7 +60,7 @@ namespace SuperDumpService.Services {
 			if(dump != null) {
 				metainfo.Created = dump.Created;
 				metainfo.Status = BundleStatus.Finished;
-				var fullresult = dumpStorage.ReadFullResult(bundleId, dump.DumpId);
+				var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId);
 				if (fullresult != null) {
 					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["reference"] = fullresult.AnalysisInfo.JiraIssue;
 					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["name"] = fullresult.AnalysisInfo.FriendlyName;

@@ -1,4 +1,5 @@
 ﻿using SuperDump.Models;
+using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
 

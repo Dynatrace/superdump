@@ -10,6 +10,7 @@ namespace SuperDumpService.Models {
 		public DateTime Created { get; set; }
 		public DateTime Finished { get; set; }
 		public DumpStatus Status { get; set; }
+		public string ErrorMessage { get; internal set; }
 	}
 
 	public enum DumpStatus {

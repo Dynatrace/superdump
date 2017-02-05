@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using SuperDump.Models;
+using SuperDumpService.Models;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SuperDumpService.Models;
+using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -44,7 +46,7 @@ namespace SuperDumpService.Services {
 				BundleId = bundleId,
 				DumpId = dumpId
 			};
-			var result = ReadFullResult(bundleId, dumpId);
+			var result = ReadResults(bundleId, dumpId);
 			if (result != null) {
 				metainfo.Status = DumpStatus.Finished;
 				metainfo.Created = result.AnalysisInfo.ServerTimeStamp;
@@ -55,10 +57,45 @@ namespace SuperDumpService.Services {
 			WriteMetainfoFile(metainfo, PathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
-		public SDResult ReadFullResult(string bundleId, string dumpId) {
+		public SDResult ReadResults(string bundleId, string dumpId) {
 			var filename = PathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) return null;
 			return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
+		}
+
+		public string GetDumpFilePath(string bundleId, string dumpId) {
+			var filename = PathHelper.GetDumpfilePath(bundleId, dumpId);
+			if (!File.Exists(filename)) return null;
+			return filename;
+		}
+
+		/// <summary>
+		/// actually copies a file into the dumpdirectory
+		/// </summary>
+		internal async Task<string> AddDumpFile(string bundleId, string dumpId, string sourcePath) {
+			string destPath = PathHelper.GetDumpfilePath(bundleId, dumpId);
+			using (Stream source = File.OpenRead(sourcePath)) {
+				using (Stream destination = File.Create(destPath)) {
+					await source.CopyToAsync(destination);
+				}
+			}
+			return destPath;
+		}
+
+		internal void Create(string bundleId, string dumpId) {
+			string dir = PathHelper.GetDumpDirectory(bundleId, dumpId);
+			if (Directory.Exists(dir)) {
+				throw new DirectoryAlreadyExistsException("Cannot create '{dir}'. It already exists.");
+			}
+			Directory.CreateDirectory(dir);
+		}
+
+		internal IEnumerable<string> GetFilePaths(string bundleId, string dumpId) {
+			return new List<string>() { "test1" };
+		}
+
+		internal void Store(DumpMetainfo dumpInfo) {
+			WriteMetainfoFile(dumpInfo, PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
 		}
 	}
 }
