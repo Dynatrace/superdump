@@ -12,6 +12,7 @@ using SuperDumpService.Helpers;
 using Microsoft.Extensions.Options;
 using System.Net.Http;
 using System.Threading.Tasks;
+using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
 	public class SuperDumpRepository : ISuperDumpRepository {
