@@ -1,7 +1,6 @@
 ﻿using System;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDMemoryObject : ISerializableJson {
 		public string Type { get; set; } = "";
 		public ulong Count { get; set; }

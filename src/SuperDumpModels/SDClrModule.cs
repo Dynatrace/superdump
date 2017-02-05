@@ -1,9 +1,7 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDClrModule : IEquatable<SDClrModule>, ISerializableJson {
 		public ulong AssemblyId { get; set; }
 		public string AssemblyName { get; set; }
@@ -15,20 +13,6 @@ namespace SuperDump.Models {
 
 		public SDClrModule() {
 			this.Pdb = new SDPdbInfo();
-		}
-
-		public SDClrModule(ClrModule module) {
-			this.AssemblyId = module.AssemblyId;
-			this.AssemblyName = module.AssemblyName;
-			this.IsDynamic = module.IsDynamic;
-			this.IsFile = module.IsFile;
-			this.Name = module.Name;
-			this.Pdb = new SDPdbInfo();
-			if (module.Pdb != null) {
-				this.Pdb.FileName = module.Pdb.FileName;
-				this.Pdb.Guid = module.Pdb.Guid.ToString();
-				this.Pdb.Revision = module.Pdb.Revision;
-			}
 		}
 
 		public override int GetHashCode() {

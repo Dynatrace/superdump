@@ -3,6 +3,7 @@ using Microsoft.Diagnostics.Runtime;
 using SuperDump.Models;
 using System.Collections.Generic;
 using System.Linq;
+using SuperDump.ModelHelpers;
 
 namespace SuperDump.Analyzers {
 	public class MemoryAnalyzer {
@@ -53,7 +54,7 @@ namespace SuperDump.Analyzers {
 			if (this.context.Heap != null && this.context.Heap.CanWalkHeap) {
 				context.WriteLine("{0,-20} {1,-10} {2,-8} {3,-20} {4,-20}", "Address", "Type", "Locked", "Owners", "Pending");
 				foreach (BlockingObject obj in this.context.Heap.EnumerateBlockingObjects()) {
-					this.blockingObjects.Add(new SDBlockingObject(obj));
+					this.blockingObjects.Add(obj.ToSDModel());
 				}
 			} else {
 				context.WriteWarning("no heap information avaliable!");

@@ -3,7 +3,6 @@ using SuperDump.Models;
 using System;
 
 namespace SuperDumpModels {
-	[Serializable]
 	public class SDFileAndLineNumber : IEquatable<SDFileAndLineNumber>, ISerializableJson {
 		public string File;
 		public int Line;

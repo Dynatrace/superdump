@@ -1,11 +1,9 @@
-﻿using Microsoft.Diagnostics.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SuperDump.Models {
-	[Serializable]
 	public class SDClrException : IEquatable<SDClrException>, ISerializableJson {
 		public ulong OSThreadId { get; set; }
 		public string Type { get; set; }
@@ -16,26 +14,6 @@ namespace SuperDump.Models {
 		public SDCombinedStackTrace StackTrace { get; set; } = new SDCombinedStackTrace(new List<SDCombinedStackFrame>());
 
 		public SDClrException() { }
-
-		public SDClrException(ClrException clrException) {
-			if (clrException != null) {
-				this.Address = clrException.Address;
-				this.Type = clrException.Type.Name;
-				//this.HResult = clrException.HResult;
-
-				if (this.InnerException != null) {
-					this.InnerException = new SDClrException(clrException.Inner);
-				}
-
-				this.Message = clrException.GetExceptionMessageSafe();
-
-				var frames = new List<SDCombinedStackFrame>();
-				foreach (ClrStackFrame clrFrame in clrException.StackTrace) {
-					this.StackTrace.Add(new SDCombinedStackFrame(clrFrame));
-				}
-				this.StackTrace = new SDCombinedStackTrace(frames);
-			}
-		}
 
 		public override int GetHashCode() {
 			return base.GetHashCode();

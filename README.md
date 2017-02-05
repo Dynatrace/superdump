@@ -46,8 +46,9 @@ Build
 =====
 
  * Prerequisites:
-   * Visual Studio 2015 Update 3
-   * .NET Core Tooling Preview 2
+   * Visual Studio 2017 RC3
+   * .NET Core Tooling RC3 (1.0.0-rc3-004530)
+   * .NET Core 1.1
    * .NET Framework 4.6
    * LocalDB
  * Build via `building/build.cmd`

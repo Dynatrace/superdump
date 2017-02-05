@@ -8,7 +8,6 @@ using System.IO;
 using SuperDumpService.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
-using System.Net.Mime;
 using System.Text;
 using SuperDumpService.Services;
 using System.Linq;
@@ -25,7 +24,7 @@ namespace SuperDumpService.Controllers {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
-			Console.WriteLine(Environment.CurrentDirectory);
+			Console.WriteLine(Directory.GetCurrentDirectory());
 			PathHelper.PrepareDirectories();
 		}
 
@@ -162,7 +161,7 @@ namespace SuperDumpService.Controllers {
 				return Content(sb.ToString());
 			}
 			byte[] fileBytes = System.IO.File.ReadAllBytes(file.FullName);
-			return File(fileBytes, MediaTypeNames.Application.Octet, file.Name);
+			return File(fileBytes, "application/octet-stream", file.Name);
 		}
 
 		[HttpPost]

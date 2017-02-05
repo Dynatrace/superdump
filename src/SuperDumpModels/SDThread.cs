@@ -59,7 +59,6 @@ namespace SuperDump.Models {
 		//TS_Detached               = 0x80000000,    // Thread was detached by DllMain
 	}
 
-	[Serializable]
 	public class SDThread : IEquatable<SDThread>, ISerializableJson, ITaggableItem {
 		public uint Index { get; set; }
 		public uint EngineId { get; set; }
