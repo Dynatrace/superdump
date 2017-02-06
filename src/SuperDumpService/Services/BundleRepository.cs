@@ -1,9 +1,10 @@
-﻿using SuperDumpService.Helpers;
-using SuperDumpService.Models;
+﻿using SuperDumpService.Controllers;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -34,14 +35,17 @@ namespace SuperDumpService.Services {
 			return bundles.Values;
 		}
 
-		public BundleMetainfo Create() {
+		public BundleMetainfo Create(string filename, DumpAnalysisInput input) {
 			lock (sync) {
 				string bundleId = CreateUniqueBundleId();
 				var bundleInfo = new BundleMetainfo() {
 					BundleId = bundleId,
+					BundleFileName = filename,
 					Created = DateTime.Now,
 					Status = BundleStatus.Created
 				};
+				if (!string.IsNullOrEmpty(input.JiraIssue)) bundleInfo.CustomProperties["reference"] = input.JiraIssue;
+				if (!string.IsNullOrEmpty(input.FriendlyName)) bundleInfo.CustomProperties["friendly-name"] = input.FriendlyName;
 				bundles[bundleId] = bundleInfo;
 				storage.Store(bundleInfo);
 				return bundleInfo;

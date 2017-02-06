@@ -19,5 +19,8 @@ namespace SuperDumpService.Controllers {
 		// for compat
 		public string JiraIssue { get; set; }
 
+		// for compat
+		public string FriendlyName { get; set; }
+
 	}
 }

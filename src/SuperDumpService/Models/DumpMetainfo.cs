@@ -7,6 +7,7 @@ namespace SuperDumpService.Models {
 	public class DumpMetainfo {
 		public string BundleId { get; set; }
 		public string DumpId { get; set; }
+		public string DumpFileName { get; set; } // original filename. just informational.
 		public DateTime Created { get; set; }
 		public DateTime Finished { get; set; }
 		public DumpStatus Status { get; set; }

@@ -11,6 +11,7 @@ using System.Linq;
 using SuperDumpService.Services;
 using SuperDump.Models;
 using SuperDumpService.ViewModels;
+using System.Collections.Generic;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
@@ -18,14 +19,14 @@ namespace SuperDumpService.Controllers {
 		public SuperDumpRepository superDumpRepo;
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
+		public DumpStorageFilebased dumpStorage;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
-			Console.WriteLine(Directory.GetCurrentDirectory());
-			PathHelper.PrepareDirectories();
+			this.dumpStorage = dumpStorage;
 		}
 
 		public IActionResult Index() {
@@ -46,7 +47,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> Create(DumpAnalysisInput input) {
+		public IActionResult Create(DumpAnalysisInput input) {
 			PathHelper.PrepareDirectories();
 
 			if (ModelState.IsValid) {
@@ -54,6 +55,9 @@ namespace SuperDumpService.Controllers {
 
 				string filename = input.Filename;
 				if (Utility.ValidateUrl(input.Url, ref filename)) {
+					if (filename == null && Utility.IsLocalFile(input.Url)) {
+						filename = Path.GetFileName(input.Url);
+					}
 					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
 
 					// return list of file paths from zip
@@ -91,8 +95,8 @@ namespace SuperDumpService.Controllers {
 					using (var fileStream = new FileStream(filePath, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpAnalysisInput { Url = filePath, JiraIssue = jiraIssue };
-					return await Create(bundle);
+					var bundle = new DumpAnalysisInput { Url = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
 			} else {
@@ -129,11 +133,18 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 
-			string jiraIssue = string.Empty;
-			bundleInfo.CustomProperties.TryGetValue("reference", out jiraIssue);
-			return View(new ReportViewModel(bundleId, dumpId, jiraIssue,
-				string.Empty, string.Empty, dumpInfo.Created, res,
-				dumpInfo.Status == DumpStatus.Failed, dumpInfo.ErrorMessage, dumpRepo.GetFilePaths(bundleId, dumpId)));
+			return View(new ReportViewModel(bundleId, dumpId) {
+				BundleFileName = bundleInfo.BundleFileName,
+				DumpFileName = dumpInfo.DumpFileName,
+				Result = res,
+				CustomProperties = Utility.Sanitize(bundleInfo.CustomProperties),
+				HasAnalysisFailed = dumpInfo.Status == DumpStatus.Failed,
+				TimeStamp = dumpInfo.Created,
+				Files = dumpRepo.GetFileNames(bundleId, dumpId),
+				AnalysisError = dumpInfo.ErrorMessage,
+				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
+				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12)
+			});
 		}
 
 		public IActionResult UploadError() {
@@ -145,7 +156,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult DownloadFile(string bundleId, string dumpId, string filename) {
-			var file = superDumpRepo.GetReportFile(bundleId, dumpId, filename);
+			var file = dumpStorage.GetFile(bundleId, dumpId, filename);
 			if (file == null) throw new ArgumentException("could not find file");
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"

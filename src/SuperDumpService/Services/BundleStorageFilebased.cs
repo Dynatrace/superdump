@@ -43,7 +43,7 @@ namespace SuperDumpService.Services {
 		}
 
 		private static void WriteMetainfoFile(BundleMetainfo metaInfo, string filename) {
-			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo));
+			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
 		/// <summary>
@@ -63,7 +63,7 @@ namespace SuperDumpService.Services {
 				var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId);
 				if (fullresult != null) {
 					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["reference"] = fullresult.AnalysisInfo.JiraIssue;
-					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["name"] = fullresult.AnalysisInfo.FriendlyName;
+					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["friendly-name"] = fullresult.AnalysisInfo.FriendlyName;
 				}
 			}
 			WriteMetainfoFile(metainfo, PathHelper.GetBundleMetadataPath(bundleId));

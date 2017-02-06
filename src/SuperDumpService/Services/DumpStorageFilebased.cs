@@ -1,13 +1,11 @@
 ﻿using Newtonsoft.Json;
 using SuperDumpService.Models;
 using SuperDumpService.Helpers;
-using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using SuperDumpService.Models;
 using SuperDump.Models;
 
 namespace SuperDumpService.Services {
@@ -38,7 +36,7 @@ namespace SuperDumpService.Services {
 		}
 
 		private static void WriteMetainfoFile(DumpMetainfo metaInfo, string filename) {
-			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo));
+			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
 		private void CreateMetainfoForCompat(string bundleId, string dumpId) {
@@ -49,18 +47,24 @@ namespace SuperDumpService.Services {
 			var result = ReadResults(bundleId, dumpId);
 			if (result != null) {
 				metainfo.Status = DumpStatus.Finished;
+				metainfo.DumpFileName = result.AnalysisInfo.Path?.Replace(PathHelper.GetUploadsDir(), ""); // AnalysisInfo.FileName used to store full file names. e.g. "C:\superdump\uploads\myzipfilename\subdir\dump.dmp". lets only keep "myzipfilename\subdir\dump.dmp"
 				metainfo.Created = result.AnalysisInfo.ServerTimeStamp;
 			} else {
 				metainfo.Status = DumpStatus.Failed;
 			}
-			
+
 			WriteMetainfoFile(metainfo, PathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
 		public SDResult ReadResults(string bundleId, string dumpId) {
 			var filename = PathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) return null;
-			return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
+			try {
+				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
+			} catch (Exception e) {
+				Console.WriteLine($"could not deserialize {filename}: {e.Message}");
+				return null;
+			}
 		}
 
 		public string GetDumpFilePath(string bundleId, string dumpId) {
@@ -90,12 +94,31 @@ namespace SuperDumpService.Services {
 			Directory.CreateDirectory(dir);
 		}
 
-		internal IEnumerable<string> GetFilePaths(string bundleId, string dumpId) {
-			return new List<string>() { "test1" };
-		}
-
 		internal void Store(DumpMetainfo dumpInfo) {
 			WriteMetainfoFile(dumpInfo, PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
+		}
+
+		internal IEnumerable<string> GetFileNames(string bundleId, string dumpId) {
+			foreach (var file in Directory.EnumerateFiles(PathHelper.GetDumpDirectory(bundleId, dumpId))) {
+				yield return new FileInfo(file).Name;
+			}
+		}
+
+		public FileInfo GetFile(string bundleId, string dumpId, string filename) {
+			// make sure filename is not some relative ".."
+			if (filename.Contains("..")) throw new UnauthorizedAccessException();
+
+			string dir = PathHelper.GetDumpDirectory(bundleId, dumpId);
+			var file = new FileInfo(Path.Combine(dir, filename));
+
+			// make sure file really is inside of the dumps-directory
+			if (!file.FullName.ToLower().Contains(dir.ToLower())) throw new UnauthorizedAccessException();
+
+			if (file.Exists) {
+				return file;
+			} else {
+				return null;
+			}
 		}
 	}
 }

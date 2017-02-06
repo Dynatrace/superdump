@@ -65,21 +65,6 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public IEnumerable<string> GetReportFileNames(string bundleId, string id) {
-			foreach (var file in Directory.EnumerateFiles(PathHelper.GetDumpDirectory(bundleId, id))) {
-				yield return new FileInfo(file).Name;
-			}
-		}
-
-		public FileInfo GetReportFile(string bundleId, string id, string filename) {
-			var f = new FileInfo(Path.Combine(PathHelper.GetDumpDirectory(bundleId, id), filename));
-			if (f.Exists) {
-				return f;
-			} else {
-				return null;
-			}
-		}
-
 		public void WipeAllExceptDump(string bundleId, string dumpId) {
 			var dumpdir = PathHelper.GetDumpDirectory(bundleId, dumpId);
 			var dumpfile = PathHelper.GetDumpfilePath(bundleId, dumpId);
@@ -97,7 +82,7 @@ namespace SuperDumpService.Services {
 		/// <param name="input"></param>
 		/// <returns>bundleId</returns>
 		public string ProcessInputfile(string filename, DumpAnalysisInput input) {
-			var bundleInfo = bundleRepo.Create();
+			var bundleInfo = bundleRepo.Create(filename, input);
 			ScheduleDownload(bundleInfo.BundleId, input.Url, filename); // indirectly calls ProcessFile()
 			return bundleInfo.BundleId;
 		}

@@ -11,6 +11,7 @@ using SuperDumpService.Services;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
+
 		public static bool ValidateUrl(string path, ref string filename) {
 			Uri uri;
 			try {
@@ -53,6 +54,43 @@ namespace SuperDumpService.Helpers {
 
 		public static bool IsLocalFile(string path) {
 			return new Uri(path).IsFile;
+		}
+
+		public static string ConvertWindowsTimeStamp(ulong time) {
+			var dateTime = new DateTime(1601, 1, 1);
+			dateTime = dateTime.AddSeconds(time / (double)10000000);
+			DateTime localTime = dateTime.ToLocalTime();
+			return localTime.ToString() + " UTC";
+		}
+
+		public static string ConvertWindowsTimeSpan(ulong time) {
+			TimeSpan span = TimeSpan.FromSeconds(time / (double)10000000);
+			return span.ToString(@"hh\:mm\:ss\:fff");
+		}
+
+		internal static string MakeRelativePath(string folder, FileInfo file) {
+			Uri pathUri = new Uri(file.FullName);
+			// Folders must end in a slash
+			if (!folder.EndsWith(Path.DirectorySeparatorChar.ToString())) {
+				folder += Path.DirectorySeparatorChar;
+			}
+			Uri folderUri = new Uri(folder);
+			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+		}
+
+		/// <summary>
+		/// make key and values safe against XSS
+		/// </summary>
+		internal static IDictionary<string, string> Sanitize(Dictionary<string, string> sourceDict) {
+			var dict = new Dictionary<string, string>();
+			foreach(var entry in sourceDict) {
+				dict[Sanitize(entry.Key)] = Sanitize(entry.Value);
+			}
+			return dict;
+		}
+
+		private static string Sanitize(string value) {
+			return System.Net.WebUtility.HtmlEncode(value);
 		}
 	}
 }

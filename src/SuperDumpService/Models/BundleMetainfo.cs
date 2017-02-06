@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 namespace SuperDumpService.Models {
 	public class BundleMetainfo {
 		public string BundleId { get; set; }
+		public string BundleFileName {get;set;} // original filename. just informational.
 		public DateTime Created { get; set; }
 		public DateTime Finished { get; set; }
 		public BundleStatus Status { get; set; }

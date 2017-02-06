@@ -1,6 +1,5 @@
 ﻿using SuperDumpService.Helpers;
 using SuperDumpService.Models;
-using SuperDumpService.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -63,6 +62,7 @@ namespace SuperDumpService.Services {
 				dumpInfo = new DumpMetainfo() {
 					BundleId = bundleId,
 					DumpId = dumpId,
+					DumpFileName = Utility.MakeRelativePath(PathHelper.GetUploadsDir(), sourcePath),
 					Created = DateTime.Now,
 					Status = DumpStatus.Created
 				};
@@ -88,8 +88,8 @@ namespace SuperDumpService.Services {
 			return storage.ReadResults(bundleId, dumpId);
 		}
 
-		internal IEnumerable<string> GetFilePaths(string bundleId, string dumpId) {
-			return storage.GetFilePaths(bundleId, dumpId);
+		internal IEnumerable<string> GetFileNames(string bundleId, string dumpId) {
+			return storage.GetFileNames(bundleId, dumpId);
 		}
 
 		internal void SetDumpStatus(string bundleId, string dumpId, DumpStatus status, string errorMessage = null) {

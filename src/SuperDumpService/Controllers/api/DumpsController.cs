@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SuperDumpService.Services;
 using SuperDumpService.Helpers;
 using SuperDump.Models;
+using System.IO;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -26,7 +27,7 @@ namespace SuperDumpService.Controllers.Api {
 		/// <summary>
 		/// Returns analysis data for requested bundle
 		/// </summary>
-		/// <param name="id">ID of the requested bundle or dump</param>
+		/// <param name="bundleId">ID of the requested bundle or dump</param>
 		/// <returns>JSON array, if id was a bundle id, or a single JSON entry for a dump id</returns>
 		/// <response code="200">Returned JSON data for all dumps in bundle</response>
 		/// <response code="404">If result is not ready, or dump does not exist</response>
@@ -57,12 +58,15 @@ namespace SuperDumpService.Controllers.Api {
 		[HttpPost]
 		[ProducesResponseType(typeof(DumpBundle), 201)]
 		[ProducesResponseType(typeof(string), 400)]
-		public async Task<IActionResult> Post([FromBody]DumpAnalysisInput input) {
+		public IActionResult Post([FromBody]DumpAnalysisInput input) {
 			if (ModelState.IsValid) {
 
 				string filename = input.Filename;
 				//validate URL
 				if (Utility.ValidateUrl(input.Url, ref filename)) {
+					if (filename == null && Utility.IsLocalFile(input.Url)) {
+						filename = Path.GetFileName(input.Url);
+					}
 					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
 					if (bundleId != null) {
 						return CreatedAtAction("BundleCreated", "Home", new { bundleId = bundleId });
