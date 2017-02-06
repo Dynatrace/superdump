@@ -69,7 +69,7 @@ namespace SuperDumpService.Services {
 			var dumpdir = PathHelper.GetDumpDirectory(bundleId, dumpId);
 			var dumpfile = PathHelper.GetDumpfilePath(bundleId, dumpId);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
-				if (file != dumpfile) {
+				if (file != dumpfile && file != PathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
 					File.Delete(file);
 				}
 			}

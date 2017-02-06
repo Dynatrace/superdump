@@ -56,14 +56,20 @@ namespace SuperDumpService.Services {
 			};
 			// use storage directly, not repo. repo might not be initialized yet
 			// back then, every dump had the same information encoded. take the first dump and use it from there.
-			var dump = dumpStorage.ReadDumpMetainfoForBundle(bundleId).FirstOrDefault();
-			if(dump != null) {
-				metainfo.Created = dump.Created;
-				metainfo.Status = BundleStatus.Finished;
-				var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId);
-				if (fullresult != null) {
-					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["reference"] = fullresult.AnalysisInfo.JiraIssue;
-					if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["friendly-name"] = fullresult.AnalysisInfo.FriendlyName;
+
+			var dumps = dumpStorage.ReadDumpMetainfoForBundle(bundleId);
+
+			// loop through all dumps and hope to find a good one.
+			foreach (var dump in dumps) {
+				if (dump != null) {
+					metainfo.Created = dump.Created;
+					metainfo.Status = BundleStatus.Finished;
+					var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId);
+					if (fullresult != null) {
+						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["ref"] = fullresult.AnalysisInfo.JiraIssue;
+						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["note"] = fullresult.AnalysisInfo.FriendlyName;
+						break;
+					}
 				}
 			}
 			WriteMetainfoFile(metainfo, PathHelper.GetBundleMetadataPath(bundleId));
