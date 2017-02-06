@@ -63,6 +63,7 @@ namespace SuperDumpService.Services {
 			foreach (var dump in dumps) {
 				if (dump != null) {
 					metainfo.Created = dump.Created;
+					metainfo.Finished = dump.Created; // can't do better.
 					metainfo.Status = BundleStatus.Finished;
 					var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId);
 					if (fullresult != null) {

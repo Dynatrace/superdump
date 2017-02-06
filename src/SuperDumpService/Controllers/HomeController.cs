@@ -129,9 +129,6 @@ namespace SuperDumpService.Controllers {
 
 
 			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
-			if (res == null) {
-				return View(null);
-			}
 
 			return View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,

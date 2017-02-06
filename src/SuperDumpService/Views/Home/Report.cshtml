@@ -63,7 +63,7 @@
 	<div class="container-fluid">
 		@if (Model.HasAnalysisFailed) {
 			<h2>Analysis failed with errors, no report avaliable.</h2>
-			<p>Error: @Model.AnalysisError</p>
+			<pre>Error: @Model.AnalysisError</pre>
 		} else if (Model.Result == null) {
 			<h2>hang tight, still processing</h2>
 			<script>

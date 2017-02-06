@@ -55,6 +55,7 @@ namespace SuperDumpService.Services {
 					Console.WriteLine(selectorLog);
 					File.WriteAllText(Path.Combine(PathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
 					if (p.ExitCode != 0) {
+						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
 						throw new Exception(selectorLog);
 					}
 				}

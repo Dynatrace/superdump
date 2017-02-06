@@ -98,6 +98,9 @@ namespace SuperDumpService.Services {
 			if (!string.IsNullOrEmpty(errorMessage)) {
 				dumpInfo.ErrorMessage = errorMessage;
 			}
+			if (status == DumpStatus.Finished || status == DumpStatus.Failed) {
+				dumpInfo.Finished = DateTime.Now;
+			}
 			storage.Store(dumpInfo);
 		}
 	}

@@ -70,6 +70,9 @@ namespace SuperDumpService.Services {
 		internal void SetBundleStatus(string bundleId, BundleStatus status) {
 			var bundleInfo = Get(bundleId);
 			bundleInfo.Status = status;
+			if (status == BundleStatus.Finished) {
+				bundleInfo.Finished = DateTime.Now;
+			}
 			storage.Store(bundleInfo);
 		}
 	}

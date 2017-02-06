@@ -54,9 +54,9 @@ namespace SuperDumpService.Controllers.Api {
 		/// <param name="input">DumpBundle that's gonna be stored on server</param>
 		/// <returns>Created resource</returns>
 		/// <response code="400">If url was invalid, or SuperDump had an error when processing</response>
-		/// <response code="201">Returns the newly created DumpAnalysisItem</response>
+		/// <response code="201"></response>
 		[HttpPost]
-		[ProducesResponseType(typeof(DumpBundle), 201)]
+		[ProducesResponseType(typeof(string), 201)]
 		[ProducesResponseType(typeof(string), 400)]
 		public IActionResult Post([FromBody]DumpAnalysisInput input) {
 			if (ModelState.IsValid) {

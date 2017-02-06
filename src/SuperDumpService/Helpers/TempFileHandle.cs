@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace SuperDumpService.Models {
+namespace SuperDumpService.Helpers {
 	public class TempFileHandle : IDisposable {
 		private bool delete;
 
