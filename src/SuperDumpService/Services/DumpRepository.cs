@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SuperDump.Models;
+using System.IO;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -53,7 +54,7 @@ namespace SuperDumpService.Services {
 		/// Does NOT start analysis
 		/// </summary>
 		/// <returns></returns>
-		public async Task<DumpMetainfo> AddDump(string bundleId, string sourcePath) {
+		public async Task<DumpMetainfo> AddDump(string bundleId, FileInfo sourcePath) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
 			lock (sync) {

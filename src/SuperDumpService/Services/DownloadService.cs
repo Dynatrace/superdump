@@ -23,9 +23,9 @@ namespace SuperDumpService.Services {
 						}
 					}
 				}
-				return new TempFileHandle(tempPath);
+				return new TempFileHandle(new FileInfo(tempPath));
 			} else {
-				return new TempFileHandle(url, false); // in case it's a local file, don't delete it!
+				return new TempFileHandle(new FileInfo(url), false); // in case it's a local file, don't delete it!
 			}
 		}
 

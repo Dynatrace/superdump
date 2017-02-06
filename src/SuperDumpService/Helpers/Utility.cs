@@ -54,40 +54,5 @@ namespace SuperDumpService.Helpers {
 		public static bool IsLocalFile(string path) {
 			return new Uri(path).IsFile;
 		}
-
-		public static List<string> UnzipDumpZip(string zipPath) {
-			var urls = new List<string>();
-			var zipFileName = Path.GetFileNameWithoutExtension(zipPath);
-
-			using (var zip = System.IO.Compression.ZipFile.OpenRead(zipPath)) {
-				foreach (var entry in zip.Entries) {
-					if (entry.Name.ToLower().EndsWith(".dmp") || entry.Name.ToLower().EndsWith(".pdb")) {
-
-						string output = Path.Combine(PathHelper.GetUploadsDir(), Path.GetFileNameWithoutExtension(zipFileName), Path.GetFileName(entry.Name));
-						string dir = Path.GetDirectoryName(output);
-						if (!Directory.Exists(dir)) {
-							Directory.CreateDirectory(dir);
-						}
-						entry.ExtractToFile(output);
-
-						Console.WriteLine("unzipped {0} to {1}", entry.Name, output);
-						urls.Add(output);
-					}
-				}
-			}
-			return urls;
-		}
-
-		public static string ConvertWindowsTimeStamp(ulong time) {
-			var dateTime = new DateTime(1601, 1, 1);
-			dateTime = dateTime.AddSeconds(time / (double)10000000);
-			DateTime localTime = dateTime.ToLocalTime();
-			return localTime.ToString() + " UTC";
-		}
-
-		public static string ConvertWindowsTimeSpan(ulong time) {
-			TimeSpan span = TimeSpan.FromSeconds(time / (double)10000000);
-			return span.ToString(@"hh\:mm\:ss\:fff");
-		}
 	}
 }

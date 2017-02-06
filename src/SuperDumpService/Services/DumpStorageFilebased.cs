@@ -72,9 +72,9 @@ namespace SuperDumpService.Services {
 		/// <summary>
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
-		internal async Task<string> AddDumpFile(string bundleId, string dumpId, string sourcePath) {
+		internal async Task<string> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
 			string destPath = PathHelper.GetDumpfilePath(bundleId, dumpId);
-			using (Stream source = File.OpenRead(sourcePath)) {
+			using (Stream source = sourcePath.OpenRead()) {
 				using (Stream destination = File.Create(destPath)) {
 					await source.CopyToAsync(destination);
 				}

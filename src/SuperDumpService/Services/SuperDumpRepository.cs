@@ -25,14 +25,23 @@ namespace SuperDumpService.Services {
 		private readonly AnalysisService analysisService;
 		private readonly DownloadService downloadService;
 		private readonly SymStoreService symStoreService;
+		private readonly UnpackService unpackService;
 
-		public SuperDumpRepository(IOptions<SuperDumpSettings> settings, BundleRepository bundleRepo, DumpRepository dumpRepo, AnalysisService analysisService, DownloadService downloadService, SymStoreService symStoreService) {
+		public SuperDumpRepository(
+				IOptions<SuperDumpSettings> settings,
+				BundleRepository bundleRepo,
+				DumpRepository dumpRepo,
+				AnalysisService analysisService,
+				DownloadService downloadService,
+				SymStoreService symStoreService,
+				UnpackService unpackService) {
 			this.settings = settings;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			this.analysisService = analysisService;
 			this.downloadService = downloadService;
 			this.symStoreService = symStoreService;
+			this.unpackService = unpackService;
 			PathHelper.PrepareDirectories();
 		}
 
@@ -97,47 +106,50 @@ namespace SuperDumpService.Services {
 		/// processes the file given.
 		/// </summary>
 		/// <param name="bundleId"></param>
-		/// <param name="path"></param>
+		/// <param name="file"></param>
 		/// <returns></returns>
-		public async Task ProcessFile(string bundleId, string path) {
-			var extension = Path.GetExtension(path).ToLower();
+		public async Task ProcessFile(string bundleId, FileInfo file) {
+			var extension = file.Extension.ToLower();
 			switch (extension) {
 				case ".dmp":
-					await ProcessDump(bundleId, path);
+					await ProcessDump(bundleId, file);
 					break;
 				case ".zip":
-					await ProcessZip(bundleId, path);
+					await ProcessZip(bundleId, file);
 					break;
-				case ".dll":
 				case ".pdb":
-					await ProcessSymbol(path);
+					ProcessSymbol(file);
 					break;
 				default:
 					throw new InvalidDataException($"filetype '{extension}' not supported");
 			}
 		}
 
-		private async Task ProcessSymbol(string path) {
-			await symStoreService.AddSymbols(path);
+		private void ProcessSymbol(FileInfo file) {
+			symStoreService.AddSymbols(file);
 		}
 
-		private async Task ProcessZip(string bundleId, string path) {
-			var zipItems = Utility.UnzipDumpZip(path);
-
-			if (!zipItems.Any()) {
-				// TODO: proper error
-				throw new NotImplementedException();
+		private async Task ProcessDir(string bundleId, DirectoryInfo dir) {
+			foreach (FileInfo file in dir.EnumerateFiles()) {
+				await ProcessFile(bundleId, file);
 			}
-
-			foreach (var item in zipItems) {
-				await ProcessFile(bundleId, item);
+			foreach (DirectoryInfo subdir in dir.EnumerateDirectories()) {
+				await ProcessDir(bundleId, subdir);
 			}
-			// TODO delete unpacked files!
 		}
 
-		private async Task ProcessDump(string bundleId, string path) {
+		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
+			using (TempDirectoryHandle dir = unpackService.UnZip(zipfile, filename => {
+				var ext = Path.GetExtension(filename).ToLower();
+				return ext == ".dmp" || ext == ".zip" || ext == ".pdb";
+			})) {
+				await ProcessDir(bundleId, dir.Dir);
+			}
+		}
+
+		private async Task ProcessDump(string bundleId, FileInfo file) {
 			// add dump
-			var dumpInfo = await dumpRepo.AddDump(bundleId, path);
+			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
 
 			// schedule analysis
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
@@ -154,7 +166,7 @@ namespace SuperDumpService.Services {
 				// this class should only do downloading. 
 				// unf. i could not find a good way to *not* make this call from with DownloadService
 				// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
-				await ProcessFile(bundleId, tempFile.Path);
+				await ProcessFile(bundleId, tempFile.File);
 			}
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 		}

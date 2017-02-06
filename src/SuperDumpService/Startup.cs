@@ -81,6 +81,7 @@ namespace SuperDumpService {
 			services.AddSingleton<AnalysisService>();
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
+			services.AddSingleton<UnpackService>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
