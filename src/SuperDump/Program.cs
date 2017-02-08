@@ -101,6 +101,7 @@ namespace SuperDump {
 					}
 				} catch (Exception e) {
 					context.WriteError($"Exception happened: {e}");
+					throw;
 				}
 			}
 		}

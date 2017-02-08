@@ -23,11 +23,15 @@
 		<tbody>
 			@foreach (var bundle in @Model.OrderByDescending(bundle => bundle.Created)) {
 				<tr>
-					<td>@bundle.BundleId</td>
+					<td>
+						@Html.ActionLink(bundle.BundleId, "BundleCreated", "Home", new { bundleId = bundle.BundleId })
+					</td>
 					<td>
 						<ul class="flat">
 							@foreach (var dump in bundle.DumpInfos) {
-								<li>@Html.ActionLink(System.IO.Path.GetFileName(dump.DumpFileName) + " (" + dump.DumpId + ")", "Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.DumpId })</li>
+								<li>
+									<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@dump.BundleId" asp-route-dumpId="@dump.DumpId">@dump.DumpId (@System.IO.Path.GetFileName(dump.DumpFileName))</a>
+								</li>
 							}
 						</ul>
 					</td>

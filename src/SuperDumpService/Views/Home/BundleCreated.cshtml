@@ -3,8 +3,11 @@
 	ViewData["Title"] = "Created";
 }
 
-@if (Model.Status != SuperDumpService.Models.BundleStatus.Finished) {
-	<h3>Analysis ID <strong>@Model.BundleId</strong></h3>
+<h3>Analysis ID <strong>@Model.BundleId</strong></h3>
+@if (Model.Status == SuperDumpService.Models.BundleStatus.Failed) {
+	<h4>Bundle failed...</h4>
+	<pre>@Model.ErrorMessage</pre>
+} else if (Model.Status != SuperDumpService.Models.BundleStatus.Finished) {
 	<h4>..hang tight, bundle gets created..</h4>
 	<script>
 	setTimeout(function () {
@@ -12,7 +15,10 @@
 	}, 2000);
 	</script>
 } else {
-	if (Model.DumpInfos.Count() == 1) {
+	if (!Model.DumpInfos.Any()) {
+		<h4>Bundle failed...</h4>
+		<pre>No dumps found in bundle.</pre>
+	} else if (Model.DumpInfos.Count() == 1) {
 		var item = Model.DumpInfos.First();
 		<h3>
 		Dump with id <strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.BundleId" asp-route-dumpId="@item.DumpId">@item.DumpId</a></strong> successfully created.</h3>
@@ -22,12 +28,11 @@
 			window.location.replace("/Home/Report?bundleId=@item.BundleId&dumpId=@item.DumpId");
 		</script>
 	} else {
-	<h3>You uploaded a zip file with several dumps.</h3>
-	<h4>Analysis ID <strong>@Model.BundleId</strong></h4>
-	<ul>
-		@foreach (var item in Model.DumpInfos) {
-			<li>Dump with id <strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.BundleId" asp-route-dumpId="@item.DumpId">@item.DumpId</a></strong> successfully created.</li>
-		}
-	</ul>
+		<h3>You uploaded a zip file with several dumps.</h3>
+		<ul>
+			@foreach (var item in Model.DumpInfos) {
+				<li><strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.BundleId" asp-route-dumpId="@item.DumpId">@item.DumpId (@System.IO.Path.GetFileName(item.DumpFileName))</a></strong> successfully created.</li>
+			}
+		</ul>
 	}
 }
