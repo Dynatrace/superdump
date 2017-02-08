@@ -12,10 +12,24 @@ namespace SuperDumpService.Models {
 		public DateTime Finished { get; set; }
 		public DumpStatus Status { get; set; }
 		public string ErrorMessage { get; set; }
+		public List<SDFileEntry> Files { get; set; } = new List<SDFileEntry>();
 	}
 
 	public enum DumpStatus {
-		Created, Downloading, Analyzing, Finished,
-		Failed
+		Created, Downloading, Analyzing, Finished, Failed
+	}
+
+	public class SDFileEntry {
+		public SDFileType Type { get; set; }
+		public string FileName { get; set; }
+		public DateTime ExpirationDate { get; set; }
+	}
+
+	public enum SDFileType {
+		PrimaryDump,
+		WinDbg,
+		SuperDumpData,
+		SuperDumpLogfile,
+		Other
 	}
 }

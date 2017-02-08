@@ -35,6 +35,10 @@ namespace SuperDumpService.Services {
 			return JsonConvert.DeserializeObject<DumpMetainfo>(File.ReadAllText(filename));
 		}
 
+		private static DumpMetainfo ReadMetainfoFile(string bundleId, string dumpId) {
+			return ReadMetainfoFile(PathHelper.GetDumpMetadataPath(bundleId, dumpId));
+		}
+
 		private static void WriteMetainfoFile(DumpMetainfo metaInfo, string filename) {
 			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
@@ -76,14 +80,14 @@ namespace SuperDumpService.Services {
 		/// <summary>
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
-		internal async Task<string> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
-			string destPath = PathHelper.GetDumpfilePath(bundleId, dumpId);
+		internal async Task<FileInfo> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
+			var destFile = new FileInfo(PathHelper.GetDumpfilePath(bundleId, dumpId));
 			using (Stream source = sourcePath.OpenRead()) {
-				using (Stream destination = File.Create(destPath)) {
+				using (Stream destination = destFile.Create()) {
 					await source.CopyToAsync(destination);
 				}
 			}
-			return destPath;
+			return destFile;
 		}
 
 		internal void Create(string bundleId, string dumpId) {
@@ -98,10 +102,62 @@ namespace SuperDumpService.Services {
 			WriteMetainfoFile(dumpInfo, PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
 		}
 
-		internal IEnumerable<string> GetFileNames(string bundleId, string dumpId) {
-			foreach (var file in Directory.EnumerateFiles(PathHelper.GetDumpDirectory(bundleId, dumpId))) {
-				yield return new FileInfo(file).Name;
+		internal IEnumerable<SDFileInfo> GetSDFileInfos(string bundleId, string dumpId) {
+			foreach (var filePath in Directory.EnumerateFiles(PathHelper.GetDumpDirectory(bundleId, dumpId))) {
+				// in case the requested file has a "special" entry in FileEntry list, add that information
+				var dumpInfo = ReadMetainfoFile(bundleId, dumpId);
+				FileInfo fileInfo = new FileInfo(filePath);
+				SDFileEntry fileEntry = GetSDFileEntry(dumpInfo, fileInfo);
+
+				yield return new SDFileInfo() {
+					FileInfo = fileInfo,
+					FileEntry = fileEntry,
+					SizeInBytes = fileInfo.Length
+				};
 			}
+		}
+
+		private SDFileEntry GetSDFileEntry(DumpMetainfo dumpInfo, FileInfo fileInfo) {
+			// the file should be registered in dumpInfo
+			SDFileEntry fileEntry = dumpInfo.Files.Where(x => x.FileName == fileInfo.Name).SingleOrDefault();
+			if (fileEntry != null) return fileEntry;
+
+			// but if it's not registered, do some heuristic to figure out which type of file it is.
+			fileEntry = new SDFileEntry() {
+				FileName = fileInfo.Name
+			};
+			if (Path.GetFileName(PathHelper.GetDumpfilePath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+				fileEntry.Type = SDFileType.PrimaryDump;
+				return fileEntry;
+			}
+			if (Path.GetFileName(PathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+				fileEntry.Type = SDFileType.SuperDumpData;
+				return fileEntry;
+			}
+			if (Path.GetFileName(PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+				fileEntry.Type = SDFileType.SuperDumpData;
+				return fileEntry;
+			}
+			if ("windbg.log" == fileInfo.Name) {
+				fileEntry.Type = SDFileType.WinDbg;
+				return fileEntry;
+			}
+			if (fileInfo.Extension == ".log") {
+				fileEntry.Type = SDFileType.SuperDumpLogfile;
+				return fileEntry;
+			}
+			if (fileInfo.Extension == ".json") {
+				fileEntry.Type = SDFileType.SuperDumpData;
+				return fileEntry;
+			}
+			if (fileInfo.Extension == ".dmp") {
+				fileEntry.Type = SDFileType.PrimaryDump;
+				return fileEntry;
+			}
+
+			// can't figure out filetype
+			fileEntry.Type = SDFileType.Other;
+			return fileEntry;
 		}
 
 		public FileInfo GetFile(string bundleId, string dumpId, string filename) {

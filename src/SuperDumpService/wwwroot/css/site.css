@@ -395,6 +395,10 @@ a.copyButtonForJira:hover {
 	color: rgb(173, 173, 173);
 }
 
+.filesize {
+    color: rgb(173, 173, 173);
+}
+
 /* override bootstrap-cosmo */
 .table-stacktrace > thead > tr > th,
 .table-stacktrace > tbody > tr > th,
