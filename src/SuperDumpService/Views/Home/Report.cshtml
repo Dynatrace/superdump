@@ -42,11 +42,7 @@
 				@customProp.Key:
 			</dt>
 			<dd>
-				@if (@customProp.Value.StartsWith("http")) {
-					<a href="@customProp.Value"> @customProp.Value </a>
-				} else {
-					@customProp.Value
-				}
+				<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
 			</dd>
 		}
 

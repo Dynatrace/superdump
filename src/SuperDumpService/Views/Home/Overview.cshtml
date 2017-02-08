@@ -36,11 +36,7 @@
 							@foreach (var customProp in bundle.CustomProperties) {
 								<li>
 									<strong>@customProp.Key:</strong>
-									@if (@customProp.Value.StartsWith("http")) {
-										<a href="@customProp.Value">@customProp.Value</a>
-									} else {
-										@customProp.Value
-									}
+									<possible-link href="@customProp.Value" is-external="true">@customProp.Value</possible-link>
 								</li>
 							}
 						</ul>
