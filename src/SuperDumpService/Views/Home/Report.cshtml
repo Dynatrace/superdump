@@ -14,34 +14,43 @@
 	</script>
 
 } else {
-	<h2>Dump Id: @Model.Id</h2>
+	<h2>Dump Id: @Model.DumpId</h2>
 
 	<div style="display: block; float: right;">
 		@using (Html.BeginForm("Rerun", "Home")) {
 			<input type="hidden" name="bundleId" value="@Model.BundleId" />
-			<input type="hidden" name="dumpId" value="@Model.Id" />
+			<input type="hidden" name="dumpId" value="@Model.DumpId" />
 			<input type="submit" value="Rerun Analysis" />
 		}
 	</div>
 
 	<dl class="dl-horizontal smaller">
-		<dt>Dump:</dt>
-		<dd>@Model.Url</dd>
+		@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
+			<dt>BundleFileName:</dt>
+			<dd>@Model.BundleFileName</dd>
+		}
+		@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
+			<dt>DumpFileName:</dt>
+			<dd>@Model.DumpFileName</dd>
+		}
 
 		<dt>Time:</dt>
 		<dd>@Model.TimeStamp</dd>
 
-		<dt>Jira:</dt>
-		<dd><possible-link href="@Model.JiraIssue" is-external="true">@Model.JiraIssue</possible-link></dd>
-
-		<dt>Job Name:</dt>
-		<dd>@Model.FriendlyName</dd>
+		@foreach (var customProp in Model.CustomProperties) {
+			<dt>
+				@customProp.Key:
+			</dt>
+			<dd>
+				<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
+			</dd>
+		}
 
 		<dt>Files:</dt>
 		<dd>
 			<ul class="flat">
 				@foreach (var file in Model.Files) {
-					<li><a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.Id" asp-route-filename="@file">@file</a></li>
+					<li><a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file">@file</a></li>
 				}
 			</ul>
 		</dd>
@@ -50,7 +59,7 @@
 	<div class="container-fluid">
 		@if (Model.HasAnalysisFailed) {
 			<h2>Analysis failed with errors, no report avaliable.</h2>
-			<p>Error: @Model.AnalysisError</p>
+			<pre>Error: @Model.AnalysisError</pre>
 		} else if (Model.Result == null) {
 			<h2>hang tight, still processing</h2>
 			<script>

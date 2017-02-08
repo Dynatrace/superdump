@@ -270,3 +270,6 @@ build/data/
 data/
 src/SuperDumpService/wwwroot/css/site.min.css
 src/SuperDumpService/wwwroot/js/site.min.js
+build/runsuperdump_appmon.cmd
+testdata/
+test-dumps/

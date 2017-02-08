@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace SuperDumpService.Helpers {
 	public class SymStoreHelper {
@@ -13,13 +14,13 @@ namespace SuperDumpService.Helpers {
 			this.symStoreExex86 = symStoreExex86;
 		}
 
-		public bool AddToSymStore(string pdbOrDllPath, Architecture arch = Architecture.x64) {
+		public bool AddToSymStore(FileInfo pdbOrDllPath, Architecture arch = Architecture.x64) {
 			try {
 				var startInfo = new ProcessStartInfo() {
 					FileName = GetSymStoreExe(arch),
 
 					// add /f "dtagentcore.pdb" /s "D:\symbols" /t "uploaded symbol" /c "from superdump"
-					Arguments = $"add /f \"{pdbOrDllPath}\" /s \"{localSymbolCachePath}\" /t \"uploaded-by-superdump\"",
+					Arguments = $"add /f \"{pdbOrDllPath.FullName}\" /s \"{localSymbolCachePath}\" /t \"uploaded-by-superdump\"",
 					UseShellExecute = false,
 					RedirectStandardOutput = true
 				};
@@ -27,11 +28,11 @@ namespace SuperDumpService.Helpers {
 					p.WaitForExit();
 					int exitcode = p.ExitCode;
 					if (exitcode != 0) {
-						Console.WriteLine($"symstore failed with exit code '{exitcode}' for '{pdbOrDllPath}'. command was '\"{startInfo.FileName}\" {startInfo.Arguments}'");
+						Console.WriteLine($"symstore failed with exit code '{exitcode}' for '{pdbOrDllPath.FullName}'. command was '\"{startInfo.FileName}\" {startInfo.Arguments}'");
 
 						return false;
 					}
-					Console.WriteLine($"successfully added '{pdbOrDllPath}' to local symbol cache");
+					Console.WriteLine($"successfully added '{pdbOrDllPath.FullName}' to local symbol cache");
 				}
 				return true;
 			} catch (Exception e) {

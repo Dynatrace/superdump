@@ -7,9 +7,11 @@ using System.IO;
 using SuperDumpService.Models;
 using Hangfire;
 using System.IO.Compression;
+using SuperDumpService.Services;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
+
 		public static bool ValidateUrl(string path, ref string filename) {
 			Uri uri;
 			try {
@@ -54,50 +56,6 @@ namespace SuperDumpService.Helpers {
 			return new Uri(path).IsFile;
 		}
 
-		public static List<string> UnzipDumpZip(string zipPath) {
-			var urls = new List<string>();
-			var zipFileName = Path.GetFileNameWithoutExtension(zipPath);
-
-			using (var zip = System.IO.Compression.ZipFile.OpenRead(zipPath)) {
-				foreach (var entry in zip.Entries) {
-					if (entry.Name.ToLower().EndsWith(".dmp") || entry.Name.ToLower().EndsWith(".pdb")) {
-
-						string output = Path.Combine(PathHelper.GetUploadsDir(), Path.GetFileNameWithoutExtension(zipFileName), Path.GetFileName(entry.Name));
-						string dir = Path.GetDirectoryName(output);
-						if (!Directory.Exists(dir)) {
-							Directory.CreateDirectory(dir);
-						}
-						entry.ExtractToFile(output);
-
-						Console.WriteLine("unzipped {0} to {1}", entry.Name, output);
-						urls.Add(output);
-					}
-				}
-			}
-			return urls;
-		}
-
-		public static void ScheduleBundleAnalysis(string workingDir, DumpBundle bundle) {
-			// create folder for bundle
-			Directory.CreateDirectory(Path.Combine(workingDir, bundle.Id));
-			bundle.TimeStamp = DateTime.Now;
-
-			foreach (var item in bundle.DumpItems.Values) {
-				//create folders for dumps
-				Directory.CreateDirectory(Path.Combine(workingDir, bundle.Id, item.Id));
-			}
-			// enqueue bundle
-			BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddBundle(JobCancellationToken.Null, bundle));
-		}
-
-		public static void RerunAnalysis(string bundleId, string dumpId) {
-			var dumpAnalysisItem = new DumpAnalysisItem(bundleId, dumpId) {
-				Path = PathHelper.GetDumpfilePath(bundleId, dumpId)
-			};
-			// enqueue bundle
-			BackgroundJob.Enqueue<IDumpRepository>(repo => repo.AddDump(JobCancellationToken.Null, dumpAnalysisItem));
-		}
-
 		public static string ConvertWindowsTimeStamp(ulong time) {
 			var dateTime = new DateTime(1601, 1, 1);
 			dateTime = dateTime.AddSeconds(time / (double)10000000);
@@ -108,6 +66,31 @@ namespace SuperDumpService.Helpers {
 		public static string ConvertWindowsTimeSpan(ulong time) {
 			TimeSpan span = TimeSpan.FromSeconds(time / (double)10000000);
 			return span.ToString(@"hh\:mm\:ss\:fff");
+		}
+
+		internal static string MakeRelativePath(string folder, FileInfo file) {
+			Uri pathUri = new Uri(file.FullName);
+			// Folders must end in a slash
+			if (!folder.EndsWith(Path.DirectorySeparatorChar.ToString())) {
+				folder += Path.DirectorySeparatorChar;
+			}
+			Uri folderUri = new Uri(folder);
+			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+		}
+
+		/// <summary>
+		/// make key and values safe against XSS
+		/// </summary>
+		internal static IDictionary<string, string> Sanitize(Dictionary<string, string> sourceDict) {
+			var dict = new Dictionary<string, string>();
+			foreach(var entry in sourceDict) {
+				dict[Sanitize(entry.Key)] = Sanitize(entry.Value);
+			}
+			return dict;
+		}
+
+		private static string Sanitize(string value) {
+			return System.Net.WebUtility.HtmlEncode(value);
 		}
 	}
 }
