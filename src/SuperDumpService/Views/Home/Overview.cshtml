@@ -32,11 +32,11 @@
 								if (dump.AnomaliesDetected) {
 									styleClass = "anomalies-detected";
 								}
-								<li class="@styleClass">@Html.ActionLink(dump.FileName + "(" + dump.Id + ")","Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.Id })</li>
+								<li class="@styleClass">@Html.ActionLink(dump.FileName + "(" + dump.Id + ")", "Report", "Home", new { bundleId = dump.BundleId, dumpId = dump.Id })</li>
 							}
 						</ul>
 					</td>
-					<td>@bundle.JiraIssue</td>
+					<td><possible-link href="@bundle.JiraIssue" is-external="true">@bundle.JiraIssue</possible-link></td>
 					<td>@bundle.FriendlyName</td>
 					<td>@bundle.IsAnalysisComplete</td>
 					<td>@bundle.TimeStamp</td>
