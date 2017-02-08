@@ -31,8 +31,8 @@ namespace SuperDumpService.Controllers.Api {
 		/// <returns>JSON array, if id was a bundle id, or a single JSON entry for a dump id</returns>
 		/// <response code="200">Returned JSON data for all dumps in bundle</response>
 		/// <response code="404">If result is not ready, or dump does not exist</response>
-		[HttpGet("{id}", Name = "dumps")]
-		[ProducesResponseType(typeof(SDResult), 200)]
+		[HttpGet("{bundleId}", Name = "dumps")]
+		[ProducesResponseType(typeof(List<SDResult>), 200)]
 		[ProducesResponseType(typeof(string), 404)]
 		public IActionResult Get(string bundleId) {
 			// check if it is a bundle 
@@ -56,7 +56,7 @@ namespace SuperDumpService.Controllers.Api {
 		/// <response code="400">If url was invalid, or SuperDump had an error when processing</response>
 		/// <response code="201"></response>
 		[HttpPost]
-		[ProducesResponseType(typeof(string), 201)]
+		[ProducesResponseType(typeof(void), 201)]
 		[ProducesResponseType(typeof(string), 400)]
 		public IActionResult Post([FromBody]DumpAnalysisInput input) {
 			if (ModelState.IsValid) {
@@ -69,7 +69,7 @@ namespace SuperDumpService.Controllers.Api {
 					}
 					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
 					if (bundleId != null) {
-						return CreatedAtAction("BundleCreated", "Home", new { bundleId = bundleId });
+						return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
 					} else {
 						// in case the input was just symbol files, we don't get a bundleid.
 						// TODO
