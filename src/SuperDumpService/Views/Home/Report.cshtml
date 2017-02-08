@@ -43,7 +43,7 @@
 			</dt>
 			<dd>
 				@if (@customProp.Value.StartsWith("http")) {
-					<a href = "@customProp.Value" > @customProp.Value </a>
+					<a href="@customProp.Value"> @customProp.Value </a>
 				} else {
 					@customProp.Value
 				}
@@ -90,6 +90,6 @@
 			<section>
 				@{Html.RenderPartial("_Memory");}
 			</section>
-					}
+		}
 	</div>
-					}
+}
