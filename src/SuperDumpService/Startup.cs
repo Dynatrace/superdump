@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Hangfire;
-using SuperDumpService.Models;
 using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.Swagger.Model;
 using Hangfire.Logging;
@@ -18,6 +17,7 @@ using Hangfire.Annotations;
 using Microsoft.AspNetCore.Http.Features;
 using System.IO;
 using Microsoft.Extensions.Options;
+using SuperDumpService.Services;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -72,11 +72,23 @@ namespace SuperDumpService {
 			});
 
 			// register repository as singleton
-			services.AddSingleton<IDumpRepository, DumpRepository>();
+			services.AddSingleton<SuperDumpRepository>();
+
+			services.AddSingleton<BundleRepository>();
+			services.AddSingleton<BundleStorageFilebased>();
+			services.AddSingleton<DumpRepository>();
+			services.AddSingleton<DumpStorageFilebased>();
+			services.AddSingleton<AnalysisService>();
+			services.AddSingleton<DownloadService>();
+			services.AddSingleton<SymStoreService>();
+			services.AddSingleton<UnpackService>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings) {
+			app.ApplicationServices.GetService<BundleRepository>().Populate();
+			app.ApplicationServices.GetService<DumpRepository>().Populate();
+
 			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 			loggerFactory.AddDebug();
 
@@ -85,7 +97,7 @@ namespace SuperDumpService {
 			});
 
 			app.UseHangfireServer(new BackgroundJobServerOptions {
-				Queues = new[] { "bundles" },
+				Queues = new[] { "download" },
 				WorkerCount = settings.Value.MaxConcurrentBundleExtraction
 			});
 			app.UseHangfireServer(new BackgroundJobServerOptions {

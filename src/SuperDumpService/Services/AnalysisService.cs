@@ -1,0 +1,69 @@
+﻿using SuperDumpService.Helpers;
+using SuperDumpService.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace SuperDumpService.Services {
+	public class AnalysisService {
+		private readonly DumpStorageFilebased dumpStorage;
+		private readonly DumpRepository dumpRepo;
+
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo) {
+			this.dumpStorage = dumpStorage;
+			this.dumpRepo = dumpRepo;
+		}
+
+		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
+			string dumpFilePath = dumpStorage.GetDumpFilePath(dumpInfo.BundleId, dumpInfo.DumpId);
+			if (!File.Exists(dumpFilePath)) throw new DumpNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
+
+			string analysisWorkingDir = PathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
+			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
+			
+			// schedule actual analysis
+			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir));
+		}
+
+		[Hangfire.Queue("analysis", Order = 2)]
+		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+			try {
+				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
+				string dumpselector = PathHelper.GetDumpSelectorPath();
+				using (Process p = new Process()) {
+					p.StartInfo.FileName = dumpselector;
+					p.StartInfo.Arguments = dumpFilePath;
+					Console.WriteLine(p.StartInfo.Arguments);
+					p.StartInfo.RedirectStandardOutput = true;
+					p.StartInfo.RedirectStandardError = true;
+					p.StartInfo.UseShellExecute = false;
+					p.StartInfo.CreateNoWindow = true;
+
+					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
+
+					p.Start();
+					p.PriorityClass = ProcessPriorityClass.BelowNormal;
+					string stdout = p.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
+					string stderr = p.StandardError.ReadToEnd();
+					p.WaitForExit();
+					string selectorLog = $"SuperDumpSelector exited with error code {p.ExitCode}" +
+						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{stdout}" +
+						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}";
+					Console.WriteLine(selectorLog);
+					File.WriteAllText(Path.Combine(PathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
+					if (p.ExitCode != 0) {
+						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
+						throw new Exception(selectorLog);
+					}
+				}
+				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
+			} catch (OperationCanceledException e) {
+				Console.WriteLine(e.Message);
+				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
+			}
+		}
+	}
+}

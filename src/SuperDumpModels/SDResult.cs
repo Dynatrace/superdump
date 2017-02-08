@@ -49,5 +49,17 @@ namespace SuperDump.Models {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
 			});
 		}
+
+		public ISet<SDTag> GetThreadTags() {
+			var tags = new HashSet<SDTag>();
+			if (ThreadInformation == null) return tags;
+			foreach (var thread in ThreadInformation) {
+				if (thread.Value.Tags == null) continue;
+				foreach (var tag in thread.Value.Tags) {
+					tags.Add(tag);
+				}
+			}
+			return tags;
+		}
 	}
 }

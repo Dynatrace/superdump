@@ -2,24 +2,31 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SuperDumpService.Models;
-using SuperDump.Models;
-using SuperDumpService.ViewModels;
 using System.IO;
 using SuperDumpService.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.Text;
+using System.Linq;
+using SuperDumpService.Services;
+using SuperDump.Models;
+using SuperDumpService.ViewModels;
+using System.Collections.Generic;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
 		private IHostingEnvironment environment;
-		public IDumpRepository Dumps { get; set; }
+		public SuperDumpRepository superDumpRepo;
+		public BundleRepository bundleRepo;
+		public DumpRepository dumpRepo;
+		public DumpStorageFilebased dumpStorage;
 
-		public HomeController(IHostingEnvironment environment, IDumpRepository dumps) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage) {
 			this.environment = environment;
-			this.Dumps = dumps;
-			Console.WriteLine(Directory.GetCurrentDirectory());
-			PathHelper.PrepareDirectories();
+			this.superDumpRepo = superDumpRepo;
+			this.bundleRepo = bundleRepo;
+			this.dumpRepo = dumpRepo;
+			this.dumpStorage = dumpStorage;
 		}
 
 		public IActionResult Index() {
@@ -40,25 +47,23 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpPost]
-		public IActionResult Create(DumpBundle bundle) {
+		public IActionResult Create(DumpAnalysisInput input) {
 			PathHelper.PrepareDirectories();
 
 			if (ModelState.IsValid) {
-				System.Diagnostics.Debug.WriteLine(bundle.Url);
+				System.Diagnostics.Debug.WriteLine(input.Url);
 
-				try {
-					string filename = bundle.UrlFilename;
-					if (Utility.ValidateUrl(bundle.Url, ref filename)) {
-						bundle.UrlFilename = filename;
-						Utility.ScheduleBundleAnalysis(PathHelper.GetWorkingDir(), bundle);
-						// return list of file paths from zip
-						return RedirectToAction("BundleCreated", "Home", new { bundleId = bundle.Id });
-					} else {
-						return BadRequest("Provided URI is invalid or cannot be reached.");
+				string filename = input.Filename;
+				if (Utility.ValidateUrl(input.Url, ref filename)) {
+					if (filename == null && Utility.IsLocalFile(input.Url)) {
+						filename = Path.GetFileName(input.Url);
 					}
-				} catch {
-					Dumps.DeleteBundle(bundle.Id);
-					return BadRequest("Error while processing. SuperDump was not able to process it.");
+					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
+
+					// return list of file paths from zip
+					return RedirectToAction("BundleCreated", "Home", new { bundleId = bundleId });
+				} else {
+					return BadRequest("Provided URI is invalid or cannot be reached.");
 				}
 			} else {
 				return View();
@@ -66,10 +71,10 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult BundleCreated(string bundleId) {
-			if (Dumps.ContainsBundle(bundleId)) {
-				return View(new BundleViewModel(Dumps.GetBundle(bundleId)));
+			if (bundleRepo.ContainsBundle(bundleId)) {
+				return View(new BundleViewModel(bundleRepo.Get(bundleId), dumpRepo.Get(bundleId)));
 			}
-			return View(new BundleViewModel(bundleId));
+			throw new NotImplementedException("TODO better exception message");
 		}
 
 		[HttpPost]
@@ -90,7 +95,7 @@ namespace SuperDumpService.Controllers {
 					using (var fileStream = new FileStream(filePath, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpBundle { Id = Dumps.CreateUniqueBundleId(), Url = filePath, Path = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					var bundle = new DumpAnalysisInput { Url = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
@@ -100,7 +105,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult Overview() {
-			return View(Dumps.GetAll());
+			return View(bundleRepo.GetAll().Select(r => new BundleViewModel(r, dumpRepo.Get(r.BundleId))));
 		}
 
 		public IActionResult GetReport() {
@@ -112,23 +117,31 @@ namespace SuperDumpService.Controllers {
 		public IActionResult Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
 
-			// get dump result from repository
-			DumpAnalysisItem item = Dumps.GetDump(bundleId, dumpId);
-			if (item == null) {
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
 				return View(null);
 			}
 
-			SDResult res;
-			try {
-				res = Dumps.GetResult(bundleId, dumpId);
-			} catch (Exception e) {
-				res = null;
-				Console.WriteLine(e.Message);
+			var dumpInfo = superDumpRepo.GetDump(bundleId, dumpId);
+			if (dumpInfo == null) {
+				return View(null);
 			}
-			// TODO : render razor template with report data
-			return View(new ReportViewModel(bundleId, dumpId, item.JiraIssue,
-				item.FriendlyName, item.Path, item.TimeStamp, res,
-				item.HasAnalysisFailed, item.AnalysisError, item.Files));
+
+
+			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
+
+			return View(new ReportViewModel(bundleId, dumpId) {
+				BundleFileName = bundleInfo.BundleFileName,
+				DumpFileName = dumpInfo.DumpFileName,
+				Result = res,
+				CustomProperties = Utility.Sanitize(bundleInfo.CustomProperties),
+				HasAnalysisFailed = dumpInfo.Status == DumpStatus.Failed,
+				TimeStamp = dumpInfo.Created,
+				Files = dumpRepo.GetFileNames(bundleId, dumpId),
+				AnalysisError = dumpInfo.ErrorMessage,
+				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
+				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12)
+			});
 		}
 
 		public IActionResult UploadError() {
@@ -140,7 +153,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult DownloadFile(string bundleId, string dumpId, string filename) {
-			var file = Dumps.GetReportFile(bundleId, dumpId, filename);
+			var file = dumpStorage.GetFile(bundleId, dumpId, filename);
 			if (file == null) throw new ArgumentException("could not find file");
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"
@@ -160,10 +173,7 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public IActionResult Rerun(string bundleId, string dumpId) {
-			// delete all files except dump
-			Dumps.WipeAllExceptDump(bundleId, dumpId);
-
-			Utility.RerunAnalysis(bundleId, dumpId);
+			superDumpRepo.RerunAnalysis(bundleId, dumpId);
 			return View(new ReportViewModel(bundleId, dumpId));
 		}
 	}
