@@ -11,9 +11,10 @@ namespace SuperDumpService.Models {
 		public DateTime Finished { get; set; }
 		public BundleStatus Status { get; set; }
 		public Dictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
+		public string ErrorMessage { get; set; }
 	}
 
 	public enum BundleStatus {
-		Created, Downloading, Analyzing, Finished
+		Created, Downloading, Analyzing, Finished, Failed
 	}
 }

@@ -147,13 +147,17 @@ namespace SuperDumpService.Services {
 		[Hangfire.Queue("download", Order = 1)]
 		public async Task DownloadAndScheduleProcessFile(string bundleId, string url, string filename) {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
-			using (var tempFile = await downloadService.Download(bundleId, url, filename)) {
-				// this class should only do downloading. 
-				// unf. i could not find a good way to *not* make this call from with DownloadService
-				// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
-				await ProcessFile(bundleId, tempFile.File);
+			try {
+				using (var tempFile = await downloadService.Download(bundleId, url, filename)) {
+					// this class should only do downloading. 
+					// unf. i could not find a good way to *not* make this call from with DownloadService
+					// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
+					await ProcessFile(bundleId, tempFile.File);
+				}
+				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
+			} catch (Exception e) {
+				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Failed, e.ToString());
 			}
-			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 		}
 
 		public void RerunAnalysis(string bundleId, string dumpId) {

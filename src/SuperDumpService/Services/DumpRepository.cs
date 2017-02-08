@@ -69,8 +69,19 @@ namespace SuperDumpService.Services {
 				dumps[bundleId][dumpId] = dumpInfo;
 			}
 			storage.Create(bundleId, dumpId);
-			await storage.AddDumpFile(bundleId, dumpId, sourcePath);
+			
+			FileInfo destFile = await storage.AddDumpFile(bundleId, dumpId, sourcePath);
+			AddSDFile(bundleId, dumpId, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
+		}
+
+		private void AddSDFile(string bundleId, string dumpId, string filename, SDFileType type) {
+			var dumpInfo = Get(bundleId, dumpId);
+			dumpInfo.Files.Add(new SDFileEntry() {
+				FileName = filename,
+				Type = type
+			});
+			storage.Store(dumpInfo);
 		}
 
 		public string CreateUniqueDumpId() {
@@ -88,8 +99,8 @@ namespace SuperDumpService.Services {
 			return storage.ReadResults(bundleId, dumpId);
 		}
 
-		internal IEnumerable<string> GetFileNames(string bundleId, string dumpId) {
-			return storage.GetFileNames(bundleId, dumpId);
+		internal IEnumerable<SDFileInfo> GetFileNames(string bundleId, string dumpId) {
+			return storage.GetSDFileInfos(bundleId, dumpId);
 		}
 
 		internal void SetDumpStatus(string bundleId, string dumpId, DumpStatus status, string errorMessage = null) {

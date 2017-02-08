@@ -1,4 +1,6 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
+@using SuperDumpService.Helpers
+@using SuperDumpService.Models
 
 @{
 	ViewData["Title"] = "Report";
@@ -49,8 +51,19 @@
 		<dt>Files:</dt>
 		<dd>
 			<ul class="flat">
-				@foreach (var file in Model.Files) {
-					<li><a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file">@file</a></li>
+				@foreach (SDFileInfo file in Model.Files.OrderBy(x => x.FileEntry.Type)) {
+					<li>
+						<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file.FileInfo.Name">
+							@if (file.FileEntry != null) {
+								if (file.FileEntry.Type == SDFileType.PrimaryDump) {
+									<img src="~/images/bomb.png" />
+								} else if (file.FileEntry.Type == SDFileType.WinDbg) {
+									<img src="~/images/windbg.png" />
+								}
+							}
+							@file.FileInfo.Name
+						</a> <span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
+					</li>
 				}
 			</ul>
 		</dd>
@@ -86,6 +99,6 @@
 			<section>
 				@{Html.RenderPartial("_Memory");}
 			</section>
-		}
+					}
 	</div>
-}
+					}

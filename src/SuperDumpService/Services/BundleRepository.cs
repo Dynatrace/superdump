@@ -67,10 +67,13 @@ namespace SuperDumpService.Services {
 			return bundles.ContainsKey(bundleId);
 		}
 
-		internal void SetBundleStatus(string bundleId, BundleStatus status) {
+		internal void SetBundleStatus(string bundleId, BundleStatus status, string errorMessage = null) {
 			var bundleInfo = Get(bundleId);
 			bundleInfo.Status = status;
-			if (status == BundleStatus.Finished) {
+			if (!string.IsNullOrEmpty(errorMessage)) {
+				bundleInfo.ErrorMessage = errorMessage;
+			}
+			if (status == BundleStatus.Finished || status == BundleStatus.Failed) {
 				bundleInfo.Finished = DateTime.Now;
 			}
 			storage.Store(bundleInfo);

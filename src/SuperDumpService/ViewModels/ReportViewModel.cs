@@ -14,7 +14,7 @@ namespace SuperDumpService.ViewModels {
 		public SDResult Result { get; set; }
 		public bool HasAnalysisFailed { get; set; }
 		public string AnalysisError { get; set; }
-		public IEnumerable<string> Files { get; set; }
+		public IEnumerable<SDFileInfo> Files { get; set; }
 		public ISet<SDTag> ThreadTags { get; set; }
 		public int PointerSize { get; set; }
 		public IDictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
