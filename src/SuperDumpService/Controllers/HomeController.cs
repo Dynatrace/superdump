@@ -53,7 +53,7 @@ namespace SuperDumpService.Controllers {
 			if (ModelState.IsValid) {
 				System.Diagnostics.Debug.WriteLine(input.Url);
 
-				string filename = input.Filename;
+				string filename = input.UrlFilename;
 				if (Utility.ValidateUrl(input.Url, ref filename)) {
 					if (filename == null && Utility.IsLocalFile(input.Url)) {
 						filename = Path.GetFileName(input.Url);
