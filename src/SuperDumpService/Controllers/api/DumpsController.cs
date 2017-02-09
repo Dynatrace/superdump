@@ -61,7 +61,7 @@ namespace SuperDumpService.Controllers.Api {
 		public IActionResult Post([FromBody]DumpAnalysisInput input) {
 			if (ModelState.IsValid) {
 
-				string filename = input.Filename;
+				string filename = input.UrlFilename;
 				//validate URL
 				if (Utility.ValidateUrl(input.Url, ref filename)) {
 					if (filename == null && Utility.IsLocalFile(input.Url)) {

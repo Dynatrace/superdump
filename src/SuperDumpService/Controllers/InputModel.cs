@@ -14,7 +14,7 @@ namespace SuperDumpService.Controllers {
 		/// <summary>
 		/// Optional. If provided, it's used as filename to store the dump.
 		/// </summary>
-		public string Filename { get; set; }
+		public string UrlFilename { get; set; }
 
 		// for compat
 		public string JiraIssue { get; set; }
