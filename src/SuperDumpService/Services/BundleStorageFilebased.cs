@@ -20,6 +20,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<BundleMetainfo> ReadBundleMetainfos() {
+			PathHelper.PrepareDirectories();
 			foreach (var dir in Directory.EnumerateDirectories(PathHelper.GetWorkingDir())) {
 				var bundleId = new DirectoryInfo(dir).Name;
 				var metainfoFilename = PathHelper.GetBundleMetadataPath(bundleId);

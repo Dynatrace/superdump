@@ -10,4 +10,4 @@ REM a working symbolpath with three servers can work like that: _NT_SYMBOL_PATH=
 set _NT_SYMBOL_PATH=srv*c:\symbols*https://msdl.microsoft.com/download/symbols
 
 cd bin\SuperDumpService
-call SuperDumpService.exe
+call dotnet SuperDumpService.dll

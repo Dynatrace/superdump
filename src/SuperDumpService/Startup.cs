@@ -39,18 +39,23 @@ namespace SuperDumpService {
 			IEnumerable<int> test = new List<int>();
 
 			//configure DB
-			string connString;
-			Console.WriteLine(Directory.GetCurrentDirectory());
-			
-			using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB")) {
-				connString = conn.ConnectionString;
+			if (Configuration.GetValue<bool>("UseInMemoryHangfireStorage")) {
+				services.AddHangfire(x => x.UseStorage(new Hangfire.MemoryStorage.MemoryStorage()));
+			} else {
+				string connString;
+				Console.WriteLine(Directory.GetCurrentDirectory());
+				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB")) {
+					connString = conn.ConnectionString;
+				}
+				if (string.IsNullOrEmpty(connString)) {
+					throw new Exception("DB could not be created, please check if LocalDB is installed.");
+				}
+				services.AddHangfire(x => x.UseSqlServerStorage(connString));
 			}
-			if (string.IsNullOrEmpty(connString)) {
-				throw new Exception("DB could not be created, please check if LocalDB is installed.");
-			}
+
+			// set upload limit
 			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 16L * 1024 * 1024 * 1024); // 16GB
 
-			services.AddHangfire(x => x.UseSqlServerStorage(connString));
 			// Add framework services.
 			services.AddMvc();
 			//services.AddCors();
@@ -69,7 +74,10 @@ namespace SuperDumpService {
 				var basePath = PlatformServices.Default.Application.ApplicationBasePath;
 
 				//Set the comments path for the swagger json and ui.
-				options.IncludeXmlComments(basePath + "\\SuperDumpService.xml");
+				var xmlDocFile = new FileInfo(Path.Combine(basePath, "SuperDumpService.xml"));
+				if (xmlDocFile.Exists) {
+					options.IncludeXmlComments(xmlDocFile.FullName);
+				}
 			});
 
 			// register repository as singleton
