@@ -44,7 +44,7 @@ namespace SuperDumpService {
 			} else {
 				string connString;
 				Console.WriteLine(Directory.GetCurrentDirectory());
-				using (SqlConnection conn = LocalDBAccess.GetLocalDB("HangfireDB")) {
+				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB")) {
 					connString = conn.ConnectionString;
 				}
 				if (string.IsNullOrEmpty(connString)) {
