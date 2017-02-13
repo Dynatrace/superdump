@@ -1,22 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <DebugType>portable</DebugType>
-    <TargetFrameworks>netcoreapp1.1;net46</TargetFrameworks>
-    <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-    <AssemblyName>SuperDumpModels</AssemblyName>
-    <PackageId>SuperDumpModels</PackageId>
-    <RestorePackages>true</RestorePackages>
-    <OutputTypeEx>library</OutputTypeEx>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<DebugType>portable</DebugType>
+		<TargetFrameworks>netstandard1.3</TargetFrameworks>
+		<RuntimeIdentifiers>win7-x86;win7-x64</RuntimeIdentifiers>
+		<PreserveCompilationContext>true</PreserveCompilationContext>
+		<AssemblyName>SuperDumpModels</AssemblyName>
+		<PackageId>SuperDumpModels</PackageId>
+		<RestorePackages>true</RestorePackages>
+		<OutputTypeEx>library</OutputTypeEx>
+	</PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+	</ItemGroup>
 </Project>

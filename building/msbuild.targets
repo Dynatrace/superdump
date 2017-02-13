@@ -20,4 +20,16 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=publish-profile" />
 	</Target>
+	
+	<Target Name="BuildAllx86">
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpModels\SuperDumpModels.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build"/>
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpModels\SuperDumpModels.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build"/>
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpModels\SuperDumpModels.csproj" Properties="Configuration=$(Configuration);Platform=x64" Targets="Build"/>
+		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
+		
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=publish-profile" />
+	</Target>
 </Project>

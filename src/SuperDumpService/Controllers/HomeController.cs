@@ -20,13 +20,15 @@ namespace SuperDumpService.Controllers {
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
 		public DumpStorageFilebased dumpStorage;
+		private readonly PathHelper pathHelper;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, PathHelper pathHelper) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			this.dumpStorage = dumpStorage;
+			this.pathHelper = pathHelper;
 		}
 
 		public IActionResult Index() {
@@ -48,7 +50,7 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public IActionResult Create(DumpAnalysisInput input) {
-			PathHelper.PrepareDirectories();
+			pathHelper.PrepareDirectories();
 
 			if (ModelState.IsValid) {
 				System.Diagnostics.Debug.WriteLine(input.Url);
@@ -80,12 +82,12 @@ namespace SuperDumpService.Controllers {
 		[HttpPost]
 		public async Task<IActionResult> Upload(IFormFile file, string jiraIssue, string friendlyName) {
 			if (ModelState.IsValid) {
-				PathHelper.PrepareDirectories();
+				pathHelper.PrepareDirectories();
 				if (file.Length > 0) {
 					int i = 0;
-					string filePath = Path.Combine(PathHelper.GetUploadsDir(), file.FileName);
+					string filePath = Path.Combine(pathHelper.GetUploadsDir(), file.FileName);
 					while (System.IO.File.Exists(filePath)) {
-						filePath = Path.Combine(PathHelper.GetUploadsDir(),
+						filePath = Path.Combine(pathHelper.GetUploadsDir(),
 							Path.GetFileNameWithoutExtension(file.FileName)
 								+ "_" + i
 								+ Path.GetExtension(filePath));

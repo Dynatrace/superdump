@@ -11,17 +11,19 @@ namespace SuperDumpService.Services {
 	public class AnalysisService {
 		private readonly DumpStorageFilebased dumpStorage;
 		private readonly DumpRepository dumpRepo;
+		private readonly PathHelper pathHelper;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
+			this.pathHelper = pathHelper;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
 			string dumpFilePath = dumpStorage.GetDumpFilePath(dumpInfo.BundleId, dumpInfo.DumpId);
 			if (!File.Exists(dumpFilePath)) throw new DumpNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
 
-			string analysisWorkingDir = PathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
+			string analysisWorkingDir = pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
 			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
 			
 			// schedule actual analysis
@@ -32,7 +34,7 @@ namespace SuperDumpService.Services {
 		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
-				string dumpselector = PathHelper.GetDumpSelectorPath();
+				string dumpselector = pathHelper.GetDumpSelectorExePath();
 				using (Process p = new Process()) {
 					p.StartInfo.FileName = dumpselector;
 					p.StartInfo.Arguments = dumpFilePath;
@@ -45,7 +47,7 @@ namespace SuperDumpService.Services {
 					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
 
 					p.Start();
-					p.PriorityClass = ProcessPriorityClass.BelowNormal;
+					TrySetPriorityClass(p, ProcessPriorityClass.BelowNormal);
 					string stdout = p.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
 					string stderr = p.StandardError.ReadToEnd();
 					p.WaitForExit();
@@ -53,7 +55,7 @@ namespace SuperDumpService.Services {
 						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{stdout}" +
 						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}";
 					Console.WriteLine(selectorLog);
-					File.WriteAllText(Path.Combine(PathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
 					if (p.ExitCode != 0) {
 						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
 						throw new Exception(selectorLog);
@@ -63,6 +65,14 @@ namespace SuperDumpService.Services {
 			} catch (OperationCanceledException e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
+			}
+		}
+
+		private static void TrySetPriorityClass(Process process, ProcessPriorityClass priority) {
+			try {
+				process.PriorityClass = priority;
+			} catch (Exception) {
+				// this might be disallowed, e.g. in Azure WebApps
 			}
 		}
 	}

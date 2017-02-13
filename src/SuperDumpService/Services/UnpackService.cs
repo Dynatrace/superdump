@@ -10,10 +10,13 @@ using System.Threading.Tasks;
 namespace SuperDumpService.Services {
 	public class UnpackService {
 		private readonly object sync = new object();
-		private readonly DirectoryInfo tempDir = new DirectoryInfo(PathHelper.GetUploadsDir());
+		private readonly PathHelper pathHelper;
+		private readonly DirectoryInfo tempDir;
 
-		public UnpackService() {
-			tempDir.Create();
+		public UnpackService(PathHelper pathHelper) {
+			this.pathHelper = pathHelper;
+			this.tempDir = new DirectoryInfo(pathHelper.GetUploadsDir());
+			this.tempDir.Create();
 		}
 
 		public TempDirectoryHandle UnZip(FileInfo file, Func<string, bool> filter) {

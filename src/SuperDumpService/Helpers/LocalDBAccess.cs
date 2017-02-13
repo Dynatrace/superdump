@@ -5,11 +5,11 @@ using Microsoft.Extensions.Configuration;
 
 namespace SuperDumpService.Helpers {
 	public static class LocalDBAccess {
-		public static SqlConnection GetLocalDB(IConfigurationRoot configuration, string dbName, bool deleteIfExists = false) {
+		public static SqlConnection GetLocalDB(IConfigurationRoot configuration, string dbName, PathHelper pathHelper, bool deleteIfExists = false) {
 			try {
 				// todo: need to think about cleanup
-				PathHelper.PrepareDirectories();
-				string outputFolder = PathHelper.GetHangfireDBDir();
+				pathHelper.PrepareDirectories();
+				string outputFolder = pathHelper.GetHangfireDBDir();
 				string mdfFilename = dbName + ".mdf";
 				string dbFileName = Path.Combine(outputFolder, mdfFilename);
 
@@ -66,7 +66,7 @@ namespace SuperDumpService.Helpers {
 				return false;
 			}
 		}
-
+		
 		public static bool DetachDatabase(IConfigurationRoot configuration, string dbName) {
 			try {
 				string connectionString = configuration.GetConnectionString("HangfireDB");
