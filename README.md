@@ -3,12 +3,12 @@ SuperDump
 
 *SuperDump* is a service for *automated Windows crash-dump analysis*. 
 
-SuperDump was made with these goals in mind:
+SuperDump was made with these goals in mind: 
 
  * Make crash-dump analysis easy for people who are unexperienced with it, or don't have the necessary tools installed.
  * Speed up first assessment of a crash-dump, by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
 
-What SuperDump is not:
+What SuperDump is not: 
 
   * A replacement for in-depth analysis tools such as WinDbg.
 
@@ -18,7 +18,7 @@ Features
  * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
  * .zip files containing multiple crash-dumps are also supported.
  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
- * SuperDump report shows:
+ * SuperDump report shows: 
    * Basic information (bitness, system/process uptime, lastevent, ...)
    * Loaded modules and versions
    * Stacktraces of all threads (native and .NET frames)
@@ -71,7 +71,7 @@ Future
 ======
 We've open sourced SuperDump, because we believe it can be helpful for others. Anyone is welcome to contribute to SuperDump. In small ways, or in ways we have not thought about yet. Feedback, github tickets, as well as PR's are welcome.
 
-Some high-level ideas we've been poking around:
+Some high-level ideas we've been poking around: 
 
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
  * _Linux coredumps:_ Use Linux/GDB to automatically analyze linux coredumps, and use SuperDumpService as frontend (for file upload, REST-API, view reports).
