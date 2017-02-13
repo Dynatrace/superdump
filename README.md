@@ -4,10 +4,12 @@ SuperDump
 *SuperDump* is a service for **_automated Windows crash-dump analysis_**. 
 
 SuperDump was made with these goals in mind: 
+
  * Make crash-dump analysis easy for people who are unexperienced with it, or don't have the necessary tools installed.
  * Speed up first assessment of a crash-dump, by automatically preparing crash-dump analysis up-front. A developer should be quicker in determining if it's an already known crash.
 
 What SuperDump is not: 
+
   * A replacement for in-depth analysis tools such as WinDbg.
 
 Features
