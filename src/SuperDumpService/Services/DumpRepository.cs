@@ -17,10 +17,12 @@ namespace SuperDumpService.Services {
 		private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>> dumps = new ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>>();
 		private readonly DumpStorageFilebased storage;
 		private readonly BundleRepository bundleRepo;
+		private readonly PathHelper pathHelper;
 
-		public DumpRepository(DumpStorageFilebased storage, BundleRepository bundleRepo) {
+		public DumpRepository(DumpStorageFilebased storage, BundleRepository bundleRepo, PathHelper pathHelper) {
 			this.storage = storage;
 			this.bundleRepo = bundleRepo;
+			this.pathHelper = pathHelper;
 		}
 
 		public void Populate() {
@@ -62,7 +64,7 @@ namespace SuperDumpService.Services {
 				dumpInfo = new DumpMetainfo() {
 					BundleId = bundleId,
 					DumpId = dumpId,
-					DumpFileName = Utility.MakeRelativePath(PathHelper.GetUploadsDir(), sourcePath),
+					DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
 					Created = DateTime.Now,
 					Status = DumpStatus.Created
 				};

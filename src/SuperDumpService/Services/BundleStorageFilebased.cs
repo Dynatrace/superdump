@@ -14,16 +14,18 @@ namespace SuperDumpService.Services {
 	/// </summary>
 	public class BundleStorageFilebased {
 		private readonly DumpStorageFilebased dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
+		private readonly PathHelper pathHelper;
 
-		public BundleStorageFilebased(DumpStorageFilebased dumpStorage) {
+		public BundleStorageFilebased(DumpStorageFilebased dumpStorage, PathHelper pathHelper) {
 			this.dumpStorage = dumpStorage;
+			this.pathHelper = pathHelper;
 		}
 
 		public IEnumerable<BundleMetainfo> ReadBundleMetainfos() {
-			PathHelper.PrepareDirectories();
-			foreach (var dir in Directory.EnumerateDirectories(PathHelper.GetWorkingDir())) {
+			pathHelper.PrepareDirectories();
+			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetWorkingDir())) {
 				var bundleId = new DirectoryInfo(dir).Name;
-				var metainfoFilename = PathHelper.GetBundleMetadataPath(bundleId);
+				var metainfoFilename = pathHelper.GetBundleMetadataPath(bundleId);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist
 					CreateBundleMetainfoForCompat(bundleId);
@@ -39,8 +41,8 @@ namespace SuperDumpService.Services {
 		}
 
 		internal void Store(BundleMetainfo bundleInfo) {
-			Directory.CreateDirectory(PathHelper.GetBundleDirectory(bundleInfo.BundleId));
-			WriteMetainfoFile(bundleInfo, PathHelper.GetBundleMetadataPath(bundleInfo.BundleId));
+			Directory.CreateDirectory(pathHelper.GetBundleDirectory(bundleInfo.BundleId));
+			WriteMetainfoFile(bundleInfo, pathHelper.GetBundleMetadataPath(bundleInfo.BundleId));
 		}
 
 		private static void WriteMetainfoFile(BundleMetainfo metaInfo, string filename) {
@@ -74,7 +76,7 @@ namespace SuperDumpService.Services {
 					}
 				}
 			}
-			WriteMetainfoFile(metainfo, PathHelper.GetBundleMetadataPath(bundleId));
+			WriteMetainfoFile(metainfo, pathHelper.GetBundleMetadataPath(bundleId));
 		}
 	}
 }

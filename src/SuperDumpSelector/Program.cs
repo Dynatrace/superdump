@@ -42,7 +42,7 @@ namespace SuperDumpSelector {
 					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
 					Console.WriteLine($"working dir: '{p.StartInfo.WorkingDirectory}'");
 					p.Start();
-					p.PriorityClass = ProcessPriorityClass.BelowNormal;
+					TrySetPriorityClass(p, ProcessPriorityClass.BelowNormal);
 					Console.WriteLine("... analyzing");
 					do {
 						Console.WriteLine(p.StandardOutput.ReadLine());
@@ -58,6 +58,14 @@ namespace SuperDumpSelector {
 				}
 			} else {
 				throw new FileNotFoundException($"Dump file was not found at {file}. Please try again");
+			}
+		}
+
+		private static void TrySetPriorityClass(Process process, ProcessPriorityClass priority) {
+			try {
+				process.PriorityClass = priority;
+			} catch (Exception) {
+				// this might be disallowed, e.g. in Azure WebApps
 			}
 		}
 

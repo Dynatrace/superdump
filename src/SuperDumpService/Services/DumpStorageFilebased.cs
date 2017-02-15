@@ -14,15 +14,16 @@ namespace SuperDumpService.Services {
 	/// this implementation uses simple filebased storage
 	/// </summary>
 	public class DumpStorageFilebased {
+		private readonly PathHelper pathHelper;
 
-		public DumpStorageFilebased() {
-
+		public DumpStorageFilebased(PathHelper pathHelper) {
+			this.pathHelper = pathHelper;
 		}
 
 		public IEnumerable<DumpMetainfo> ReadDumpMetainfoForBundle(string bundleId) {
-			foreach (var dir in Directory.EnumerateDirectories(PathHelper.GetBundleDirectory(bundleId))) {
+			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetBundleDirectory(bundleId))) {
 				var dumpId = new DirectoryInfo(dir).Name;
-				var metainfoFilename = PathHelper.GetDumpMetadataPath(bundleId, dumpId);
+				var metainfoFilename = pathHelper.GetDumpMetadataPath(bundleId, dumpId);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist. read full json, then store metadata file
 					CreateMetainfoForCompat(bundleId, dumpId);
@@ -31,15 +32,15 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private static DumpMetainfo ReadMetainfoFile(string filename) {
+		private DumpMetainfo ReadMetainfoFile(string filename) {
 			return JsonConvert.DeserializeObject<DumpMetainfo>(File.ReadAllText(filename));
 		}
 
-		private static DumpMetainfo ReadMetainfoFile(string bundleId, string dumpId) {
-			return ReadMetainfoFile(PathHelper.GetDumpMetadataPath(bundleId, dumpId));
+		private DumpMetainfo ReadMetainfoFile(string bundleId, string dumpId) {
+			return ReadMetainfoFile(pathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
-		private static void WriteMetainfoFile(DumpMetainfo metaInfo, string filename) {
+		private void WriteMetainfoFile(DumpMetainfo metaInfo, string filename) {
 			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
@@ -51,17 +52,17 @@ namespace SuperDumpService.Services {
 			var result = ReadResults(bundleId, dumpId);
 			if (result != null) {
 				metainfo.Status = DumpStatus.Finished;
-				metainfo.DumpFileName = result.AnalysisInfo.Path?.Replace(PathHelper.GetUploadsDir(), ""); // AnalysisInfo.FileName used to store full file names. e.g. "C:\superdump\uploads\myzipfilename\subdir\dump.dmp". lets only keep "myzipfilename\subdir\dump.dmp"
+				metainfo.DumpFileName = result.AnalysisInfo.Path?.Replace(pathHelper.GetUploadsDir(), ""); // AnalysisInfo.FileName used to store full file names. e.g. "C:\superdump\uploads\myzipfilename\subdir\dump.dmp". lets only keep "myzipfilename\subdir\dump.dmp"
 				metainfo.Created = result.AnalysisInfo.ServerTimeStamp;
 			} else {
 				metainfo.Status = DumpStatus.Failed;
 			}
 
-			WriteMetainfoFile(metainfo, PathHelper.GetDumpMetadataPath(bundleId, dumpId));
+			WriteMetainfoFile(metainfo, pathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
 		public SDResult ReadResults(string bundleId, string dumpId) {
-			var filename = PathHelper.GetJsonPath(bundleId, dumpId);
+			var filename = pathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) return null;
 			try {
 				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
@@ -72,7 +73,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public string GetDumpFilePath(string bundleId, string dumpId) {
-			var filename = PathHelper.GetDumpfilePath(bundleId, dumpId);
+			var filename = pathHelper.GetDumpfilePath(bundleId, dumpId);
 			if (!File.Exists(filename)) return null;
 			return filename;
 		}
@@ -81,7 +82,7 @@ namespace SuperDumpService.Services {
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
 		internal async Task<FileInfo> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
-			var destFile = new FileInfo(PathHelper.GetDumpfilePath(bundleId, dumpId));
+			var destFile = new FileInfo(pathHelper.GetDumpfilePath(bundleId, dumpId));
 			using (Stream source = sourcePath.OpenRead()) {
 				using (Stream destination = destFile.Create()) {
 					await source.CopyToAsync(destination);
@@ -91,7 +92,7 @@ namespace SuperDumpService.Services {
 		}
 
 		internal void Create(string bundleId, string dumpId) {
-			string dir = PathHelper.GetDumpDirectory(bundleId, dumpId);
+			string dir = pathHelper.GetDumpDirectory(bundleId, dumpId);
 			if (Directory.Exists(dir)) {
 				throw new DirectoryAlreadyExistsException("Cannot create '{dir}'. It already exists.");
 			}
@@ -99,11 +100,11 @@ namespace SuperDumpService.Services {
 		}
 
 		internal void Store(DumpMetainfo dumpInfo) {
-			WriteMetainfoFile(dumpInfo, PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
+			WriteMetainfoFile(dumpInfo, pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
 		}
 
 		internal IEnumerable<SDFileInfo> GetSDFileInfos(string bundleId, string dumpId) {
-			foreach (var filePath in Directory.EnumerateFiles(PathHelper.GetDumpDirectory(bundleId, dumpId))) {
+			foreach (var filePath in Directory.EnumerateFiles(pathHelper.GetDumpDirectory(bundleId, dumpId))) {
 				// in case the requested file has a "special" entry in FileEntry list, add that information
 				var dumpInfo = ReadMetainfoFile(bundleId, dumpId);
 				FileInfo fileInfo = new FileInfo(filePath);
@@ -126,15 +127,15 @@ namespace SuperDumpService.Services {
 			fileEntry = new SDFileEntry() {
 				FileName = fileInfo.Name
 			};
-			if (Path.GetFileName(PathHelper.GetDumpfilePath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+			if (Path.GetFileName(pathHelper.GetDumpfilePath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
 				fileEntry.Type = SDFileType.PrimaryDump;
 				return fileEntry;
 			}
-			if (Path.GetFileName(PathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+			if (Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
 				fileEntry.Type = SDFileType.SuperDumpData;
 				return fileEntry;
 			}
-			if (Path.GetFileName(PathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+			if (Path.GetFileName(pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
 				fileEntry.Type = SDFileType.SuperDumpData;
 				return fileEntry;
 			}
@@ -164,7 +165,7 @@ namespace SuperDumpService.Services {
 			// make sure filename is not some relative ".."
 			if (filename.Contains("..")) throw new UnauthorizedAccessException();
 
-			string dir = PathHelper.GetDumpDirectory(bundleId, dumpId);
+			string dir = pathHelper.GetDumpDirectory(bundleId, dumpId);
 			var file = new FileInfo(Path.Combine(dir, filename));
 
 			// make sure file really is inside of the dumps-directory

@@ -1,59 +1,78 @@
-﻿using System;
+﻿using Microsoft.Extensions.Options;
+using System;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 
 namespace SuperDumpService.Helpers {
-	public static class PathHelper {
-		private static string workingDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/");
-		private static string uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/");
-		private static string hangfireDbDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/");
+	public class PathHelper {
+		private readonly string workingDir;
+		private readonly string uploadsDir;
+		private readonly string hangfireDbDir;
+		private readonly string superDumpSelectorExePath;
 		private static string confDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../conf/");
+		private static string confDirFallback = Directory.GetCurrentDirectory();
 
-		internal static string GetHangfireDBDir() {
-			return hangfireDbDir;
-		}
-
-		public static string GetUploadsDir() {
-			return Path.GetFullPath(uploadsDir);
-		}
-
-		public static string GetWorkingDir() {
-			return Path.GetFullPath(workingDir);
-		}
-
-		public static string GetDumpDirectory(string bundleId, string dumpId) {
-			return Path.Combine(GetBundleDirectory(bundleId), dumpId);
+		public PathHelper(IConfigurationSection configurationSection) {
+			// maybe there is a smarter way to convert IConfigurationSection to SuperDumpSettings?
+			this.workingDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.DumpsDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/");
+			this.uploadsDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/");
+			this.hangfireDbDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/");
+			this.superDumpSelectorExePath = configurationSection.GetValue<string>(nameof(SuperDumpSettings.SuperDumpSelectorExePath)) ?? GetDumpSelectorExePathFallback();
 		}
 
 		internal static string GetConfDirectory() {
-			return confDir;
+			if (Directory.Exists(confDir)) {
+				return confDir;
+			} else {
+				return confDirFallback;
+			}
 		}
 
-		public static string GetBundleDirectory(string bundleId) {
+		internal string GetHangfireDBDir() {
+			return hangfireDbDir;
+		}
+
+		public string GetUploadsDir() {
+			return Path.GetFullPath(uploadsDir);
+		}
+
+		public string GetWorkingDir() {
+			return Path.GetFullPath(workingDir);
+		}
+
+		public string GetDumpDirectory(string bundleId, string dumpId) {
+			return Path.Combine(GetBundleDirectory(bundleId), dumpId);
+		}
+
+		public string GetBundleDirectory(string bundleId) {
 			return Path.Combine(GetWorkingDir(), bundleId);
 		}
 
-		public static string GetBundleDownloadPath(string fileName) {
+		public string GetBundleDownloadPath(string fileName) {
 			return Path.Combine(GetUploadsDir(), fileName);
 		}
 
 		/// <summary>
 		/// makes sure all required directories exist
 		/// </summary>
-		internal static void PrepareDirectories() {
+		internal void PrepareDirectories() {
 			Directory.CreateDirectory(GetWorkingDir());
 			Directory.CreateDirectory(GetUploadsDir());
 			Directory.CreateDirectory(GetHangfireDBDir());
 		}
 
-		public static string GetDumpfilePath(string bundleId, string dumpId) {
+		public string GetDumpfilePath(string bundleId, string dumpId) {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".dmp");
 		}
 
-		public static string GetJsonPath(string bundleId, string dumpId) {
+		public string GetJsonPath(string bundleId, string dumpId) {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".json");
 		}
 
-		public static string GetDumpSelectorPath() {
+		public string GetDumpSelectorExePath() {
+			return superDumpSelectorExePath;
+		}
+		private string GetDumpSelectorExePathFallback() {
 			string dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\bin\SuperDumpSelector.exe"));
 			if (!File.Exists(dumpselector)) {
 				// deployment case
@@ -62,11 +81,11 @@ namespace SuperDumpService.Helpers {
 			return dumpselector;
 		}
 
-		internal static string GetBundleMetadataPath(string bundleId) {
+		internal string GetBundleMetadataPath(string bundleId) {
 			return Path.Combine(GetBundleDirectory(bundleId), "bundleinfo.json");
 		}
 
-		internal static string GetDumpMetadataPath(string bundleId, string dumpId) {
+		internal string GetDumpMetadataPath(string bundleId, string dumpId) {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "dumpinfo.json");
 		}
 	}

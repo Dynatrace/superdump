@@ -26,6 +26,7 @@ namespace SuperDumpService.Services {
 		private readonly DownloadService downloadService;
 		private readonly SymStoreService symStoreService;
 		private readonly UnpackService unpackService;
+		private readonly PathHelper pathHelper;
 
 		public SuperDumpRepository(
 				IOptions<SuperDumpSettings> settings,
@@ -34,7 +35,8 @@ namespace SuperDumpService.Services {
 				AnalysisService analysisService,
 				DownloadService downloadService,
 				SymStoreService symStoreService,
-				UnpackService unpackService) {
+				UnpackService unpackService,
+				PathHelper pathHelper) {
 			this.settings = settings;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -42,7 +44,8 @@ namespace SuperDumpService.Services {
 			this.downloadService = downloadService;
 			this.symStoreService = symStoreService;
 			this.unpackService = unpackService;
-			PathHelper.PrepareDirectories();
+			this.pathHelper = pathHelper;
+			pathHelper.PrepareDirectories();
 		}
 
 		public SDResult GetResult(string bundleId, string dumpId) {
@@ -66,10 +69,10 @@ namespace SuperDumpService.Services {
 		}
 
 		public void WipeAllExceptDump(string bundleId, string dumpId) {
-			var dumpdir = PathHelper.GetDumpDirectory(bundleId, dumpId);
-			var dumpfile = PathHelper.GetDumpfilePath(bundleId, dumpId);
+			var dumpdir = pathHelper.GetDumpDirectory(bundleId, dumpId);
+			var dumpfile = pathHelper.GetDumpfilePath(bundleId, dumpId);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
-				if (file != dumpfile && file != PathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
+				if (file != dumpfile && file != pathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
 					File.Delete(file);
 				}
 			}

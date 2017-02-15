@@ -27,6 +27,11 @@ namespace SuperDumpService {
 				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), "appsettings.json"), optional: false, reloadOnChange: true)
 				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), $"appsettings.{env.EnvironmentName}.json"), optional: true)
 				.AddEnvironmentVariables();
+
+			if (env.IsDevelopment()) {
+				//builder.AddApplicationInsightsSettings(developerMode: true);
+			}
+
 			Configuration = builder.Build();
 		}
 
@@ -35,8 +40,9 @@ namespace SuperDumpService {
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
 			services.Configure<SuperDumpSettings>(Configuration.GetSection("SuperDumpSettings"));
-
-			IEnumerable<int> test = new List<int>();
+			
+			var pathHelper = new PathHelper(Configuration.GetSection("SuperDumpSettings"));
+			services.AddSingleton(pathHelper);
 
 			//configure DB
 			if (Configuration.GetValue<bool>("UseInMemoryHangfireStorage")) {
@@ -44,7 +50,7 @@ namespace SuperDumpService {
 			} else {
 				string connString;
 				Console.WriteLine(Directory.GetCurrentDirectory());
-				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB")) {
+				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB", pathHelper)) {
 					connString = conn.ConnectionString;
 				}
 				if (string.IsNullOrEmpty(connString)) {
@@ -79,6 +85,9 @@ namespace SuperDumpService {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
 			});
+
+			// App Insights
+			services.AddApplicationInsightsTelemetry(Configuration);
 
 			// register repository as singleton
 			services.AddSingleton<SuperDumpRepository>();

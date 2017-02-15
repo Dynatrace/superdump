@@ -7,13 +7,19 @@ using System.Net.Http;
 
 namespace SuperDumpService.Services {
 	public class DownloadService {
+		private readonly PathHelper pathHelper;
+
+		public DownloadService(PathHelper pathHelper) {
+			this.pathHelper = pathHelper;
+		}
+
 		public async Task<TempFileHandle> Download(string bundleId, string url, string filename) {
 			var uri = new Uri(url);
 			
 			//check if local or not
 			if (!Utility.IsLocalFile(url)) {
 				// download
-				string tempPath = Path.Combine(FindUniqueFilename(PathHelper.GetBundleDownloadPath(filename)));
+				string tempPath = Path.Combine(FindUniqueFilename(pathHelper.GetBundleDownloadPath(filename)));
 				using (var client = new HttpClient()) {
 					using (var download = await client.GetAsync(uri)) {
 						using (var stream = await download.Content.ReadAsStreamAsync()) {
