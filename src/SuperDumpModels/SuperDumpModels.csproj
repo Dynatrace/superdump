@@ -3,7 +3,6 @@
 		<OutputType>Library</OutputType>
 		<DebugType>portable</DebugType>
 		<TargetFrameworks>netstandard1.3</TargetFrameworks>
-		<RuntimeIdentifiers>win7-x86;win7-x64</RuntimeIdentifiers>
 		<PreserveCompilationContext>true</PreserveCompilationContext>
 		<AssemblyName>SuperDumpModels</AssemblyName>
 		<PackageId>SuperDumpModels</PackageId>
