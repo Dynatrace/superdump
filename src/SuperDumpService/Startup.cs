@@ -39,9 +39,11 @@ namespace SuperDumpService {
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
-			services.Configure<SuperDumpSettings>(Configuration.GetSection("SuperDumpSettings"));
-			
-			var pathHelper = new PathHelper(Configuration.GetSection("SuperDumpSettings"));
+			services.AddOptions();
+			services.Configure<SuperDumpSettings>(Configuration.GetSection(nameof(SuperDumpSettings)));
+
+
+			var pathHelper = new PathHelper(Configuration.GetSection(nameof(SuperDumpSettings)));
 			services.AddSingleton(pathHelper);
 
 			//configure DB
@@ -60,7 +62,9 @@ namespace SuperDumpService {
 			}
 
 			// set upload limit
-			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 16L * 1024 * 1024 * 1024); // 16GB
+			int maxUploadSizeMB = Configuration.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
+			if (maxUploadSizeMB == 0) maxUploadSizeMB = 16000; // default
+			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 1024L * 1024L * maxUploadSizeMB);
 
 			// Add framework services.
 			services.AddMvc();

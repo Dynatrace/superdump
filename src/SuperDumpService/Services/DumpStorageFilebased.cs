@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using SuperDump.Models;
+using Microsoft.Extensions.Options;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -15,9 +16,11 @@ namespace SuperDumpService.Services {
 	/// </summary>
 	public class DumpStorageFilebased {
 		private readonly PathHelper pathHelper;
+		private readonly IOptions<SuperDumpSettings> settings;
 
-		public DumpStorageFilebased(PathHelper pathHelper) {
+		public DumpStorageFilebased(PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
 			this.pathHelper = pathHelper;
+			this.settings = settings;
 		}
 
 		public IEnumerable<DumpMetainfo> ReadDumpMetainfoForBundle(string bundleId) {
@@ -91,6 +94,10 @@ namespace SuperDumpService.Services {
 			return destFile;
 		}
 
+		internal void DeleteDumpFile(string bundleId, string dumpId) {
+			File.Delete(pathHelper.GetDumpfilePath(bundleId, dumpId));
+		}
+
 		internal void Create(string bundleId, string dumpId) {
 			string dir = pathHelper.GetDumpDirectory(bundleId, dumpId);
 			if (Directory.Exists(dir)) {
@@ -109,11 +116,12 @@ namespace SuperDumpService.Services {
 				var dumpInfo = ReadMetainfoFile(bundleId, dumpId);
 				FileInfo fileInfo = new FileInfo(filePath);
 				SDFileEntry fileEntry = GetSDFileEntry(dumpInfo, fileInfo);
-
+				
 				yield return new SDFileInfo() {
 					FileInfo = fileInfo,
 					FileEntry = fileEntry,
-					SizeInBytes = fileInfo.Length
+					SizeInBytes = fileInfo.Length,
+					Downloadable = fileEntry.Type != SDFileType.PrimaryDump || settings.Value.DumpDownloadable
 				};
 			}
 		}
@@ -170,6 +178,13 @@ namespace SuperDumpService.Services {
 
 			// make sure file really is inside of the dumps-directory
 			if (!file.FullName.ToLower().Contains(dir.ToLower())) throw new UnauthorizedAccessException();
+
+			var dumpInfo = ReadMetainfoFile(bundleId, dumpId);
+			SDFileEntry fileEntry = GetSDFileEntry(dumpInfo, file);
+
+			if (fileEntry.Type == SDFileType.PrimaryDump && !settings.Value.DumpDownloadable) {
+				throw new UnauthorizedAccessException();
+			}
 
 			if (file.Exists) {
 				return file;

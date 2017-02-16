@@ -11,5 +11,6 @@ namespace SuperDumpService.Models
 
 		public SDFileEntry FileEntry { get; set; }
 		public long SizeInBytes { get; set; }
+		public bool Downloadable { get; set; }
 	}
 }

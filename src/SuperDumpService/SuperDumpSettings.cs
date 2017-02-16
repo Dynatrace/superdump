@@ -9,5 +9,8 @@
 		public string UploadDir { get; set; }
 		public string HangfireLocalDbDir { get; set; }
 		public string SuperDumpSelectorExePath { get; set; }
+		public bool DeleteDumpAfterAnalysis { get; set; }
+		public bool DumpDownloadable { get; set; } = true;
+		public int MaxUploadSizeMB { get; set; } = 16000;
 	}
 }
