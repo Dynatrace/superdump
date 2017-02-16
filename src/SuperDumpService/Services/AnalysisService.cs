@@ -34,32 +34,19 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
-		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
 				string dumpselector = pathHelper.GetDumpSelectorExePath();
-				using (Process p = new Process()) {
-					p.StartInfo.FileName = dumpselector;
-					p.StartInfo.Arguments = dumpFilePath;
-					Console.WriteLine(p.StartInfo.Arguments);
-					p.StartInfo.RedirectStandardOutput = true;
-					p.StartInfo.RedirectStandardError = true;
-					p.StartInfo.UseShellExecute = false;
-					p.StartInfo.CreateNoWindow = true;
 
-					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
-
-					p.Start();
-					TrySetPriorityClass(p, ProcessPriorityClass.BelowNormal);
-					string stdout = p.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
-					string stderr = p.StandardError.ReadToEnd();
-					p.WaitForExit();
-					string selectorLog = $"SuperDumpSelector exited with error code {p.ExitCode}" +
-						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{stdout}" +
-						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}";
+				Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}");
+				using (var process = await ProcessRunner.Run(dumpselector, dumpFilePath)) {
+					string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
+						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
 					Console.WriteLine(selectorLog);
 					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
-					if (p.ExitCode != 0) {
+					if (process.ExitCode != 0) {
 						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
 						throw new Exception(selectorLog);
 					}
@@ -72,14 +59,6 @@ namespace SuperDumpService.Services {
 				if (settings.Value.DeleteDumpAfterAnalysis) {
 					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
 				}
-			}
-		}
-
-		private static void TrySetPriorityClass(Process process, ProcessPriorityClass priority) {
-			try {
-				process.PriorityClass = priority;
-			} catch (Exception) {
-				// this might be disallowed, e.g. in Azure WebApps
 			}
 		}
 	}
