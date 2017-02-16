@@ -53,7 +53,18 @@
 			<ul class="flat">
 				@foreach (SDFileInfo file in Model.Files.OrderBy(x => x.FileEntry.Type)) {
 					<li>
-						<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file.FileInfo.Name">
+						@if (file.Downloadable) {
+							<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file.FileInfo.Name">
+								@if (file.FileEntry != null) {
+									if (file.FileEntry.Type == SDFileType.PrimaryDump) {
+										<img src="~/images/bomb.png" />
+									} else if (file.FileEntry.Type == SDFileType.WinDbg) {
+										<img src="~/images/windbg.png" />
+									}
+								}
+								@file.FileInfo.Name
+							</a> <span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
+						} else {
 							@if (file.FileEntry != null) {
 								if (file.FileEntry.Type == SDFileType.PrimaryDump) {
 									<img src="~/images/bomb.png" />
@@ -62,7 +73,8 @@
 								}
 							}
 							@file.FileInfo.Name
-						</a> <span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
+							<span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
+						}
 					</li>
 				}
 			</ul>

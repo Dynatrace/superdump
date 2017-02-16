@@ -1,4 +1,5 @@
-﻿using SuperDumpService.Helpers;
+﻿using Microsoft.Extensions.Options;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,13 @@ namespace SuperDumpService.Services {
 		private readonly DumpStorageFilebased dumpStorage;
 		private readonly DumpRepository dumpRepo;
 		private readonly PathHelper pathHelper;
+		private readonly IOptions<SuperDumpSettings> settings;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
 			this.pathHelper = pathHelper;
+			this.settings = settings;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -65,6 +68,10 @@ namespace SuperDumpService.Services {
 			} catch (OperationCanceledException e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
+			} finally {
+				if (settings.Value.DeleteDumpAfterAnalysis) {
+					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
+				}
 			}
 		}
 
