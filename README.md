@@ -32,6 +32,9 @@ Features
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
 <a href="doc/img/managedexception.png"><img src="doc/img/managedexception.png" title="managed exception" width="200"/></a>
+Demo
+============
+http://superdump-demo.azurewebsites.net
 
 Technologies
 ============
