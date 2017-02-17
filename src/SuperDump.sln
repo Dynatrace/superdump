@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpSelector", "SuperD
 		{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4} = {0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpModels", "SuperDumpmodels\SuperDumpModels.csproj", "{BB6EC51D-3ACC-4ADE-B09C-4217B4AD3C58}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpModels", "SuperDumpModels\SuperDumpModels.csproj", "{BB6EC51D-3ACC-4ADE-B09C-4217B4AD3C58}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService", "SuperDumpService\SuperDumpService.csproj", "{F362A805-CAD7-44A5-A6E3-6F69DD429C8E}"
 	ProjectSection(ProjectDependencies) = postProject

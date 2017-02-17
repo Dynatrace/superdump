@@ -76,26 +76,20 @@ namespace SuperDumpService.Services {
 		}
 
 		public string GetDumpFilePath(string bundleId, string dumpId) {
-			var filename = pathHelper.GetDumpfilePath(bundleId, dumpId);
-			if (!File.Exists(filename)) return null;
-			return filename;
+			var filename = GetSDFileInfos(bundleId, dumpId).Single(x => x.FileEntry.Type == SDFileType.PrimaryDump).FileInfo;
+			if (!filename.Exists) return null;
+			return filename.FullName;
 		}
 
 		/// <summary>
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
-		internal async Task<FileInfo> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
-			var destFile = new FileInfo(pathHelper.GetDumpfilePath(bundleId, dumpId));
-			using (Stream source = sourcePath.OpenRead()) {
-				using (Stream destination = destFile.Create()) {
-					await source.CopyToAsync(destination);
-				}
-			}
-			return destFile;
+		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo sourcePath) {
+			return await Utility.CopyFile(sourcePath, new FileInfo(Path.Combine(pathHelper.GetDumpDirectory(bundleId, dumpId), sourcePath.Name)));
 		}
 
 		internal void DeleteDumpFile(string bundleId, string dumpId) {
-			File.Delete(pathHelper.GetDumpfilePath(bundleId, dumpId));
+			File.Delete(GetDumpFilePath(bundleId, dumpId));
 		}
 
 		internal void Create(string bundleId, string dumpId) {
@@ -125,7 +119,7 @@ namespace SuperDumpService.Services {
 				};
 			}
 		}
-
+		
 		private SDFileEntry GetSDFileEntry(DumpMetainfo dumpInfo, FileInfo fileInfo) {
 			// the file should be registered in dumpInfo
 			SDFileEntry fileEntry = dumpInfo.Files.Where(x => x.FileName == fileInfo.Name).SingleOrDefault();
@@ -135,10 +129,6 @@ namespace SuperDumpService.Services {
 			fileEntry = new SDFileEntry() {
 				FileName = fileInfo.Name
 			};
-			if (Path.GetFileName(pathHelper.GetDumpfilePath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.PrimaryDump;
-				return fileEntry;
-			}
 			if (Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
 				fileEntry.Type = SDFileType.SuperDumpData;
 				return fileEntry;
@@ -161,6 +151,14 @@ namespace SuperDumpService.Services {
 			}
 			if (fileInfo.Extension == ".dmp") {
 				fileEntry.Type = SDFileType.PrimaryDump;
+				return fileEntry;
+			}
+			if (fileInfo.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
+				fileEntry.Type = SDFileType.PrimaryDump;
+				return fileEntry;
+			}
+			if (fileInfo.Name.EndsWith(".libs.tar.gz", StringComparison.OrdinalIgnoreCase)) {
+				fileEntry.Type = SDFileType.LinuxLibraries;
 				return fileEntry;
 			}
 

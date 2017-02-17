@@ -9,6 +9,7 @@ using SuperDump.Printers;
 namespace SuperDump {
 	public static class Program {
 		public static string DUMP_LOC;
+		private static string OUTPUT_LOC;
 		public static string SYMBOL_PATH = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
 
 		private static DumpContext context;
@@ -30,10 +31,18 @@ namespace SuperDump {
 					DUMP_LOC = args[0];
 				}
 
-				string absoluteDumpFile = Path.GetFullPath(DUMP_LOC);
+				if (args.Length < 2) {
+					Console.WriteLine("no output file was specified! Please enter output file: ");
+					OUTPUT_LOC = Console.ReadLine();
+				} else {
+					OUTPUT_LOC = args[1];
+				}
 
+				string absoluteDumpFile = Path.GetFullPath(DUMP_LOC);
 				Console.WriteLine(absoluteDumpFile);
-				context.Printer = new FilePrinter(absoluteDumpFile + ".log");
+
+				var logfile = new FileInfo(Path.Combine(Path.GetDirectoryName(OUTPUT_LOC), "superdump.log"));
+				context.Printer = new FilePrinter(logfile.FullName);
 
 				try {
 					if (File.Exists(absoluteDumpFile)) {
@@ -91,8 +100,7 @@ namespace SuperDump {
 						analyzer.PrintExceptionsObjects();
 
 						// write to json
-						analysisResult.WriteResultToJSONFile(context.DumpDirectory + "\\" +
-							 Path.GetFileNameWithoutExtension(context.DumpFile) + ".json");
+						analysisResult.WriteResultToJSONFile(OUTPUT_LOC);
 
 						context.WriteInfo("--- End of output ---");
 						Console.WriteLine("done.");

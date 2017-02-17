@@ -9,55 +9,26 @@ using System.Threading.Tasks;
 
 namespace SuperDumpService.Services {
 	public class UnpackService {
-		private readonly object sync = new object();
 		private readonly PathHelper pathHelper;
-		private readonly DirectoryInfo tempDir;
 
 		public UnpackService(PathHelper pathHelper) {
 			this.pathHelper = pathHelper;
-			this.tempDir = new DirectoryInfo(pathHelper.GetUploadsDir());
-			this.tempDir.Create();
 		}
 
-		public TempDirectoryHandle UnZip(FileInfo file, Func<string, bool> filter) {
-			var outputDir = FindUniqueTempDir(Path.GetFileNameWithoutExtension(file.Name));
-			var tempHandle = new TempDirectoryHandle(outputDir);
-			try {
-				using (ZipArchive zip = ZipFile.OpenRead(file.FullName)) {
-					foreach (var entry in zip.Entries) {
-						if (filter(entry.Name)) {
-							entry.ExtractToFile(FindUniqueFileName(outputDir, Path.GetFileName(entry.Name)).FullName);
-						}
-					}
-				}
-			} catch {
-				tempHandle.Dispose(); // don't leak in case of exception.
-				throw;
-			}
-			return tempHandle;
+		public DirectoryInfo UnZip(FileInfo file) {
+			var outputDir = FindUniqueTempDir(file.Directory, Path.GetFileNameWithoutExtension(file.Name));
+			ZipFile.ExtractToDirectory(file.FullName, outputDir.FullName);
+			return outputDir;
 		}
 
-		private FileInfo FindUniqueFileName(DirectoryInfo dir, string filename) {
-			lock (sync) {
-				var file = new FileInfo(Path.Combine(dir.FullName, filename));
-				int i = 0;
-				while (file.Exists) {
-					file = new FileInfo(Path.Combine(dir.FullName, $"{Path.GetFileNameWithoutExtension(filename)}_{i}_{Path.GetExtension(filename)}"));
-				}
-				return file;
+		private DirectoryInfo FindUniqueTempDir(DirectoryInfo dir, string dirname) {
+			var subdir = new DirectoryInfo(Path.Combine(dir.FullName, dirname));
+			int i = 0;
+			while (subdir.Exists || File.Exists(subdir.FullName)) {
+				subdir = new DirectoryInfo($"{subdir.FullName}_{i}");
 			}
-		}
-
-		private DirectoryInfo FindUniqueTempDir(string dirname) {
-			lock (sync) {
-				var dir = new DirectoryInfo(Path.Combine(tempDir.FullName, dirname));
-				int i = 0;
-				while (dir.Exists || File.Exists(dir.FullName)) {
-					dir = new DirectoryInfo($"{dir.FullName}_{i}");
-				}
-				dir.Create();
-				return dir;
-			}
+			subdir.Create();
+			return subdir;
 		}
 	}
 }

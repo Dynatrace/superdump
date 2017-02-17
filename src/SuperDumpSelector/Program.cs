@@ -9,18 +9,25 @@ using System.Reflection;
 namespace SuperDumpSelector {
 	public static class Program {
 		public static void Main(string[] args) {
-			string file;
+			string dumpfile;
 			if (args.Length > 0) {
-				file = args[0];
+				dumpfile = args[0];
 			} else {
 				Console.Write("Enter dump file path: ");
-				file = Console.ReadLine();
+				dumpfile = Console.ReadLine();
+			}
+			string outputfile;
+			if (args.Length > 1) {
+				outputfile = args[1];
+			} else {
+				Console.Write("Enter output file path: ");
+				outputfile = Console.ReadLine();
 			}
 
 			Console.WriteLine(Environment.CurrentDirectory);
-			if (File.Exists(file)) {
+			if (File.Exists(dumpfile)) {
 				var p = new Process();
-				using (DataTarget target = DataTarget.LoadCrashDump(file)) {
+				using (DataTarget target = DataTarget.LoadCrashDump(dumpfile)) {
 					if (target.PointerSize == 8) {
 						p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx64"]);
 						if (!File.Exists(p.StartInfo.FileName)) p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx64_deployment"]);
@@ -33,7 +40,7 @@ namespace SuperDumpSelector {
 						Console.WriteLine("target dump architecture is different than x64 or x86, this is not yet supported!");
 					}
 				}
-				p.StartInfo.Arguments = file;
+				p.StartInfo.Arguments = $"{dumpfile} {outputfile}";
 				p.StartInfo.UseShellExecute = false;
 				p.StartInfo.RedirectStandardOutput = true;
 				p.StartInfo.WorkingDirectory = Path.GetDirectoryName(p.StartInfo.FileName);
@@ -57,7 +64,7 @@ namespace SuperDumpSelector {
 					throw;
 				}
 			} else {
-				throw new FileNotFoundException($"Dump file was not found at {file}. Please try again");
+				throw new FileNotFoundException($"Dump file was not found at {dumpfile}. Please try again");
 			}
 		}
 

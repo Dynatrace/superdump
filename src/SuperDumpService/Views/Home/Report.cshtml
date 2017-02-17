@@ -1,6 +1,7 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
+@using SuperDumpService.ViewModels
 
 @{
 	ViewData["Title"] = "Report";
@@ -50,34 +51,22 @@
 
 		<dt>Files:</dt>
 		<dd>
-			<ul class="flat">
-				@foreach (SDFileInfo file in Model.Files.OrderBy(x => x.FileEntry.Type)) {
-					<li>
-						@if (file.Downloadable) {
-							<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@file.FileInfo.Name">
-								@if (file.FileEntry != null) {
-									if (file.FileEntry.Type == SDFileType.PrimaryDump) {
-										<img src="~/images/bomb.png" />
-									} else if (file.FileEntry.Type == SDFileType.WinDbg) {
-										<img src="~/images/windbg.png" />
-									}
-								}
-								@file.FileInfo.Name
-							</a> <span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
-						} else {
-							@if (file.FileEntry != null) {
-								if (file.FileEntry.Type == SDFileType.PrimaryDump) {
-									<img src="~/images/bomb.png" />
-								} else if (file.FileEntry.Type == SDFileType.WinDbg) {
-									<img src="~/images/windbg.png" />
-								}
+			<dl class="dl-horizontal">
+				@{ var sequence = new List<string> { "Primary Dump", "Other files", "Logs", "Results" }; }
+					@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
+						.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+					<dt class="filesize">@filetype.ToString()</dt>
+					<dd class="">
+						<ul class="flat">
+							@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+								<li>
+									@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+								</li>
 							}
-							@file.FileInfo.Name
-							<span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(file.SizeInBytes, 0))</span>
-						}
-					</li>
+						</ul>
+					</dd>
 				}
-			</ul>
+				</dl>
 		</dd>
 	</dl>
 
@@ -86,12 +75,18 @@
 			<h2>Analysis failed with errors, no report avaliable.</h2>
 			<pre>Error: @Model.AnalysisError</pre>
 		} else if (Model.Result == null) {
-			<h2>hang tight, still processing</h2>
-			<script>
-				setTimeout(function () {
-					window.location.reload(1);
-				}, 5000);
-			</script>
+			if (Model.CustomTextResult != null) {
+				<section>
+					<pre>@Model.CustomTextResult</pre>
+				</section>
+			} else {
+				<h2>hang tight, still processing</h2>
+				<script>
+					setTimeout(function () {
+						window.location.reload(1);
+					}, 5000);
+				</script>
+			}
 		} else {
 			<section>
 				@{Html.RenderPartial("_Summary");}
@@ -113,4 +108,4 @@
 			</section>
 					}
 	</div>
-					}
+}

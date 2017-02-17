@@ -76,7 +76,7 @@ namespace SuperDumpService.Controllers {
 			if (bundleRepo.ContainsBundle(bundleId)) {
 				return View(new BundleViewModel(bundleRepo.Get(bundleId), dumpRepo.Get(bundleId)));
 			}
-			throw new NotImplementedException("TODO better exception message");
+			throw new NotImplementedException($"bundleid '{bundleId}' does not exist in repository");
 		}
 
 		[HttpPost]
@@ -84,20 +84,13 @@ namespace SuperDumpService.Controllers {
 			if (ModelState.IsValid) {
 				pathHelper.PrepareDirectories();
 				if (file.Length > 0) {
-					int i = 0;
-					string filePath = Path.Combine(pathHelper.GetUploadsDir(), file.FileName);
-					while (System.IO.File.Exists(filePath)) {
-						filePath = Path.Combine(pathHelper.GetUploadsDir(),
-							Path.GetFileNameWithoutExtension(file.FileName)
-								+ "_" + i
-								+ Path.GetExtension(filePath));
-
-						i++;
-					}
-					using (var fileStream = new FileStream(filePath, FileMode.Create)) {
+					var tempDir = new DirectoryInfo(pathHelper.GetTempDir());
+					tempDir.Create();
+					var filePath = new FileInfo(Path.Combine(tempDir.FullName, file.FileName));
+					using (var fileStream = new FileStream(filePath.FullName, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpAnalysisInput { Url = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					var bundle = new DumpAnalysisInput { Url = filePath.FullName, JiraIssue = jiraIssue, FriendlyName = friendlyName };
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
@@ -132,7 +125,7 @@ namespace SuperDumpService.Controllers {
 
 			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
 
-			return View(new ReportViewModel(bundleId, dumpId) {
+			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
 				DumpFileName = dumpInfo.DumpFileName,
 				Result = res,
@@ -142,8 +135,17 @@ namespace SuperDumpService.Controllers {
 				Files = dumpRepo.GetFileNames(bundleId, dumpId),
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
-				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12)
+				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
+				CustomTextResult = ReadCustomTextResult(dumpInfo)
 			});
+		}
+
+		private string ReadCustomTextResult(DumpMetainfo dumpInfo) {
+			SDFileEntry customResultFile = dumpInfo.Files.SingleOrDefault(x => x.Type == SDFileType.CustomTextResult);
+			if (customResultFile == null) return null;
+			FileInfo file = dumpStorage.GetFile(dumpInfo.BundleId, dumpInfo.DumpId, customResultFile.FileName);
+			if (!file.Exists) return null;
+			return System.IO.File.ReadAllText(file.FullName);
 		}
 
 		public IActionResult UploadError() {

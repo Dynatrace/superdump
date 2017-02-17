@@ -28,44 +28,25 @@ namespace SuperDumpService.Services {
 
 			string analysisWorkingDir = pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
 			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
-			
+
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir));
+			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir)); // got a stackoverflow problem here.
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
-		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
-				string dumpselector = pathHelper.GetDumpSelectorExePath();
-				using (Process p = new Process()) {
-					p.StartInfo.FileName = dumpselector;
-					p.StartInfo.Arguments = dumpFilePath;
-					Console.WriteLine(p.StartInfo.Arguments);
-					p.StartInfo.RedirectStandardOutput = true;
-					p.StartInfo.RedirectStandardError = true;
-					p.StartInfo.UseShellExecute = false;
-					p.StartInfo.CreateNoWindow = true;
 
-					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
-
-					p.Start();
-					TrySetPriorityClass(p, ProcessPriorityClass.BelowNormal);
-					string stdout = p.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
-					string stderr = p.StandardError.ReadToEnd();
-					p.WaitForExit();
-					string selectorLog = $"SuperDumpSelector exited with error code {p.ExitCode}" +
-						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{stdout}" +
-						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}";
-					Console.WriteLine(selectorLog);
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
-					if (p.ExitCode != 0) {
-						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
-						throw new Exception(selectorLog);
-					}
+				if (dumpInfo.DumpType == DumpType.WindowsDump) {
+					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
+					await AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+				} else {
+					throw new Exception("unknown dumptype. here be dragons");
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
-			} catch (OperationCanceledException e) {
+			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
 			} finally {
@@ -75,11 +56,41 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private static void TrySetPriorityClass(Process process, ProcessPriorityClass priority) {
-			try {
-				process.PriorityClass = priority;
-			} catch (Exception) {
-				// this might be disallowed, e.g. in Azure WebApps
+		private async Task AnalyzeWindows(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			string dumpselector = pathHelper.GetDumpSelectorExePath();
+
+			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}");
+			using (var process = await ProcessRunner.Run(dumpselector, workingDir, dumpFilePath, pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId))) {
+				string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
+					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+				Console.WriteLine(selectorLog);
+				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
+				if (process.ExitCode != 0) {
+					dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
+					throw new Exception(selectorLog);
+				}
+			}
+		}
+
+		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			string command = settings.Value.LinuxCommandTemplate;
+
+			if (string.IsNullOrEmpty(command)) {
+				throw new ArgumentNullException("'LinuxCommandTemplate' setting is not configured.");
+			}
+
+			command = command.Replace("{coredump}", dumpFilePath);
+			command = command.Replace("{outputjson}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
+
+			var parts = command.Split(' ');
+			string executable = parts.First();
+			string arguments = string.Join(" ", parts.Skip(1).ToArray());
+
+			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
+			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
+				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
+				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
 			}
 		}
 	}

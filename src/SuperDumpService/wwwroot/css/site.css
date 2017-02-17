@@ -430,7 +430,7 @@ a.copyButtonForJira:hover {
 .dl-horizontal {
 	font-family: Courier New, Courier, monospace;
 	font-size: 12px;
-	padding-top: 6px;
+	padding-top: 16px;
 	padding-bottom: 6px;
 	margin: 0px;
 }
@@ -442,10 +442,10 @@ a.copyButtonForJira:hover {
 }
 
 .smaller dt {
-	width: 70px;
+	width: 100px;
 }
 .smaller dd {
-	margin-left: 80px;
+	margin-left: 110px;
 }
 
 /* make open/close threads faster*/

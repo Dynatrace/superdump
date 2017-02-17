@@ -70,7 +70,7 @@ namespace SuperDumpService.Services {
 
 		public void WipeAllExceptDump(string bundleId, string dumpId) {
 			var dumpdir = pathHelper.GetDumpDirectory(bundleId, dumpId);
-			var dumpfile = pathHelper.GetDumpfilePath(bundleId, dumpId);
+			var dumpfile = dumpRepo.GetDumpFilePath(bundleId, dumpId);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
 				if (file != dumpfile && file != pathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
 					File.Delete(file);
@@ -97,50 +97,48 @@ namespace SuperDumpService.Services {
 		/// <param name="file"></param>
 		/// <returns></returns>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
-			var extension = file.Extension.ToLower();
-			switch (extension) {
-				case ".dmp":
-					await ProcessDump(bundleId, file);
-					break;
-				case ".zip":
-					await ProcessZip(bundleId, file);
-					break;
-				case ".pdb":
-					ProcessSymbol(file);
-					break;
-				default:
-					throw new InvalidDataException($"filetype '{extension}' not supported");
-			}
+			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
+			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
+			// ignore the file. it might still get picked up, if IncludeOtherFilesInReport is set.
 		}
 
 		private void ProcessSymbol(FileInfo file) {
 			symStoreService.AddSymbols(file);
 		}
 
-		private async Task ProcessDir(string bundleId, DirectoryInfo dir) {
-			foreach (FileInfo file in dir.EnumerateFiles()) {
+		private async Task ProcessDirRecursive(string bundleId, DirectoryInfo dir) {
+			var files = dir.GetFiles("*", SearchOption.AllDirectories); // don't use EnumerateFiles, because due to unzipping, files might be added
+			foreach (FileInfo file in files) {
 				await ProcessFile(bundleId, file);
-			}
-			foreach (DirectoryInfo subdir in dir.EnumerateDirectories()) {
-				await ProcessDir(bundleId, subdir);
 			}
 		}
 
 		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
-			using (TempDirectoryHandle dir = unpackService.UnZip(zipfile, filename => {
-				var ext = Path.GetExtension(filename).ToLower();
-				return ext == ".dmp" || ext == ".zip" || ext == ".pdb";
-			})) {
-				await ProcessDir(bundleId, dir.Dir);
-			}
+			DirectoryInfo dir = unpackService.UnZip(zipfile);
+			await ProcessDirRecursive(bundleId, dir);
 		}
 
 		private async Task ProcessDump(string bundleId, FileInfo file) {
 			// add dump
-			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
+			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
+	
+			// add other files within the same directory
+			await IncludeOtherFiles(bundleId, file, dumpInfo);
 
 			// schedule analysis
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
+		}
+
+		private async Task IncludeOtherFiles(string bundleId, FileInfo file, DumpMetainfo dumpInfo) {
+			if (settings.Value.IncludeOtherFilesInReport) {
+				var dir = file.Directory;
+				foreach (var siblingFile in dir.EnumerateFiles()) {
+					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
+					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
+				}
+			}
 		}
 
 		private void ScheduleDownload(string bundleId, string url, string filename) {
@@ -151,11 +149,11 @@ namespace SuperDumpService.Services {
 		public async Task DownloadAndScheduleProcessFile(string bundleId, string url, string filename) {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
 			try {
-				using (var tempFile = await downloadService.Download(bundleId, url, filename)) {
+				using (TempDirectoryHandle tempDir = await downloadService.Download(bundleId, url, filename)) {
 					// this class should only do downloading. 
 					// unf. i could not find a good way to *not* make this call from with DownloadService
 					// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
-					await ProcessFile(bundleId, tempFile.File);
+					await ProcessDirRecursive(bundleId, tempDir.Dir);
 				}
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 			} catch (Exception e) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ namespace SuperDumpService.Models {
 		public string BundleId { get; set; }
 		public string DumpId { get; set; }
 		public string DumpFileName { get; set; } // original filename. just informational.
+		public DumpType DumpType { get; set; } = DumpType.WindowsDump; // default to windows, for compatibility to existing repos (which will only contain windows dumps)
 		public DateTime Created { get; set; }
 		public DateTime Finished { get; set; }
 		public DumpStatus Status { get; set; }
@@ -25,11 +27,33 @@ namespace SuperDumpService.Models {
 		public DateTime ExpirationDate { get; set; }
 	}
 
+	public enum DumpType {
+		// *.dmp        -> windows user-space minidump or user-space fulldump
+		WindowsDump,
+		
+		// *.core.gz    -> linux coredump file
+		LinuxCoreDump
+	}
+
 	public enum SDFileType {
+		[Description("Primary Dump")]
 		PrimaryDump,
+
+		[Description("Results")]
 		WinDbg,
+		[Description("Results")]
 		SuperDumpData,
+		[Description("Results")]
+		CustomTextResult,
+
+		[Description("Logs")]
 		SuperDumpLogfile,
-		Other
+
+		[Description("Other files")]
+		LinuxLibraries,
+		[Description("Other files")]
+		SiblingFile,
+		[Description("Other files")]
+		Other,
 	}
 }
