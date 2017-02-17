@@ -16,7 +16,7 @@ namespace SuperDumpService.Helpers {
 		public ProcessRunner(string executable, DirectoryInfo workingDir, params string[] arguments) {
 			this.process = new Process();
 			this.process.StartInfo.FileName = executable;
-			this.process.StartInfo.WorkingDirectory = executable;
+			this.process.StartInfo.WorkingDirectory = workingDir.FullName;
 			this.process.StartInfo.Arguments = string.Join(" ", arguments);
 			this.process.StartInfo.RedirectStandardOutput = true;
 			this.process.StartInfo.RedirectStandardError = true;
