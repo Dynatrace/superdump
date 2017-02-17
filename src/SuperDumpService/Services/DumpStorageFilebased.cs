@@ -85,13 +85,7 @@ namespace SuperDumpService.Services {
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
 		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo sourcePath) {
-			var destFile = new FileInfo(Path.Combine(pathHelper.GetDumpDirectory(bundleId, dumpId), sourcePath.Name));
-			using (Stream source = sourcePath.OpenRead()) {
-				using (Stream destination = destFile.Create()) {
-					await source.CopyToAsync(destination);
-				}
-			}
-			return destFile;
+			return await Utility.CopyFile(sourcePath, new FileInfo(Path.Combine(pathHelper.GetDumpDirectory(bundleId, dumpId), sourcePath.Name)));
 		}
 
 		internal void DeleteDumpFile(string bundleId, string dumpId) {

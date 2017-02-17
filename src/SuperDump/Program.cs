@@ -39,9 +39,10 @@ namespace SuperDump {
 				}
 
 				string absoluteDumpFile = Path.GetFullPath(DUMP_LOC);
-
 				Console.WriteLine(absoluteDumpFile);
-				context.Printer = new FilePrinter("superdump.log");
+
+				var logfile = new FileInfo(Path.Combine(Path.GetDirectoryName(OUTPUT_LOC), "superdump.log"));
+				context.Printer = new FilePrinter(logfile.FullName);
 
 				try {
 					if (File.Exists(absoluteDumpFile)) {

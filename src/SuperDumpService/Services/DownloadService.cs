@@ -13,26 +13,26 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper;
 		}
 
-		public async Task<TempFileHandle> Download(string bundleId, string url, string filename) {
-			var uri = new Uri(url);
-			
-			//check if local or not
-			if (!Utility.IsLocalFile(url)) {
+		public async Task<TempDirectoryHandle> Download(string bundleId, string url, string filename) {
+			var tempDir = new TempDirectoryHandle(FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir())));
+			tempDir.Dir.Create();
+			var tempPath = new FileInfo(Path.Combine(tempDir.Dir.FullName, Path.GetFileName(filename)));
+
+			if (Utility.IsLocalFile(url)) {
+				await Utility.CopyFile(new FileInfo(url), tempPath);
+			} else {
 				// download
-				string tempPath = Path.Combine(FindUniqueFilename(pathHelper.GetBundleDownloadPath(filename)));
 				using (var client = new HttpClient()) {
-					using (var download = await client.GetAsync(uri)) {
+					using (var download = await client.GetAsync(url)) {
 						using (var stream = await download.Content.ReadAsStreamAsync()) {
-							using (var outfile = File.OpenWrite(tempPath)) {
+							using (var outfile = File.OpenWrite(tempPath.FullName)) {
 								await stream.CopyToAsync(outfile);
 							}
 						}
 					}
 				}
-				return new TempFileHandle(new FileInfo(tempPath));
-			} else {
-				return new TempFileHandle(new FileInfo(url), false); // in case it's a local file, don't delete it!
 			}
+			return tempDir;
 		}
 
 		private static string FindUniqueFilename(string fullpath) {
@@ -47,6 +47,15 @@ namespace SuperDumpService.Services {
 				i++;
 			}
 			return fullpath;
+		}
+
+		private static DirectoryInfo FindUniqueSubDirectoryName(DirectoryInfo dir) {
+			DirectoryInfo subdir;
+			do {
+				string rand = RandomIdGenerator.GetRandomId(1, 10);
+				subdir = new DirectoryInfo(Path.Combine(dir.FullName, rand));
+			} while (subdir.Exists);
+			return subdir;
 		}
 	}
 }

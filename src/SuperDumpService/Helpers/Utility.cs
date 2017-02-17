@@ -8,6 +8,8 @@ using SuperDumpService.Models;
 using Hangfire;
 using System.IO.Compression;
 using SuperDumpService.Services;
+using System.Reflection;
+using System.ComponentModel;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -83,7 +85,7 @@ namespace SuperDumpService.Helpers {
 		/// </summary>
 		internal static IDictionary<string, string> Sanitize(Dictionary<string, string> sourceDict) {
 			var dict = new Dictionary<string, string>();
-			foreach(var entry in sourceDict) {
+			foreach (var entry in sourceDict) {
 				dict[Sanitize(entry.Key)] = Sanitize(entry.Value);
 			}
 			return dict;
@@ -116,6 +118,31 @@ namespace SuperDumpService.Helpers {
 			return string.Format("{0:n" + decimalPlaces + "}{1}",
 				adjustedSize,
 				SizeSuffixes[mag]);
+		}
+
+		public static string GetEnumDescription(Enum value) {
+			FieldInfo fi = value.GetType().GetField(value.ToString());
+
+			DescriptionAttribute[] attributes =
+				(DescriptionAttribute[])fi.GetCustomAttributes(
+				typeof(DescriptionAttribute),
+				false);
+
+			if (attributes != null &&
+				attributes.Length > 0) {
+				return attributes[0].Description;
+			} else {
+				return value.ToString();
+			}
+		}
+
+		public static async Task<FileInfo> CopyFile(FileInfo sourceFile, FileInfo destFile) {
+			using (Stream source = sourceFile.OpenRead()) {
+				using (Stream destination = destFile.Create()) {
+					await source.CopyToAsync(destination);
+				}
+			}
+			return destFile;
 		}
 	}
 }

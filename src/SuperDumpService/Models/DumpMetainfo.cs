@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -35,12 +36,22 @@ namespace SuperDumpService.Models {
 	}
 
 	public enum SDFileType {
+		[Description("Primary Dump")]
 		PrimaryDump,
+
+		[Description("Results")]
 		WinDbg,
+		[Description("Results")]
 		SuperDumpData,
+
+		[Description("Logs")]
 		SuperDumpLogfile,
+
+		[Description("Other files")]
 		LinuxLibraries,
+		[Description("Other files")]
+		SiblingFile,
+		[Description("Other files")]
 		Other,
-		SiblingFile
 	}
 }
