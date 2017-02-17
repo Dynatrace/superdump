@@ -125,7 +125,7 @@ namespace SuperDumpService.Controllers {
 
 			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
 
-			return View(new ReportViewModel(bundleId, dumpId) {
+			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
 				DumpFileName = dumpInfo.DumpFileName,
 				Result = res,
@@ -135,8 +135,17 @@ namespace SuperDumpService.Controllers {
 				Files = dumpRepo.GetFileNames(bundleId, dumpId),
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
-				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12)
+				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
+				CustomTextResult = ReadCustomTextResult(dumpInfo)
 			});
+		}
+
+		private string ReadCustomTextResult(DumpMetainfo dumpInfo) {
+			SDFileEntry customResultFile = dumpInfo.Files.SingleOrDefault(x => x.Type == SDFileType.CustomTextResult);
+			if (customResultFile == null) return null;
+			FileInfo file = dumpStorage.GetFile(dumpInfo.BundleId, dumpInfo.DumpId, customResultFile.FileName);
+			if (!file.Exists) return null;
+			return System.IO.File.ReadAllText(file.FullName);
 		}
 
 		public IActionResult UploadError() {

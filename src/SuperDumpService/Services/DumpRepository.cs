@@ -128,9 +128,13 @@ namespace SuperDumpService.Services {
 			storage.Store(dumpInfo);
 		}
 
-		internal async Task AddSiblingFile(string bundleId, string dumpId, FileInfo siblingFile) {
-			await storage.AddFileCopy(bundleId, dumpId, siblingFile);
-			AddSDFile(bundleId, dumpId, siblingFile.Name, SDFileType.SiblingFile);
+		internal async Task AddFileCopy(string bundleId, string dumpId, FileInfo file, SDFileType type) {
+			await storage.AddFileCopy(bundleId, dumpId, file);
+			AddSDFile(bundleId, dumpId, file.Name, type);
+		}
+
+		internal void AddFile(string bundleId, string dumpId, string filename, SDFileType type) {
+			AddSDFile(bundleId, dumpId, filename, type);
 		}
 	}
 }

@@ -46,7 +46,7 @@ namespace SuperDumpService.Services {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
-			} catch (OperationCanceledException e) {
+			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
 			} finally {
@@ -75,7 +75,8 @@ namespace SuperDumpService.Services {
 
 		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			using (var process = await ProcessRunner.Run("ipconfig", workingDir, "")) {
-				Console.WriteLine(process.StdOut);
+				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
+				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
 			}
 		}
 	}

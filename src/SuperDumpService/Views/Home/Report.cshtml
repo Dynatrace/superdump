@@ -75,12 +75,18 @@
 			<h2>Analysis failed with errors, no report avaliable.</h2>
 			<pre>Error: @Model.AnalysisError</pre>
 		} else if (Model.Result == null) {
-			<h2>hang tight, still processing</h2>
-			<script>
-				setTimeout(function () {
-					window.location.reload(1);
-				}, 5000);
-			</script>
+			if (Model.CustomTextResult != null) {
+				<section>
+					<pre>@Model.CustomTextResult</pre>
+				</section>
+			} else {
+				<h2>hang tight, still processing</h2>
+				<script>
+					setTimeout(function () {
+						window.location.reload(1);
+					}, 5000);
+				</script>
+			}
 		} else {
 			<section>
 				@{Html.RenderPartial("_Summary");}
@@ -102,4 +108,4 @@
 			</section>
 					}
 	</div>
-					}
+}

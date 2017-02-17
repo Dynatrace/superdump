@@ -133,7 +133,7 @@ namespace SuperDumpService.Services {
 				var dir = file.Directory;
 				foreach(var siblingFile in dir.EnumerateFiles()) {
 					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
-					await dumpRepo.AddSiblingFile(bundleId, dumpInfo.DumpId, siblingFile);
+					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
 				}
 			}
 

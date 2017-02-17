@@ -43,6 +43,8 @@ namespace SuperDumpService.Models {
 		WinDbg,
 		[Description("Results")]
 		SuperDumpData,
+		[Description("Results")]
+		CustomTextResult,
 
 		[Description("Logs")]
 		SuperDumpLogfile,
