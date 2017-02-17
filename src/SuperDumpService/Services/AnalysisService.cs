@@ -28,28 +28,22 @@ namespace SuperDumpService.Services {
 
 			string analysisWorkingDir = pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
 			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
-			
+
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir));
+			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir)); // got a stackoverflow problem here.
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
 		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
-				string dumpselector = pathHelper.GetDumpSelectorExePath();
 
-				Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}");
-				using (var process = await ProcessRunner.Run(dumpselector, dumpFilePath)) {
-					string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
-						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
-						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
-					Console.WriteLine(selectorLog);
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
-					if (process.ExitCode != 0) {
-						dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
-						throw new Exception(selectorLog);
-					}
+				if (dumpInfo.DumpType == DumpType.WindowsDump) {
+					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
+					await AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+				} else {
+					throw new Exception("unknown dumptype. here be dragons");
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
 			} catch (OperationCanceledException e) {
@@ -59,6 +53,29 @@ namespace SuperDumpService.Services {
 				if (settings.Value.DeleteDumpAfterAnalysis) {
 					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
 				}
+			}
+		}
+
+		private async Task AnalyzeWindows(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			string dumpselector = pathHelper.GetDumpSelectorExePath();
+
+			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}");
+			using (var process = await ProcessRunner.Run(dumpselector, workingDir, dumpFilePath, pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId))) {
+				string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
+					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+				Console.WriteLine(selectorLog);
+				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
+				if (process.ExitCode != 0) {
+					dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
+					throw new Exception(selectorLog);
+				}
+			}
+		}
+
+		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			using (var process = await ProcessRunner.Run("ipconfig", workingDir, "")) {
+				Console.WriteLine(process.StdOut);
 			}
 		}
 	}

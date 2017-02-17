@@ -61,17 +61,14 @@ namespace SuperDumpService.Helpers {
 			Directory.CreateDirectory(GetHangfireDBDir());
 		}
 
-		public string GetDumpfilePath(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".dmp");
-		}
-
 		public string GetJsonPath(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".json");
+			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "superdump-result.json");
 		}
 
 		public string GetDumpSelectorExePath() {
 			return superDumpSelectorExePath;
 		}
+
 		private string GetDumpSelectorExePathFallback() {
 			string dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\bin\SuperDumpSelector.exe"));
 			if (!File.Exists(dumpselector)) {

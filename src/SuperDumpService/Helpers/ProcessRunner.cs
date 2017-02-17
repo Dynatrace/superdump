@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace SuperDumpService.Helpers {
@@ -12,10 +13,11 @@ namespace SuperDumpService.Helpers {
 		public string StdErr { get; private set; }
 		public int ExitCode { get; private set; }
 
-		public ProcessRunner(string executable, string arguments) {
+		public ProcessRunner(string executable, DirectoryInfo workingDir, params string[] arguments) {
 			this.process = new Process();
 			this.process.StartInfo.FileName = executable;
-			this.process.StartInfo.Arguments = arguments;
+			this.process.StartInfo.WorkingDirectory = executable;
+			this.process.StartInfo.Arguments = string.Join(" ", arguments);
 			this.process.StartInfo.RedirectStandardOutput = true;
 			this.process.StartInfo.RedirectStandardError = true;
 			this.process.StartInfo.UseShellExecute = false;
@@ -42,8 +44,8 @@ namespace SuperDumpService.Helpers {
 			}
 		}
 
-		public async static Task<ProcessRunner> Run(string executable, string arguments) {
-			return await new ProcessRunner(executable, arguments).Start();
+		public async static Task<ProcessRunner> Run(string executable, DirectoryInfo workingDir, params string[] arguments) {
+			return await new ProcessRunner(executable, workingDir, arguments).Start();
 		}
 
 		public void Dispose() {

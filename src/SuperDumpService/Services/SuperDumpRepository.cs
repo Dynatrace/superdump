@@ -70,7 +70,7 @@ namespace SuperDumpService.Services {
 
 		public void WipeAllExceptDump(string bundleId, string dumpId) {
 			var dumpdir = pathHelper.GetDumpDirectory(bundleId, dumpId);
-			var dumpfile = pathHelper.GetDumpfilePath(bundleId, dumpId);
+			var dumpfile = dumpRepo.GetDumpFilePath(bundleId, dumpId);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
 				if (file != dumpfile && file != pathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
 					File.Delete(file);
@@ -97,20 +97,11 @@ namespace SuperDumpService.Services {
 		/// <param name="file"></param>
 		/// <returns></returns>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
-			var extension = file.Extension.ToLower();
-			switch (extension) {
-				case ".dmp":
-					await ProcessDump(bundleId, file);
-					break;
-				case ".zip":
-					await ProcessZip(bundleId, file);
-					break;
-				case ".pdb":
-					ProcessSymbol(file);
-					break;
-				default:
-					throw new InvalidDataException($"filetype '{extension}' not supported");
-			}
+			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessWindowsDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessLinuxDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
+			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
+			throw new InvalidDataException($"filetype of '{file.Name}' not supported");
 		}
 
 		private void ProcessSymbol(FileInfo file) {
@@ -129,13 +120,21 @@ namespace SuperDumpService.Services {
 		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
 			using (TempDirectoryHandle dir = unpackService.UnZip(zipfile, filename => {
 				var ext = Path.GetExtension(filename).ToLower();
-				return ext == ".dmp" || ext == ".zip" || ext == ".pdb";
+				return ext == ".dmp" || ext == ".zip" || ext == ".pdb" || filename.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase);
 			})) {
 				await ProcessDir(bundleId, dir.Dir);
 			}
 		}
 
-		private async Task ProcessDump(string bundleId, FileInfo file) {
+		private async Task ProcessWindowsDump(string bundleId, FileInfo file) {
+			// add dump
+			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
+
+			// schedule analysis
+			analysisService.ScheduleDumpAnalysis(dumpInfo);
+		}
+
+		private async Task ProcessLinuxDump(string bundleId, FileInfo file) {
 			// add dump
 			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
 

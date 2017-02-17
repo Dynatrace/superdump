@@ -76,7 +76,7 @@ namespace SuperDumpService.Controllers {
 			if (bundleRepo.ContainsBundle(bundleId)) {
 				return View(new BundleViewModel(bundleRepo.Get(bundleId), dumpRepo.Get(bundleId)));
 			}
-			throw new NotImplementedException("TODO better exception message");
+			throw new NotImplementedException($"bundleid '{bundleId}' does not exist in repository");
 		}
 
 		[HttpPost]

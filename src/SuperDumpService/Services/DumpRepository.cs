@@ -65,6 +65,7 @@ namespace SuperDumpService.Services {
 					BundleId = bundleId,
 					DumpId = dumpId,
 					DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
+					DumpType = DetermineDumpType(sourcePath),
 					Created = DateTime.Now,
 					Status = DumpStatus.Created
 				};
@@ -75,6 +76,16 @@ namespace SuperDumpService.Services {
 			FileInfo destFile = await storage.AddDumpFile(bundleId, dumpId, sourcePath);
 			AddSDFile(bundleId, dumpId, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
+		}
+
+		internal string GetDumpFilePath(string bundleId, string dumpId) {
+			return storage.GetDumpFilePath(bundleId, dumpId);
+		}
+
+		private DumpType DetermineDumpType(FileInfo sourcePath) {
+			if (sourcePath.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) return DumpType.WindowsDump;
+			if (sourcePath.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) return DumpType.LinuxCoreDump;
+			throw new InvalidDataException($"cannot determine dumptype of {sourcePath.FullName}");
 		}
 
 		private void AddSDFile(string bundleId, string dumpId, string filename, SDFileType type) {
