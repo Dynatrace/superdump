@@ -85,7 +85,6 @@ namespace SuperDumpService.Services {
 		/// <param name="input"></param>
 		/// <returns>bundleId</returns>
 		public string ProcessInputfile(string filename, DumpAnalysisInput input) {
-			Console.WriteLine($"ProcessInputfile: {filename}");
 			var bundleInfo = bundleRepo.Create(filename, input);
 			ScheduleDownload(bundleInfo.BundleId, input.Url, filename); // indirectly calls ProcessFile()
 			return bundleInfo.BundleId;
@@ -98,9 +97,8 @@ namespace SuperDumpService.Services {
 		/// <param name="file"></param>
 		/// <returns></returns>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
-			Console.WriteLine($"ProcessFile: {file.FullName}");
-			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessWindowsDump(bundleId, file); return; }
-			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessLinuxDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
+			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
 			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
 			// ignore the file. it might still get picked up, if IncludeOtherFilesInReport is set.
@@ -111,7 +109,6 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task ProcessDirRecursive(string bundleId, DirectoryInfo dir) {
-			Console.WriteLine($"ProcessDir: {dir.FullName}");
 			var files = dir.GetFiles("*", SearchOption.AllDirectories); // don't use EnumerateFiles, because due to unzipping, files might be added
 			foreach (FileInfo file in files) {
 				await ProcessFile(bundleId, file);
@@ -119,35 +116,29 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
-			Console.WriteLine($"ProcessZip: {zipfile.FullName}");
 			DirectoryInfo dir = unpackService.UnZip(zipfile);
 			await ProcessDirRecursive(bundleId, dir);
 		}
 
-		private async Task ProcessWindowsDump(string bundleId, FileInfo file) {
-			Console.WriteLine($"ProcessWindowsDump: {file.FullName}");
+		private async Task ProcessDump(string bundleId, FileInfo file) {
 			// add dump
 			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
-
-			if (settings.Value.IncludeOtherFilesInReport) {
-				var dir = file.Directory;
-				foreach(var siblingFile in dir.EnumerateFiles()) {
-					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
-					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
-				}
-			}
+	
+			// add other files within the same directory
+			await IncludeOtherFiles(bundleId, file, dumpInfo);
 
 			// schedule analysis
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
 		}
 
-		private async Task ProcessLinuxDump(string bundleId, FileInfo file) {
-			Console.WriteLine($"ProcessLinuxDump: {file.FullName}");
-			// add dump
-			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
-
-			// schedule analysis
-			analysisService.ScheduleDumpAnalysis(dumpInfo);
+		private async Task IncludeOtherFiles(string bundleId, FileInfo file, DumpMetainfo dumpInfo) {
+			if (settings.Value.IncludeOtherFilesInReport) {
+				var dir = file.Directory;
+				foreach (var siblingFile in dir.EnumerateFiles()) {
+					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
+					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
+				}
+			}
 		}
 
 		private void ScheduleDownload(string bundleId, string url, string filename) {
