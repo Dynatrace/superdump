@@ -13,5 +13,6 @@
 		public bool DumpDownloadable { get; set; } = true;
 		public int MaxUploadSizeMB { get; set; } = 16000;
 		public bool IncludeOtherFilesInReport { get; set; }
+		public string LinuxCommandTemplate { get; set; }
 	}
 }

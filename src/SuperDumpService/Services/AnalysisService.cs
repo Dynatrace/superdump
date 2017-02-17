@@ -74,7 +74,21 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
-			using (var process = await ProcessRunner.Run("ipconfig", workingDir, "")) {
+			string command = settings.Value.LinuxCommandTemplate;
+
+			if (string.IsNullOrEmpty(command)) {
+				throw new ArgumentNullException("'LinuxCommandTemplate' setting is not configured.");
+			}
+
+			command = command.Replace("{coredump}", dumpFilePath);
+			command = command.Replace("{outputjson}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
+
+			var parts = command.Split(' ');
+			string executable = parts.First();
+			string arguments = string.Join(" ", parts.Skip(1).ToArray());
+
+			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
+			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
 				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
 				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
 			}
