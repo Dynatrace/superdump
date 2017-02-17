@@ -101,7 +101,7 @@ namespace SuperDumpService.Services {
 			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessLinuxDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
 			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
-			throw new InvalidDataException($"filetype of '{file.Name}' not supported");
+			// ignore the file. it might still get picked up, if IncludeOtherFilesInReport is set.
 		}
 
 		private void ProcessSymbol(FileInfo file) {
@@ -120,7 +120,13 @@ namespace SuperDumpService.Services {
 		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
 			using (TempDirectoryHandle dir = unpackService.UnZip(zipfile, filename => {
 				var ext = Path.GetExtension(filename).ToLower();
-				return ext == ".dmp" || ext == ".zip" || ext == ".pdb" || filename.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase);
+				return 
+					settings.Value.IncludeOtherFilesInReport // in this case, extract all files, otherwise extract only files that are needed
+					|| ext == ".dmp"
+					|| ext == ".zip"
+					|| ext == ".pdb"
+					|| filename.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase) // linux coredump
+					|| filename.EndsWith("libs.tar.gz", StringComparison.OrdinalIgnoreCase); // linux libs
 			})) {
 				await ProcessDir(bundleId, dir.Dir);
 			}
@@ -128,7 +134,15 @@ namespace SuperDumpService.Services {
 
 		private async Task ProcessWindowsDump(string bundleId, FileInfo file) {
 			// add dump
-			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
+			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
+
+			if (settings.Value.IncludeOtherFilesInReport) {
+				var dir = file.Directory;
+				foreach(var siblingFile in dir.EnumerateFiles()) {
+					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
+					await dumpRepo.AddSiblingFile(bundleId, dumpInfo.DumpId, siblingFile);
+				}
+			}
 
 			// schedule analysis
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
@@ -136,7 +150,7 @@ namespace SuperDumpService.Services {
 
 		private async Task ProcessLinuxDump(string bundleId, FileInfo file) {
 			// add dump
-			var dumpInfo = await dumpRepo.AddDump(bundleId, file);
+			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
 
 			// schedule analysis
 			analysisService.ScheduleDumpAnalysis(dumpInfo);

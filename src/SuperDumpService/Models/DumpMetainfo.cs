@@ -40,6 +40,7 @@ namespace SuperDumpService.Models {
 		SuperDumpData,
 		SuperDumpLogfile,
 		LinuxLibraries,
-		Other
+		Other,
+		SiblingFile
 	}
 }

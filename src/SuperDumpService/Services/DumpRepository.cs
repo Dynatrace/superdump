@@ -55,7 +55,7 @@ namespace SuperDumpService.Services {
 		/// Does NOT start analysis
 		/// </summary>
 		/// <returns></returns>
-		public async Task<DumpMetainfo> AddDump(string bundleId, FileInfo sourcePath) {
+		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
 			lock (sync) {
@@ -73,7 +73,7 @@ namespace SuperDumpService.Services {
 			}
 			storage.Create(bundleId, dumpId);
 			
-			FileInfo destFile = await storage.AddDumpFile(bundleId, dumpId, sourcePath);
+			FileInfo destFile = await storage.AddFileCopy(bundleId, dumpId, sourcePath);
 			AddSDFile(bundleId, dumpId, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
 		}
@@ -126,6 +126,11 @@ namespace SuperDumpService.Services {
 				dumpInfo.Finished = DateTime.Now;
 			}
 			storage.Store(dumpInfo);
+		}
+
+		internal async Task AddSiblingFile(string bundleId, string dumpId, FileInfo siblingFile) {
+			await storage.AddFileCopy(bundleId, dumpId, siblingFile);
+			AddSDFile(bundleId, dumpId, siblingFile.Name, SDFileType.SiblingFile);
 		}
 	}
 }

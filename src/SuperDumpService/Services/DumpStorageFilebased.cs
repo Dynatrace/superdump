@@ -84,7 +84,7 @@ namespace SuperDumpService.Services {
 		/// <summary>
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
-		internal async Task<FileInfo> AddDumpFile(string bundleId, string dumpId, FileInfo sourcePath) {
+		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo sourcePath) {
 			var destFile = new FileInfo(Path.Combine(pathHelper.GetDumpDirectory(bundleId, dumpId), sourcePath.Name));
 			using (Stream source = sourcePath.OpenRead()) {
 				using (Stream destination = destFile.Create()) {
@@ -125,7 +125,7 @@ namespace SuperDumpService.Services {
 				};
 			}
 		}
-
+		
 		private SDFileEntry GetSDFileEntry(DumpMetainfo dumpInfo, FileInfo fileInfo) {
 			// the file should be registered in dumpInfo
 			SDFileEntry fileEntry = dumpInfo.Files.Where(x => x.FileName == fileInfo.Name).SingleOrDefault();
