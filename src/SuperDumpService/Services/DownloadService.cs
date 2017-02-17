@@ -14,25 +14,33 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<TempDirectoryHandle> Download(string bundleId, string url, string filename) {
-			var tempDir = new TempDirectoryHandle(FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir())));
-			tempDir.Dir.Create();
-			var tempPath = new FileInfo(Path.Combine(tempDir.Dir.FullName, Path.GetFileName(filename)));
-
-			if (Utility.IsLocalFile(url)) {
-				await Utility.CopyFile(new FileInfo(url), tempPath);
+			if (Utility.IsLocalFile(url) && IsAlreadyInUploadsDir(url)) {
+				return new TempDirectoryHandle(new DirectoryInfo(Path.GetDirectoryName(url)));
 			} else {
-				// download
-				using (var client = new HttpClient()) {
-					using (var download = await client.GetAsync(url)) {
-						using (var stream = await download.Content.ReadAsStreamAsync()) {
-							using (var outfile = File.OpenWrite(tempPath.FullName)) {
-								await stream.CopyToAsync(outfile);
+				var tempDir = new TempDirectoryHandle(FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir())));
+				tempDir.Dir.Create();
+				var tempPath = new FileInfo(Path.Combine(tempDir.Dir.FullName, Path.GetFileName(filename)));
+
+				if (Utility.IsLocalFile(url)) {
+					await Utility.CopyFile(new FileInfo(url), tempPath);
+				} else {
+					// download
+					using (var client = new HttpClient()) {
+						using (var download = await client.GetAsync(url)) {
+							using (var stream = await download.Content.ReadAsStreamAsync()) {
+								using (var outfile = File.OpenWrite(tempPath.FullName)) {
+									await stream.CopyToAsync(outfile);
+								}
 							}
 						}
 					}
 				}
+				return tempDir;
 			}
-			return tempDir;
+		}
+
+		private bool IsAlreadyInUploadsDir(string url) {
+			return Utility.IsSubdirectoryOf(new DirectoryInfo(pathHelper.GetUploadsDir()), new DirectoryInfo(Path.GetDirectoryName(url)));
 		}
 
 		private static string FindUniqueFilename(string fullpath) {

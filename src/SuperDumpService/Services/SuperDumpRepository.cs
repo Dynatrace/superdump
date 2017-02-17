@@ -85,6 +85,7 @@ namespace SuperDumpService.Services {
 		/// <param name="input"></param>
 		/// <returns>bundleId</returns>
 		public string ProcessInputfile(string filename, DumpAnalysisInput input) {
+			Console.WriteLine($"ProcessInputfile: {filename}");
 			var bundleInfo = bundleRepo.Create(filename, input);
 			ScheduleDownload(bundleInfo.BundleId, input.Url, filename); // indirectly calls ProcessFile()
 			return bundleInfo.BundleId;
@@ -97,6 +98,7 @@ namespace SuperDumpService.Services {
 		/// <param name="file"></param>
 		/// <returns></returns>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
+			Console.WriteLine($"ProcessFile: {file.FullName}");
 			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessWindowsDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessLinuxDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
@@ -108,31 +110,22 @@ namespace SuperDumpService.Services {
 			symStoreService.AddSymbols(file);
 		}
 
-		private async Task ProcessDir(string bundleId, DirectoryInfo dir) {
-			foreach (FileInfo file in dir.EnumerateFiles()) {
+		private async Task ProcessDirRecursive(string bundleId, DirectoryInfo dir) {
+			Console.WriteLine($"ProcessDir: {dir.FullName}");
+			var files = dir.GetFiles("*", SearchOption.AllDirectories); // don't use EnumerateFiles, because due to unzipping, files might be added
+			foreach (FileInfo file in files) {
 				await ProcessFile(bundleId, file);
-			}
-			foreach (DirectoryInfo subdir in dir.EnumerateDirectories()) {
-				await ProcessDir(bundleId, subdir);
 			}
 		}
 
 		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
-			using (TempDirectoryHandle dir = unpackService.UnZip(zipfile, filename => {
-				var ext = Path.GetExtension(filename).ToLower();
-				return 
-					settings.Value.IncludeOtherFilesInReport // in this case, extract all files, otherwise extract only files that are needed
-					|| ext == ".dmp"
-					|| ext == ".zip"
-					|| ext == ".pdb"
-					|| filename.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase) // linux coredump
-					|| filename.EndsWith("libs.tar.gz", StringComparison.OrdinalIgnoreCase); // linux libs
-			})) {
-				await ProcessDir(bundleId, dir.Dir);
-			}
+			Console.WriteLine($"ProcessZip: {zipfile.FullName}");
+			DirectoryInfo dir = unpackService.UnZip(zipfile);
+			await ProcessDirRecursive(bundleId, dir);
 		}
 
 		private async Task ProcessWindowsDump(string bundleId, FileInfo file) {
+			Console.WriteLine($"ProcessWindowsDump: {file.FullName}");
 			// add dump
 			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
 
@@ -149,6 +142,7 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task ProcessLinuxDump(string bundleId, FileInfo file) {
+			Console.WriteLine($"ProcessLinuxDump: {file.FullName}");
 			// add dump
 			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
 
@@ -168,7 +162,7 @@ namespace SuperDumpService.Services {
 					// this class should only do downloading. 
 					// unf. i could not find a good way to *not* make this call from with DownloadService
 					// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
-					await ProcessDir(bundleId, tempDir.Dir);
+					await ProcessDirRecursive(bundleId, tempDir.Dir);
 				}
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 			} catch (Exception e) {

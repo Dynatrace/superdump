@@ -36,6 +36,10 @@ namespace SuperDumpService.Helpers {
 			return Path.GetFullPath(uploadsDir);
 		}
 
+		public string GetTempDir() {
+			return Path.Combine(GetUploadsDir(), RandomIdGenerator.GetRandomId(3, 16));
+		}
+
 		public string GetWorkingDir() {
 			return Path.GetFullPath(workingDir);
 		}

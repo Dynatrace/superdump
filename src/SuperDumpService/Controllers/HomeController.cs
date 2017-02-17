@@ -84,20 +84,13 @@ namespace SuperDumpService.Controllers {
 			if (ModelState.IsValid) {
 				pathHelper.PrepareDirectories();
 				if (file.Length > 0) {
-					int i = 0;
-					string filePath = Path.Combine(pathHelper.GetUploadsDir(), file.FileName);
-					while (System.IO.File.Exists(filePath)) {
-						filePath = Path.Combine(pathHelper.GetUploadsDir(),
-							Path.GetFileNameWithoutExtension(file.FileName)
-								+ "_" + i
-								+ Path.GetExtension(filePath));
-
-						i++;
-					}
-					using (var fileStream = new FileStream(filePath, FileMode.Create)) {
+					var tempDir = new DirectoryInfo(pathHelper.GetTempDir());
+					tempDir.Create();
+					var filePath = new FileInfo(Path.Combine(tempDir.FullName, file.FileName));
+					using (var fileStream = new FileStream(filePath.FullName, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpAnalysisInput { Url = filePath, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					var bundle = new DumpAnalysisInput { Url = filePath.FullName, JiraIssue = jiraIssue, FriendlyName = friendlyName };
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));

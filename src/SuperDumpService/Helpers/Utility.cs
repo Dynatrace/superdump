@@ -144,5 +144,26 @@ namespace SuperDumpService.Helpers {
 			}
 			return destFile;
 		}
+
+		public static bool IsSubdirectoryOf(DirectoryInfo parentDir, DirectoryInfo subDir) {
+			var di1 = parentDir;
+			var di2 = subDir;
+			while (di2.Parent != null) {
+				if (DirectoryEquals(di2, di1)) return true;
+				di2 = di2.Parent;
+			}
+			return false;
+		}
+
+		private static bool DirectoryEquals(DirectoryInfo path1, DirectoryInfo path2) {
+			return DirectoryEquals(path1.FullName, path2.FullName);
+		}
+
+		private static bool DirectoryEquals(string path1, string path2) {
+			return string.Equals(
+					Path.GetFullPath(path1).TrimEnd('\\'),
+					Path.GetFullPath(path2).TrimEnd('\\'),
+					StringComparison.OrdinalIgnoreCase);
+		}
 	}
 }
