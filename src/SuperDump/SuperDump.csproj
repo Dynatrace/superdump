@@ -193,7 +193,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SuperDumpmodels\SuperDumpModels.csproj">
+    <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj">
       <Project>{bb6ec51d-3acc-4ade-b09c-4217b4ad3c58}</Project>
       <Name>SuperDumpModels</Name>
     </ProjectReference>
