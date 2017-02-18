@@ -66,7 +66,11 @@ namespace SuperDumpService.Services {
 
 		public SDResult ReadResults(string bundleId, string dumpId) {
 			var filename = pathHelper.GetJsonPath(bundleId, dumpId);
-			if (!File.Exists(filename)) return null;
+			if (!File.Exists(filename)) {
+				// fallback for older dumps
+				filename = pathHelper.GetJsonPathFallback(bundleId, dumpId);
+				if (!File.Exists(filename)) return null;
+			}
 			try {
 				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
 			} catch (Exception e) {

@@ -69,6 +69,10 @@ namespace SuperDumpService.Helpers {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "superdump-result.json");
 		}
 
+		internal string GetJsonPathFallback(string bundleId, string dumpId) {
+			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".json");
+		}
+
 		public string GetDumpSelectorExePath() {
 			return superDumpSelectorExePath;
 		}
