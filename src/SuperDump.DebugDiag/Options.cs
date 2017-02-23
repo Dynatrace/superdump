@@ -16,7 +16,7 @@ namespace SuperDump.DebugDiag {
 		[Option("overwrite", HelpText = "Overwrite existing output files")]
 		public bool Overwrite { get; set; }
 
-		[Option("symbolPath", HelpText = "Symbol search path, e.g. srv*[local cache]*[private symbol server]*https://msdl.microsoft.com/download/symbols", Required = true)]
+		[Option("symbolPath", HelpText = "Symbol search path, e.g. srv*[local cache]*[private symbol server]*https://msdl.microsoft.com/download/symbols. If not specified _NT_SYMBOL_PATH is used")]
 		public string SymbolPath { get; set; }
 
 		[Option("imagePath", HelpText = "Image search path")]

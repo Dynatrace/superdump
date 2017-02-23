@@ -2,6 +2,8 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SuperDumpService.Helpers {
 	public class PathHelper {
@@ -18,6 +20,13 @@ namespace SuperDumpService.Helpers {
 			this.uploadsDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/");
 			this.hangfireDbDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/");
 			this.superDumpSelectorExePath = configurationSection.GetValue<string>(nameof(SuperDumpSettings.SuperDumpSelectorExePath)) ?? GetDumpSelectorExePathFallback();
+
+
+			IConfigurationSection binPathSection = configurationSection.GetSection(nameof(SuperDumpSettings.BinPath));
+			IEnumerable<string> binPath = binPathSection.GetChildren().Select(s => s.Value);
+			string path = Environment.GetEnvironmentVariable("PATH");
+			string additionalPath = string.Join(";", binPath);
+			Environment.SetEnvironmentVariable("PATH", path + ";" + additionalPath);
 		}
 
 		internal static string GetConfDirectory() {

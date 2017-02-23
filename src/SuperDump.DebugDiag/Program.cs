@@ -41,6 +41,10 @@ namespace SuperDump.DebugDiag {
 				return;
 			}
 
+			if (string.IsNullOrEmpty(options.SymbolPath)) {
+				options.SymbolPath = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
+			}
+
 			using (NetAnalyzer analyzer = new NetAnalyzer()) {
 				//analyzer.Initialize(true, true, true, true);
 				analyzer.AddDumpFile(dumpFile.FullName, options.SymbolPath);
@@ -60,6 +64,7 @@ namespace SuperDump.DebugDiag {
 				Console.WriteLine("Dump: {0}", dumpFile);
 				Console.WriteLine("Report file: {0}", options.ReportFile);
 				Console.WriteLine("Analysis rules: {0}", string.Join(",", options.AnalysisRules.ToArray()));
+				Console.WriteLine("Symbol path: {0}", options.SymbolPath);
 
 				foreach (Type analysisRule in DebugDiagHelper.GetAnalysisRules(options.AnalysisRules))
 					analyzer.AddAnalysisRuleToRunList(analysisRule);

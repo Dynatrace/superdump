@@ -1,4 +1,6 @@
-﻿namespace SuperDumpService {
+﻿using System.Collections.Generic;
+
+namespace SuperDumpService {
 	public class SuperDumpSettings {
 		public string LocalSymbolCache { get; set; }
 		public string SymStoreExex86 { get; set; }
@@ -14,5 +16,6 @@
 		public int MaxUploadSizeMB { get; set; } = 16000;
 		public bool IncludeOtherFilesInReport { get; set; }
 		public string LinuxCommandTemplate { get; set; }
+		public IEnumerable<string> BinPath { get; set; }
 	}
 }
