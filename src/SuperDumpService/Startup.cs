@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Http.Features;
 using System.IO;
 using Microsoft.Extensions.Options;
 using SuperDumpService.Services;
+using System.Linq;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -39,9 +40,16 @@ namespace SuperDumpService {
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
+			// setup path
+			IConfigurationSection configurationSection = Configuration.GetSection(nameof(SuperDumpSettings));
+			IConfigurationSection binPathSection = configurationSection.GetSection(nameof(SuperDumpSettings.BinPath));
+			IEnumerable<string> binPath = binPathSection.GetChildren().Select(s => s.Value);
+			string path = Environment.GetEnvironmentVariable("PATH");
+			string additionalPath = string.Join(";", binPath);
+			Environment.SetEnvironmentVariable("PATH", path + ";" + additionalPath);
+
 			services.AddOptions();
 			services.Configure<SuperDumpSettings>(Configuration.GetSection(nameof(SuperDumpSettings)));
-
 
 			var pathHelper = new PathHelper(Configuration.GetSection(nameof(SuperDumpSettings)));
 			services.AddSingleton(pathHelper);
