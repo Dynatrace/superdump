@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
 
 namespace SuperDumpService.Helpers {
 	public class PathHelper {
