@@ -27,6 +27,7 @@ Features
  * SuperDump detects exceptions (native and managed) and marks the responsible threads.
  * Deadlock detection.
  * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
+ * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
 
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
@@ -79,7 +80,6 @@ Some high-level ideas we've been poking around:
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
  * _Linux coredumps:_ Use Linux/GDB to automatically analyze linux coredumps, and use SuperDumpService as frontend (for file upload, REST-API, view reports).
  * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. It can be used to find duplicate crashes and cluster similar crashes.
- * _Integrate DebugDiag:_ DebugDiag can do some great analysis. It would be great if SuperDump would invoke DebugDiag analysis automatically and would just offer the result (`.mht`) file directly.
 
 Credit
 ======
