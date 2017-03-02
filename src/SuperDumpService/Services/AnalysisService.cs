@@ -71,6 +71,27 @@ namespace SuperDumpService.Services {
 					throw new Exception(selectorLog);
 				}
 			}
+
+			await RunDebugDiagAnalysis(dumpInfo, workingDir, dumpFilePath);
+		}
+
+		private async Task RunDebugDiagAnalysis(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			//--dump = "C:\superdump\data\dumps\hno3391\iwb0664\iwb0664.dmp"--out= "C:\superdump\data\dumps\hno3391\iwb0664\debugdiagout.mht"--symbolPath = "cache*c:\localsymbols;http://msdl.microsoft.com/download/symbols"--overwrite
+			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "DebugDiagAnalysis.mht");
+			string debugDiagExe = "SuperDump.DebugDiag.exe";
+
+			Console.WriteLine($"launching '{debugDiagExe}' --dump='{dumpFilePath}' --out='{reportFilePath}' --overwrite");
+			using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,
+				$"--dump=\"{dumpFilePath}\"",
+				$"--out=\"{reportFilePath}\"",
+				"--overwrite")) {
+				string log = $"debugDiagExe exited with error code {process.ExitCode}" +
+					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+				Console.WriteLine(log);
+				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), log);
+				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
+			}
 		}
 
 		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
