@@ -162,17 +162,9 @@ namespace SuperDumpService.Controllers {
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"
 				|| file.Extension == ".json") {
-				var sb = new StringBuilder();
-				using (var stream = new StreamReader(System.IO.File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))) {
-					string s = string.Empty;
-					while ((s = stream.ReadLine()) != null) {
-						sb.AppendLine(s);
-					}
-				}
-				return Content(sb.ToString());
+				return Content(System.IO.File.ReadAllText(file.FullName));
 			}
-			byte[] fileBytes = System.IO.File.ReadAllBytes(file.FullName);
-			return File(fileBytes, "application/octet-stream", file.Name);
+			return File(System.IO.File.ReadAllBytes(file.FullName), "application/octet-stream", file.Name);
 		}
 
 		[HttpPost]

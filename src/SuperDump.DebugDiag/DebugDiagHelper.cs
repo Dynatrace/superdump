@@ -9,13 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SuperDump.DebugDiag {
-	class DebugDiagHelper {
+	internal class DebugDiagHelper {
 		private static string GetDefaultRegVal(string keyName) {
 			return (string)Microsoft.Win32.Registry.GetValue(keyName, "", string.Empty);
 		}
 
-		public static string GetInstallDir() {
-			string installDir = "";
+		internal static string GetInstallDir() {
+			string installDir = string.Empty;
 			string text = "HKEY_CLASSES_ROOT\\DbgLib.DbgControl\\CLSID";
 			string defaultRegVal = GetDefaultRegVal(text);
 			try {
@@ -23,10 +23,10 @@ namespace SuperDump.DebugDiag {
 					text = string.Format("HKEY_CLASSES_ROOT\\CLSID\\{0}\\InprocServer32", defaultRegVal);
 					defaultRegVal = GetDefaultRegVal(text);
 					if (!string.IsNullOrEmpty(defaultRegVal)) {
-						installDir = System.IO.Path.GetDirectoryName(defaultRegVal);
+						installDir = Path.GetDirectoryName(defaultRegVal);
 					}
 				}
-			} catch (System.Exception ex) {
+			} catch (Exception ex) {
 				string value = string.Format("An exception occurred while finding the v2 analysis runtime.\r\n\tKeyPath:  {0}\r\n\tValueName:  {1}\r\n\tMessage:  {2}\r\nStack Trace:\r\n{3}", new object[]
 				{
 					text,
@@ -34,7 +34,7 @@ namespace SuperDump.DebugDiag {
 					ex.Message,
 					ex.StackTrace
 				});
-				System.Console.WriteLine(value);
+				Console.WriteLine(value);
 			}
 
 			if (string.IsNullOrEmpty(installDir) == false && installDir.EndsWith("x86Support")) {

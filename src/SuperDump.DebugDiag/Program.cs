@@ -45,7 +45,7 @@ namespace SuperDump.DebugDiag {
 				options.SymbolPath = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
 			}
 
-			using (NetAnalyzer analyzer = new NetAnalyzer()) {
+			using (var analyzer = new NetAnalyzer()) {
 				//analyzer.Initialize(true, true, true, true);
 				analyzer.AddDumpFile(dumpFile.FullName, options.SymbolPath);
 

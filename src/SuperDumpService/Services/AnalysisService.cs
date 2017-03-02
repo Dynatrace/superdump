@@ -72,7 +72,11 @@ namespace SuperDumpService.Services {
 				}
 			}
 
-			//--dump = "C:\workspaces\dyna-repos\superdump\data\dumps\hno3391\iwb0664\iwb0664.dmp"--out= "C:\workspaces\dyna-repos\superdump\data\dumps\hno3391\iwb0664\debugdiagout.mht"--symbolPath = "cache*c:\localsymbols;srv*\\lnz-ta-ws12-sym01v.dynatrace.vmta\symstore;\\lnz-dt-ws12r2-sym01v.dynatrace.vmta\symstore;http://msdl.microsoft.com/download/symbols"--overwrite
+			await RunDebugDiagAnalysis(dumpInfo, workingDir, dumpFilePath);
+		}
+
+		private async Task RunDebugDiagAnalysis(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+			//--dump = "C:\superdump\data\dumps\hno3391\iwb0664\iwb0664.dmp"--out= "C:\superdump\data\dumps\hno3391\iwb0664\debugdiagout.mht"--symbolPath = "cache*c:\localsymbols;http://msdl.microsoft.com/download/symbols"--overwrite
 			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "DebugDiagAnalysis.mht");
 			string debugDiagExe = "SuperDump.DebugDiag.exe";
 
@@ -81,12 +85,12 @@ namespace SuperDumpService.Services {
 				$"--dump=\"{dumpFilePath}\"",
 				$"--out=\"{reportFilePath}\"",
 				"--overwrite")) {
-				string selectorLog = $"debugDiagExe exited with error code {process.ExitCode}" +
+				string log = $"debugDiagExe exited with error code {process.ExitCode}" +
 					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
 					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
-				Console.WriteLine(selectorLog);
-				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), selectorLog);
-				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.CustomTextResult);
+				Console.WriteLine(log);
+				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), log);
+				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
 			}
 		}
 

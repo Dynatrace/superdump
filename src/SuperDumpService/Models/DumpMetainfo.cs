@@ -44,7 +44,9 @@ namespace SuperDumpService.Models {
 		[Description("Results")]
 		SuperDumpData,
 		[Description("Results")]
-		CustomTextResult,
+		CustomTextResult, // this has a special meaning: in case there is no result.json file, this text result is shown instead
+		[Description("Results")]
+		DebugDiagResult,
 
 		[Description("Logs")]
 		SuperDumpLogfile,
