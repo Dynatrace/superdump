@@ -36,6 +36,16 @@ namespace SuperDumpService.Services {
 				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
 				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId)) {
 					dumps[bundleId][dumpInfo.DumpId] = dumpInfo;
+
+					if (!dumpInfo.Is64Bit.HasValue) {
+						// this is done for repos, which did not store bitness information yet
+						// be aware that this will slow down startup considerable.
+						var res = storage.ReadResults(bundleId, dumpInfo.DumpId);
+						if (res != null) {
+							dumpInfo.Is64Bit = res.SystemContext.ProcessArchitecture.Contains("64");
+							storage.Store(dumpInfo);
+						}
+					}
 				}
 			}
 		}

@@ -1,0 +1,33 @@
+﻿@model SuperDumpService.ViewModels.InteractiveViewModel
+@using SuperDumpService.Helpers
+@using SuperDumpService.Models
+@using SuperDumpService.ViewModels
+
+@{
+	Layout = null;
+}
+@{
+	ViewData["Title"] = "Interactive Mode";
+}
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Interactive @Model.DumpInfo.DumpFileName</title>
+	@{Html.RenderPartial("_Resources");}
+
+	<script src="~/js/jquery.console.js"></script>
+	<script data-main="scripts/main" src="https://rawgit.com/radu-matei/websocket-manager/master/src/WebSocketManager.Client.TS/dist/WebSocketManager.js"></script>
+	<script src="~/js/webterm.js"></script>
+</head>
+<body>
+	@{Html.RenderPartial("_Nav");}
+	<div class="container-webterm" style="padding-top: 50px;">
+		<div style="display:inline-block; float: left; padding: 8px;">
+			Interactive debug session for <strong>@Model.DumpInfo.DumpFileName</strong>.
+			<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId">Back to Report</a>
+		</div>
+		<div style="display:inline-block; float: right; padding: 8px;"><a href="http://windbg.info/doc/1-common-cmds.html">WinDbg Cheat Sheet</a></div>
+		<div id="webtermConsole" class="left-aligned"></div>
+	</div>
+</body>
+</html>

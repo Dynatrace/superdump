@@ -19,6 +19,8 @@ using System.IO;
 using Microsoft.Extensions.Options;
 using SuperDumpService.Services;
 using System.Linq;
+using SuperDump.Webterm;
+using WebSocketManager;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -112,10 +114,11 @@ namespace SuperDumpService {
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
 			services.AddSingleton<UnpackService>();
+			services.AddWebSocketManager();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings) {
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider) {
 			app.ApplicationServices.GetService<BundleRepository>().Populate();
 			app.ApplicationServices.GetService<DumpRepository>().Populate();
 
@@ -150,6 +153,9 @@ namespace SuperDumpService {
 			}
 
 			app.UseStaticFiles();
+
+			app.UseWebSockets();
+			app.MapWebSocketManager("/cmd", serviceProvider.GetService<WebTermHandler>());
 
 			app.UseMvc(routes => {
 				routes.MapRoute(

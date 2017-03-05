@@ -1,0 +1,28 @@
+SuperDump Project
+
+SuperDump includes works distributed under the licenses listed below. The full text for most of the licenses listed below can be found in the LICENSE.txt file accompanying each work. The original copyright notices have been preserved within the respective files and or packages. Please refer to the specific files and/or packages for more detailed information about the authors, copyright notices, and licenses.
+
+Kudu
+-----
+Website:      https://github.com/projectkudu/kudu/
+Copyright:    Copyright 2015 .NET Foundation
+License:      Apache 2.0
+Modifications:webterm.js is a modified version of KuduExecV2.js
+
+jQuery
+-----
+Website:      http://jquery.com
+Copyright:    Copyright (c) 2010 John Resig, http://jquery.com
+License:      MIT
+
+jQuery jquery-console
+-----
+Website:      https://github.com/chrisdone/jquery-console
+Copyright:    Copyright 2010 Chris Done, Simon David Pratt. All rights reserved.
+License:      http://github.com/chrisdone/jquery-console/blob/master/README.md
+
+Json.NET
+-----
+Website:      http://json.codeplex.com/
+Copyright:    Copyright (c) 2007 James Newton-King
+License:      MIT

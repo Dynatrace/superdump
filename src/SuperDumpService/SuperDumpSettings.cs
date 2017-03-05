@@ -17,5 +17,7 @@ namespace SuperDumpService {
 		public bool IncludeOtherFilesInReport { get; set; }
 		public string LinuxCommandTemplate { get; set; }
 		public IEnumerable<string> BinPath { get; set; }
+		public string Cdbx86 { get; set; }
+		public string Cdbx64 { get; set; }
 	}
 }
