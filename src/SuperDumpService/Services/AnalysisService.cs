@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Options;
-using SuperDumpService.Helpers;
-using SuperDumpService.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using SuperDump.Common;
+using SuperDumpService.Helpers;
+using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
