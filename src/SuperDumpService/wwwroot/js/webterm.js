@@ -1,6 +1,18 @@
 // some code here is borrowed from Kudu. see https://github.com/projectkudu/kudu/blob/2a04e469a546a8fe81332d39c79ef6f178236ae1/Kudu.Services.Web/Content/Scripts/KuduExecV2.js
 
-function LoadConsole() {
+
+function getURLParameter(sParam) {
+	var sPageURL = window.location.search.substring(1);
+	var sURLVariables = sPageURL.split('&');
+	for (var i = 0; i < sURLVariables.length; i++) {
+		var sParameterName = sURLVariables[i].split('=');
+		if (sParameterName[0] == sParam) {
+			return sParameterName[1];
+		}
+	}
+}
+
+function loadConsole() {
 	var originalMatchString = undefined;
 	var currentMatchIndex = -1;
 	var lastLine = {
@@ -73,6 +85,7 @@ function LoadConsole() {
 
 	connection.connectionMethods.onConnected = () => {
 		console.log("You are now connected! Connection ID: " + connection.connectionId);
+		sendStartSession(getURLParameter("bundleId"), getURLParameter("dumpId"));
 	};
 
 	connection.connectionMethods.onDisconnected = () => {
@@ -90,6 +103,11 @@ function LoadConsole() {
 	function _sendCommand(input) {
 		console.log("_sendCommand: " + input);
 		connection.invoke("ReceiveMessage", connection.connectionId, input);
+	}
+
+	function sendStartSession(bundleId, dumpId) {
+		console.log("_sendStartSession: " + bundleId + "," + dumpId);
+		connection.invoke("StartSession", connection.connectionId, bundleId, dumpId);
 	}
 
 	function endsWith(str, suffix) {
@@ -163,5 +181,5 @@ function LoadConsole() {
 }
 
 $(function () {
-	LoadConsole();
+	loadConsole();
 })

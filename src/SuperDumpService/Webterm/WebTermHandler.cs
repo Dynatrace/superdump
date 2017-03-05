@@ -5,13 +5,16 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using WebSocketManager;
 using WebSocketManager.Common;
+using SuperDumpService.Services;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
 		private Dictionary<string, ConsoleAppManager> socketIdToProcess = new Dictionary<string, ConsoleAppManager>();
 		private Dictionary<ConsoleAppManager, string> processToSocketId = new Dictionary<ConsoleAppManager, string>();
+		private DumpRepository dumpRepo;
 
-		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager) : base(webSocketConnectionManager) {
+		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager, DumpRepository dumpRepo) : base(webSocketConnectionManager) {
+			this.dumpRepo = dumpRepo;
 		}
 
 		private void Mgr_ErrorTextReceived(object sender, string e) {
@@ -34,34 +37,34 @@ namespace SuperDump.Webterm {
 			}
 		}
 
-		public override async Task OnConnected(WebSocket socket) {
-			await base.OnConnected(socket);
-
-			var socketId = WebSocketConnectionManager.GetId(socket);
-
-			var message = new Message() {
-				MessageType = MessageType.Text,
-				Data = "{ \"Output\": \"connected\", \"Error\": \"\" }"
-			};
-
-			System.Console.WriteLine("new connection");
-
-			var mgr = new ConsoleAppManager($@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe");
+		private void StartCdb(string socketId, string dumpPath, bool is64Bit) {
+			string cdbPath;
+			if (is64Bit) {
+				cdbPath = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe";
+			} else {
+				cdbPath = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe";
+			}
+			var mgr = new ConsoleAppManager(cdbPath);
 			socketIdToProcess[socketId] = mgr;
 			processToSocketId[mgr] = socketId;
 			mgr.StandartTextReceived += Mgr_StandartTextReceived;
 			mgr.ErrorTextReceived += Mgr_ErrorTextReceived;
 			mgr.ProcessExited += Mgr_ProcessExited;
-
-			string dumpPath = @"C:\workspaces\superdump\data\dumps\oad0312\uvl6925\unhandledex-64bit-net4.6.1080.dmp";
 			mgr.ExecuteAsync($"-z {dumpPath}");
 
-			await SendMessageToAllAsync(message);
+			mgr.WriteLine(".cordll -ve -u -l"); // load DAC and SOS
 		}
 
-		public async Task ReceiveMessage(string socketId, string input) {
+		public void ReceiveMessage(string socketId, string input) {
 			System.Console.WriteLine($"ReceiveMessage ({socketId}): {input}");
 			socketIdToProcess[socketId].Write(input);
+		}
+
+		public void StartSession(string socketId, string bundleId, string dumpId) {
+			System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
+			var dumpInfo = dumpRepo.Get(bundleId, dumpId);
+			bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
+			StartCdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
 		}
 
 		public async Task SendToClient(string socketId, string output, string error) {
