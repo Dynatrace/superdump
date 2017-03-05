@@ -80,7 +80,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> Upload(IFormFile file, string jiraIssue, string friendlyName) {
+		public async Task<IActionResult> Upload(IFormFile file, string refurl, string note) {
 			if (ModelState.IsValid) {
 				pathHelper.PrepareDirectories();
 				if (file.Length > 0) {
@@ -90,7 +90,7 @@ namespace SuperDumpService.Controllers {
 					using (var fileStream = new FileStream(filePath.FullName, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpAnalysisInput { Url = filePath.FullName, JiraIssue = jiraIssue, FriendlyName = friendlyName };
+					var bundle = new DumpAnalysisInput (filePath.FullName, new Tuple<string, string>("ref", refurl), new Tuple<string, string>("note", note));
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));

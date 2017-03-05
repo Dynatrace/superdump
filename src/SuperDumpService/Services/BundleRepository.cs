@@ -44,6 +44,7 @@ namespace SuperDumpService.Services {
 					Created = DateTime.Now,
 					Status = BundleStatus.Created
 				};
+				bundleInfo.CustomProperties = input.CustomProperties;
 				if (!string.IsNullOrEmpty(input.JiraIssue)) bundleInfo.CustomProperties["ref"] = input.JiraIssue;
 				if (!string.IsNullOrEmpty(input.FriendlyName)) bundleInfo.CustomProperties["note"] = input.FriendlyName;
 				bundles[bundleId] = bundleInfo;

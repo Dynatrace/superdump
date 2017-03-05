@@ -147,8 +147,8 @@ function uploadFile(file) {
 
 	var formdata = new FormData();    // Anlegen eines FormData Objekts zum Versenden unserer Datei
 	formdata.append('file', file);  // Anhängen der Datei an das Objekt
-	formdata.append('jiraIssue', $('#jiraIssue').val());
-	formdata.append('friendlyName', $('#friendlyName').val());
+	formdata.append('refurl', $('#refurl').val());
+	formdata.append('note', $('#note').val());
 	xhr.send(formdata);
 }
 function progressHandler(event) {
