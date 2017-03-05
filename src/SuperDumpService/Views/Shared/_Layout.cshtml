@@ -9,6 +9,7 @@
 		<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
 		<link rel="stylesheet" href="~/css/bootstrap-cosmo.css" />
 		<link rel="stylesheet" href="~/css/site.css" />
+		<link rel="stylesheet" href="~/css/webterm.css" />
 		<link rel="stylesheet" href="~/css/dataTables.bootstrap.min.css" />
 	</environment>
 	<environment names="Staging,Production">
@@ -17,22 +18,21 @@
 			  asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
 		<link rel="stylesheet" href="~/css/bootstrap-cosmo.min.css" asp-fallback-href="~/css/bootstrap-cosmo.css" />
 		<link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+		<link rel="stylesheet" href="~/css/webterm.min.css" asp-append-version="true" />
 		<link rel="stylesheet" href="~/css/dataTables.bootstrap.min.css" />
 
 		<script src="~/lib/Chart.js/dist/Chart.min.js"></script>
 	</environment>
 
+
+
 	<environment names="Development">
 		<script src="~/lib/jquery/dist/jquery.js"></script>
 		<script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
 		<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-		<script src="~/lib/clipboard/dist/clipboard.js"></script>
-		<script src="~/lib/notifyjs/dist/notify.js"></script>
 		<script src="~/lib/Chart.js/dist/Chart.js"></script>
 		<script src="~/js/jquery.dataTables.min.js"></script>
 		<script src="~/js/dataTables.bootstrap.min.js"></script>
-		<script src="~/js/file-size.js"></script>
-		<script src="~/js/site.js" asp-append-version="true"></script>
 	</environment>
 	<environment names="Staging,Production">
 		<script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
@@ -44,13 +44,16 @@
 				asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
 				asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal">
 		</script>
-		<script src="~/lib/clipboard/dist/clipboard.js"></script>
-		<script src="~/lib/notifyjs/dist/notify.js"></script>
+
 		<script src="~/js/jquery.dataTables.min.js"></script>
 		<script src="~/js/dataTables.bootstrap.min.js"></script>
-		<script src="~/js/file-size.js"></script>
 		<script src="~/js/site.min.js" asp-append-version="true"></script>
 	</environment>
+
+	<script src="~/lib/clipboard/dist/clipboard.js"></script>
+	<script src="~/lib/notifyjs/dist/notify.js"></script>
+
+
 	@Html.Raw(JavaScriptSnippet.FullScript)
 </head>
 <body>

@@ -46,14 +46,15 @@ namespace SuperDump.Webterm {
 
 			System.Console.WriteLine("new connection");
 
-			var mgr = new ConsoleAppManager("cmd.exe");
+			var mgr = new ConsoleAppManager($@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe");
 			socketIdToProcess[socketId] = mgr;
 			processToSocketId[mgr] = socketId;
 			mgr.StandartTextReceived += Mgr_StandartTextReceived;
 			mgr.ErrorTextReceived += Mgr_ErrorTextReceived;
 			mgr.ProcessExited += Mgr_ProcessExited;
 
-			mgr.ExecuteAsync("/Q");
+			string dumpPath = @"C:\workspaces\superdump\data\dumps\oad0312\uvl6925\unhandledex-64bit-net4.6.1080.dmp";
+			mgr.ExecuteAsync($"-z {dumpPath}");
 
 			await SendMessageToAllAsync(message);
 		}

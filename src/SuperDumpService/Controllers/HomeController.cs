@@ -90,7 +90,7 @@ namespace SuperDumpService.Controllers {
 					using (var fileStream = new FileStream(filePath.FullName, FileMode.Create)) {
 						await file.CopyToAsync(fileStream);
 					}
-					var bundle = new DumpAnalysisInput (filePath.FullName, new Tuple<string, string>("ref", refurl), new Tuple<string, string>("note", note));
+					var bundle = new DumpAnalysisInput(filePath.FullName, new Tuple<string, string>("ref", refurl), new Tuple<string, string>("note", note));
 					return Create(bundle);
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
@@ -108,6 +108,11 @@ namespace SuperDumpService.Controllers {
 			return View();
 		}
 
+		[HttpGet(Name = "Interactive")]
+		public IActionResult Interactive(string bundleId, string dumpId) {
+			return View(new InteractiveViewModel() { BundleId = bundleId, DumpId = dumpId });
+		}
+
 		[HttpGet(Name = "Report")]
 		public IActionResult Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
@@ -121,7 +126,6 @@ namespace SuperDumpService.Controllers {
 			if (dumpInfo == null) {
 				return View(null);
 			}
-
 
 			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
 

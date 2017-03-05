@@ -1,9 +1,27 @@
-﻿@model SuperDumpService.ViewModels.ReportViewModel
+﻿@model SuperDumpService.ViewModels.InteractiveViewModel
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
 @using SuperDumpService.ViewModels
 
 @{
+	Layout = null;
+}
+@{
 	ViewData["Title"] = "Interactive Mode";
 }
-<div id="webtermConsole" class="left-aligned"></div>
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="~/css/webterm.css" />
+
+	<script src="~/lib/jquery/dist/jquery.js"></script>
+	<script src="~/js/jquery.dataTables.min.js"></script>
+	<script src="~/js/jquery.console.js"></script>
+	<script data-main="scripts/main" src="https://rawgit.com/radu-matei/websocket-manager/master/src/WebSocketManager.Client.TS/dist/WebSocketManager.js"></script>
+	<script src="~/js/webterm.js"></script>
+</head>
+<body>
+	<h1>Interactive</h1>
+	<div id="webtermConsole" class="left-aligned"></div>
+</body>
+</html>
