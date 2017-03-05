@@ -4,80 +4,10 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>@ViewData["Title"] - SuperDump</title>
-
-	<environment names="Development">
-		<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
-		<link rel="stylesheet" href="~/css/bootstrap-cosmo.css" />
-		<link rel="stylesheet" href="~/css/site.css" />
-		<link rel="stylesheet" href="~/css/webterm.css" />
-		<link rel="stylesheet" href="~/css/dataTables.bootstrap.min.css" />
-	</environment>
-	<environment names="Staging,Production">
-		<link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/css/bootstrap.min.css"
-			  asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
-			  asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
-		<link rel="stylesheet" href="~/css/bootstrap-cosmo.min.css" asp-fallback-href="~/css/bootstrap-cosmo.css" />
-		<link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
-		<link rel="stylesheet" href="~/css/webterm.min.css" asp-append-version="true" />
-		<link rel="stylesheet" href="~/css/dataTables.bootstrap.min.css" />
-
-		<script src="~/lib/Chart.js/dist/Chart.min.js"></script>
-	</environment>
-
-
-
-	<environment names="Development">
-		<script src="~/lib/jquery/dist/jquery.js"></script>
-		<script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
-		<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-		<script src="~/lib/Chart.js/dist/Chart.js"></script>
-		<script src="~/js/jquery.dataTables.min.js"></script>
-		<script src="~/js/dataTables.bootstrap.min.js"></script>
-	</environment>
-	<environment names="Staging,Production">
-		<script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
-				asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
-				asp-fallback-test="window.jQuery">
-		</script>
-		<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-		<script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/bootstrap.min.js"
-				asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
-				asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal">
-		</script>
-
-		<script src="~/js/jquery.dataTables.min.js"></script>
-		<script src="~/js/dataTables.bootstrap.min.js"></script>
-		<script src="~/js/site.min.js" asp-append-version="true"></script>
-	</environment>
-
-	<script src="~/lib/clipboard/dist/clipboard.js"></script>
-	<script src="~/lib/notifyjs/dist/notify.js"></script>
-
-
-	@Html.Raw(JavaScriptSnippet.FullScript)
+	@{Html.RenderPartial("_Resources");}
 </head>
 <body>
-	<nav class="navbar navbar-default navbar-fixed-top">
-		<div class="container" style="float: left !important;">
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
-				<a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">SuperDump</a>
-			</div>
-			<div class="navbar-collapse collapse">
-				<ul class="nav navbar-nav">
-					<li><a asp-area="" asp-controller="Home" asp-action="Overview">Overview</a></li>
-					<li><a href="/hangfire">Hangfire</a></li>
-					<li><a href="/swagger/ui">API Doc</a></li>
-					<li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
-				</ul>
-			</div>
-		</div>
-	</nav>
+	@{Html.RenderPartial("_Nav");}
 	<nav class="container body-content" style="float: left !important;">
 		@RenderBody()
 		<hr />

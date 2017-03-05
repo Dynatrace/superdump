@@ -27,85 +27,85 @@
 		}
 	</div>
 
-	<dl class="dl-horizontal smaller">
-		@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
-			<dt>BundleFileName:</dt>
-			<dd>@Model.BundleFileName</dd>
-		}
-		@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
-			<dt>DumpFileName:</dt>
-			<dd>@Model.DumpFileName</dd>
-		}
+		<dl class="dl-horizontal smaller">
+			@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
+				<dt>BundleFileName:</dt>
+				<dd>@Model.BundleFileName</dd>
+			}
+			@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
+				<dt>DumpFileName:</dt>
+				<dd>@Model.DumpFileName (<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" class="alert-link">Start interactive session</a>)</dd>
+			}
 
-		<dt>Time:</dt>
-		<dd>@Model.TimeStamp</dd>
+			<dt>Time:</dt>
+			<dd>@Model.TimeStamp</dd>
 
-		@foreach (var customProp in Model.CustomProperties) {
-			<dt>
-				@customProp.Key:
-			</dt>
+			@foreach (var customProp in Model.CustomProperties) {
+				<dt>
+					@customProp.Key:
+				</dt>
+				<dd>
+					<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
+				</dd>
+			}
+
+			<dt>Files:</dt>
 			<dd>
-				<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
-			</dd>
-		}
-
-		<dt>Files:</dt>
-		<dd>
-			<dl class="dl-horizontal">
-				@{ var sequence = new List<string> { "Primary Dump", "Other files", "Logs", "Results" }; }
+				<dl class="dl-horizontal">
+					@{ var sequence = new List<string> { "Primary Dump", "Other files", "Logs", "Results" }; }
 					@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-						.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-					<dt class="filesize">@filetype.ToString()</dt>
-					<dd class="">
-						<ul class="flat">
-							@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-								<li>
-									@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-								</li>
-							}
-						</ul>
-					</dd>
+					.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+						<dt class="filesize">@filetype.ToString()</dt>
+						<dd class="">
+							<ul class="flat">
+								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+									<li>
+										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+									</li>
+											}
+							</ul>
+						</dd>
 				}
 				</dl>
-		</dd>
-	</dl>
+			</dd>
+		</dl>
 
-	<div class="container-fluid">
-		@if (Model.HasAnalysisFailed) {
-			<h2>Analysis failed with errors, no report avaliable.</h2>
-			<pre>Error: @Model.AnalysisError</pre>
-		} else if (Model.Result == null) {
-			if (Model.CustomTextResult != null) {
-				<section>
-					<pre>@Model.CustomTextResult</pre>
-				</section>
+		<div class="container-fluid">
+			@if (Model.HasAnalysisFailed) {
+				<h2>Analysis failed with errors, no report avaliable.</h2>
+				<pre>Error: @Model.AnalysisError</pre>
+			} else if (Model.Result == null) {
+				if (Model.CustomTextResult != null) {
+					<section>
+						<pre>@Model.CustomTextResult</pre>
+					</section>
+				} else {
+					<h2>hang tight, still processing</h2>
+					<script>
+						setTimeout(function () {
+							window.location.reload(1);
+						}, 5000);
+					</script>
+				}
 			} else {
-				<h2>hang tight, still processing</h2>
-				<script>
-					setTimeout(function () {
-						window.location.reload(1);
-					}, 5000);
-				</script>
-			}
-		} else {
-			<section>
-				@{Html.RenderPartial("_Summary");}
-			</section>
-			<section>
-				@{Html.RenderPartial("_System");}
-			</section>
-			<section>
-				@{Html.RenderPartial("_Threads");}
-			</section>
-			<section>
-				@{Html.RenderPartial("_Modules");}
-			</section>
-			<section>
-				@{ Html.RenderPartial("_Domains");}
-			</section>
-			<section>
-				@{Html.RenderPartial("_Memory");}
-			</section>
-					}
-	</div>
-}
+				<section>
+					@{Html.RenderPartial("_Summary");}
+				</section>
+				<section>
+					@{Html.RenderPartial("_System");}
+				</section>
+				<section>
+					@{Html.RenderPartial("_Threads");}
+				</section>
+				<section>
+					@{Html.RenderPartial("_Modules");}
+				</section>
+				<section>
+					@{ Html.RenderPartial("_Domains");}
+				</section>
+				<section>
+					@{Html.RenderPartial("_Memory");}
+				</section>
+						}
+		</div>
+						}

@@ -5,16 +5,21 @@ html, body {
 }
 
 #webtermConsole {
-	height: 80%;
-	width: 97%;
+	height: 92%;
+	width: 100%;
+    padding: 1px;
+}
+
+.container-webterm {
+    height: 100%;
 }
 
 div.console {
-	font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
-	height: 100%;
-	margin: auto;
-	white-space: pre-wrap;
-	width: 100%;
+    font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
+    height: 100%;
+    margin: auto;
+    white-space: pre-wrap;
+    width: 100%;
 }
 
 div.console div.jquery-console-inner {

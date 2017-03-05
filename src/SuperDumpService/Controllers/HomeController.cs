@@ -110,7 +110,7 @@ namespace SuperDumpService.Controllers {
 
 		[HttpGet(Name = "Interactive")]
 		public IActionResult Interactive(string bundleId, string dumpId) {
-			return View(new InteractiveViewModel() { BundleId = bundleId, DumpId = dumpId });
+			return View(new InteractiveViewModel() { BundleId = bundleId, DumpId = dumpId, DumpInfo = dumpRepo.Get(bundleId, dumpId) });
 		}
 
 		[HttpGet(Name = "Report")]
