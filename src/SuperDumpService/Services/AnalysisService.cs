@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Options;
-using SuperDumpService.Helpers;
-using SuperDumpService.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using SuperDump.Common;
+using SuperDumpService.Helpers;
+using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
@@ -80,17 +79,25 @@ namespace SuperDumpService.Services {
 			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "DebugDiagAnalysis.mht");
 			string debugDiagExe = "SuperDump.DebugDiag.exe";
 
-			Console.WriteLine($"launching '{debugDiagExe}' --dump='{dumpFilePath}' --out='{reportFilePath}' --overwrite");
-			using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,
-				$"--dump=\"{dumpFilePath}\"",
-				$"--out=\"{reportFilePath}\"",
-				"--overwrite")) {
-				string log = $"debugDiagExe exited with error code {process.ExitCode}" +
-					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
-					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
-				Console.WriteLine(log);
-				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), log);
-				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
+			try {
+				using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,
+					$"--dump=\"{dumpFilePath}\"",
+					$"--out=\"{reportFilePath}\"",
+					"--overwrite")) {
+					string log = $"debugDiagExe exited with error code {process.ExitCode}" +
+						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+					Console.WriteLine(log);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), log);
+					dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
+				}
+			} catch (ProcessRunnerException e) {
+				if (e.InnerException is FileNotFoundException) {
+					Console.Error.WriteLine($"{debugDiagExe} not found. Check BinPath setting in appsettings.json.");
+				} else {
+					Console.Error.WriteLine($"Error during DebugDiag analyis: {e}");
+				}
+				// do not abort analysis.
 			}
 		}
 

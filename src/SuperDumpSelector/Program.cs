@@ -5,6 +5,8 @@ using System.IO;
 using System.Threading;
 using System.Configuration;
 using System.Reflection;
+using System.Threading.Tasks;
+using SuperDump.Common;
 
 namespace SuperDumpSelector {
 	public static class Program {
@@ -26,53 +28,40 @@ namespace SuperDumpSelector {
 
 			Console.WriteLine(Environment.CurrentDirectory);
 			if (File.Exists(dumpfile)) {
-				var p = new Process();
-				using (DataTarget target = DataTarget.LoadCrashDump(dumpfile)) {
-					if (target.PointerSize == 8) {
-						p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx64"]);
-						if (!File.Exists(p.StartInfo.FileName)) p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx64_deployment"]);
-						Console.WriteLine("detected x64 dump, selecting 64-bit build of SuperDump ...");
-					} else if (target.PointerSize == 4) {
-						p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx86"]);
-						if (!File.Exists(p.StartInfo.FileName)) p.StartInfo.FileName = ResolvePath(ConfigurationManager.AppSettings["superdumpx86_deployment"]);
-						Console.WriteLine("detected x86 dump, selecting 32-bit build of SuperDump ...");
-					} else {
-						Console.WriteLine("target dump architecture is different than x64 or x86, this is not yet supported!");
-					}
-				}
-				p.StartInfo.Arguments = $"{dumpfile} {outputfile}";
-				p.StartInfo.UseShellExecute = false;
-				p.StartInfo.RedirectStandardOutput = true;
-				p.StartInfo.WorkingDirectory = Path.GetDirectoryName(p.StartInfo.FileName);
-
-				try {
-					Console.WriteLine($"launching '{p.StartInfo.FileName}' '{p.StartInfo.Arguments}'");
-					Console.WriteLine($"working dir: '{p.StartInfo.WorkingDirectory}'");
-					p.Start();
-					TrySetPriorityClass(p, ProcessPriorityClass.BelowNormal);
-					Console.WriteLine("... analyzing");
-					do {
-						Console.WriteLine(p.StandardOutput.ReadLine());
-						Thread.Sleep(15);
-					} while (!p.HasExited);
-
-					Console.Write(p.StandardOutput.ReadToEnd());
-				} catch (Exception ex) {
-					Console.WriteLine("Exception thrown, maybe you have not built SuperDump in right bitness yet? Build and try again");
-
-					Console.WriteLine(ex.Message);
-					throw;
-				}
+				var superDumpPathInfo = FindSuperDumpPath(dumpfile);
+				RunSuperDump(superDumpPathInfo, dumpfile, outputfile).Wait();
 			} else {
 				throw new FileNotFoundException($"Dump file was not found at {dumpfile}. Please try again");
 			}
 		}
 
-		private static void TrySetPriorityClass(Process process, ProcessPriorityClass priority) {
-			try {
-				process.PriorityClass = priority;
-			} catch (Exception) {
-				// this might be disallowed, e.g. in Azure WebApps
+		private static FileInfo FindSuperDumpPath(string dumpfile) {
+			using (DataTarget target = DataTarget.LoadCrashDump(dumpfile)) {
+				string superDumpPath; ;
+				if (target.PointerSize == 8) {
+					superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx64"]);
+					if (!File.Exists(superDumpPath)) superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx64_deployment"]);
+					Console.WriteLine("detected x64 dump, selecting 64-bit build of SuperDump ...");
+				} else if (target.PointerSize == 4) {
+					superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx86"]);
+					if (!File.Exists(superDumpPath)) superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx86_deployment"]);
+					Console.WriteLine("detected x86 dump, selecting 32-bit build of SuperDump ...");
+				} else {
+					throw new NotSupportedException("target dump architecture is different than x64 or x86, this is not yet supported!");
+				}
+				return new FileInfo(superDumpPath);
+			}
+		}
+
+		private static async Task RunSuperDump(FileInfo superDumpPath, string dumpfile, string outputfile) {
+			using (var process = await ProcessRunner.Run(superDumpPath.FullName, superDumpPath.Directory, $"{dumpfile} {outputfile}")) {
+				//TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
+				Console.WriteLine($"stdout: {process.StdOut}");
+				Console.WriteLine($"stderr: {process.StdErr}");
+				Console.WriteLine($"exitcode: {process.ExitCode}");
+				if (process.ExitCode != 0) {
+					throw new SuperDumpFailedException(process.StdErr);
+				}
 			}
 		}
 

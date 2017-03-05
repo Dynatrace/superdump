@@ -1,11 +1,9 @@
-﻿
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace SuperDumpService.Helpers {
+namespace SuperDump.Common {
 	public class ProcessRunner : IDisposable {
 		private readonly Process process;
 
@@ -25,8 +23,14 @@ namespace SuperDumpService.Helpers {
 		}
 
 		public async Task<ProcessRunner> Start() {
+			string info = $"starting process. exe: '{process.StartInfo.FileName}', args: '{process.StartInfo.Arguments}', workdir: '{process.StartInfo.WorkingDirectory}'";
+			Console.WriteLine(info);
 			await Task.Run(() => {
-				process.Start();
+				try {
+					process.Start();
+				} catch (Exception e) {
+					throw new ProcessRunnerException($"An exception occurred while starting a process: {info}", e);
+				}
 				TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
 				StdOut = process.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
 				StdErr = process.StandardError.ReadToEnd();
