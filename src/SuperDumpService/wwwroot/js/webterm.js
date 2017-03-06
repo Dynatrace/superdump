@@ -80,7 +80,7 @@ function loadConsole() {
 	window.$webtermConsole = $('#webtermConsole');
 	window.$webtermConsole.append(webtermConsole);
 
-	var connection = new WebSocketManager.Connection("ws://" + window.location.hostname + "/cmd");
+	var connection = new WebSocketManager.Connection("ws://" + window.location.hostname + ":" + window.location.port + "/cmd");
 	window.$webtermConsole.data('connection', connection);
 
 	connection.connectionMethods.onConnected = () => {
