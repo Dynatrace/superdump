@@ -53,45 +53,61 @@ namespace SuperDump.Webterm {
 		}
 
 		public void ReceiveMessage(string socketId, string input) {
-			socketIdToProcess[socketId].Write(input);
+			try {
+				socketIdToProcess[socketId].Write(input);
+			} catch (Exception e) {
+				Console.WriteLine($"Error in ReceiveMessage: {e}");
+			}
 		}
 
 		public void StartSession(string socketId, string bundleId, string dumpId) {
-			System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
-			if (string.IsNullOrEmpty(bundleId) || string.IsNullOrEmpty(dumpId)) {
-				return;
+			try {
+				System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
+				if (string.IsNullOrEmpty(bundleId) || string.IsNullOrEmpty(dumpId)) {
+					return;
+				}
+				var dumpInfo = dumpRepo.Get(bundleId, dumpId);
+				bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
+				StartCdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
+			} catch (Exception e) {
+				Console.WriteLine($"Error in StartSession: {e}");
 			}
-			var dumpInfo = dumpRepo.Get(bundleId, dumpId);
-			bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
-			StartCdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
 		}
 
 		public async Task SendToClient(string socketId, string output, string error) {
-			await InvokeClientMethodAsync(socketId, "receiveMessage", new object[] {
+			try {
+				await InvokeClientMethodAsync(socketId, "receiveMessage", new object[] {
 				new {
 					Output = output,
 					Error = error
 				}}
-			);
+				);
+			} catch (Exception e) {
+				Console.WriteLine($"Error in SendToClient: {e}");
+			}
 		}
 
 		public override async Task OnDisconnected(WebSocket socket) {
-			var socketId = WebSocketConnectionManager.GetId(socket);
+			try {
+				var socketId = WebSocketConnectionManager.GetId(socket);
 
-			await base.OnDisconnected(socket);
+				await base.OnDisconnected(socket);
 
-			var message = new Message() {
-				MessageType = MessageType.Text,
-				Data = "{'Output': 'disconnected', 'Error': ''}"
-			};
+				var message = new Message() {
+					MessageType = MessageType.Text,
+					Data = "{'Output': 'disconnected', 'Error': ''}"
+				};
 
-			var mgr = socketIdToProcess[socketId];
-			mgr.Kill();
-			processToSocketId.Remove(mgr);
-			socketIdToProcess.Remove(socketId);
+				var mgr = socketIdToProcess[socketId];
+				mgr.Kill();
+				processToSocketId.Remove(mgr);
+				socketIdToProcess.Remove(socketId);
 
-			System.Console.WriteLine("disconnected");
-			await SendMessageToAllAsync(message);
+				System.Console.WriteLine("disconnected");
+				await SendMessageToAllAsync(message);
+			} catch (Exception e) {
+				Console.WriteLine($"Error in OnDisconnected: {e}");
+			}
 		}
 	}
 }
