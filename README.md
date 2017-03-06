@@ -1,7 +1,7 @@
 SuperDump
 =========
 
-*SuperDump* is a service for **_automated Windows crash-dump analysis_**. 
+*SuperDump* is a service for **_automated Windows crash-dump analysis_**.
 
 SuperDump was made with these goals in mind: 
 
@@ -11,6 +11,7 @@ SuperDump was made with these goals in mind:
 What SuperDump is not: 
 
   * A replacement for in-depth analysis tools such as WinDbg.
+  * A windows kernel dump analysis tool.
 
 Features
 ========
@@ -28,6 +29,7 @@ Features
  * Deadlock detection.
  * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
  * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
+ * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally.
 
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
@@ -42,11 +44,13 @@ Technologies
  * [CLRMD] for analysis.
  * [ASP.NET Core] and [Razor] for web-frontend and api.
  * [Hangfire] for task scheduling.
+ * [websocket-manager] for websocket communication for interactive WinDbg session.
  
  [CLRMD]: https://github.com/Microsoft/clrmd
  [ASP.NET Core]: https://github.com/aspnet/Home
  [Razor]: https://github.com/aspnet/Razor
  [Hangfire]: https://github.com/HangfireIO/Hangfire
+ [websocket-manager]: https://github.com/aspnet/websockets
 
 Build
 =====
@@ -67,9 +71,8 @@ SuperDump has been created at [Dynatrace] as an internship project in 2016. It t
 Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
 
  * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
- * Some stuff is tailored for our needs at Dynatrace. E.g. There is a field to link analysis to Jira-issues, which obviously will not fit for everyone. Also, we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
- * There is currently no data retention stuff implemented. Every crash-dump is stored forever. Cleanup needs to be done manually.
- * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
+ * Some stuff is tailored for our needs at Dynatrace. E.g. we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
+  * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
 
 Future
 ======
@@ -79,7 +82,8 @@ Some high-level ideas we've been poking around:
 
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
  * _Linux coredumps:_ Use Linux/GDB to automatically analyze linux coredumps, and use SuperDumpService as frontend (for file upload, REST-API, view reports).
- * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. It can be used to find duplicate crashes and cluster similar crashes.
+ * _Duplication Detection:_ Find a way to detect if the same crash has already been reported.
+ * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. This is useful if a crash is entered as a bug in a ticket system.
 
 Credit
 ======
