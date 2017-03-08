@@ -126,7 +126,7 @@ namespace SuperDumpService.Services {
 		
 		private SDFileEntry GetSDFileEntry(DumpMetainfo dumpInfo, FileInfo fileInfo) {
 			// the file should be registered in dumpInfo
-			SDFileEntry fileEntry = dumpInfo.Files.Where(x => x.FileName == fileInfo.Name).SingleOrDefault();
+			SDFileEntry fileEntry = dumpInfo.Files.Where(x => x.FileName == fileInfo.Name).FirstOrDefault(); // due to a bug, multiple entries for the same file could exist
 			if (fileEntry != null) return fileEntry;
 
 			// but if it's not registered, do some heuristic to figure out which type of file it is.
