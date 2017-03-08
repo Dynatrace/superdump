@@ -52,7 +52,7 @@
 			<dt>Files:</dt>
 			<dd>
 				<dl class="dl-horizontal">
-					@{ var sequence = new List<string> { "Primary Dump", "Other files", "Logs", "Results" }; }
+					@{ var sequence = new List<string> { "Primary Dump", "Other files", "Metadata", "Logs", "Results" }; }
 					@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
 					.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
 						<dt class="filesize">@filetype.ToString()</dt>
