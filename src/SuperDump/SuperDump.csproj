@@ -179,14 +179,20 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup Condition=" '$(Platform)' == 'x86'">
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\*.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\dbgeng.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\dbghelp.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\msdia120.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x86\symsrv.dll" />
     <None Include="@(NativeLibs)">
       <Link>%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup Condition=" '$(Platform)' == 'x64'">
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\*.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\dbgeng.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\dbghelp.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\msdia120.dll" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\symsrv.dll" />
     <None Include="@(NativeLibs)">
       <Link>%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
