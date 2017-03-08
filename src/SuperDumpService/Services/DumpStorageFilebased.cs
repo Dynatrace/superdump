@@ -138,7 +138,7 @@ namespace SuperDumpService.Services {
 				return fileEntry;
 			}
 			if (Path.GetFileName(pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.SuperDumpData;
+				fileEntry.Type = SDFileType.SuperDumpMetaData;
 				return fileEntry;
 			}
 			if ("windbg.log" == fileInfo.Name) {

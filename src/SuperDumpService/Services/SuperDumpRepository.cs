@@ -70,9 +70,18 @@ namespace SuperDumpService.Services {
 
 		public void WipeAllExceptDump(string bundleId, string dumpId) {
 			var dumpdir = pathHelper.GetDumpDirectory(bundleId, dumpId);
-			var dumpfile = dumpRepo.GetDumpFilePath(bundleId, dumpId);
+			var knownfiles = dumpRepo.GetFileNames(bundleId, dumpId);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
-				if (file != dumpfile && file != pathHelper.GetDumpMetadataPath(bundleId, dumpId)) {
+				bool shallDelete = true;
+				var match = knownfiles.SingleOrDefault(x => x.FileInfo.FullName == file);
+				if (match != null) {
+					shallDelete = match.FileEntry.Type == SDFileType.SuperDumpData
+						|| match.FileEntry.Type == SDFileType.SuperDumpLogfile
+						|| match.FileEntry.Type == SDFileType.DebugDiagResult
+						|| match.FileEntry.Type == SDFileType.CustomTextResult
+						|| match.FileEntry.Type == SDFileType.WinDbg;
+				}
+				if (shallDelete) {
 					File.Delete(file);
 				}
 			}
@@ -123,7 +132,7 @@ namespace SuperDumpService.Services {
 		private async Task ProcessDump(string bundleId, FileInfo file) {
 			// add dump
 			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
-	
+
 			// add other files within the same directory
 			await IncludeOtherFiles(bundleId, file, dumpInfo);
 
@@ -136,6 +145,8 @@ namespace SuperDumpService.Services {
 				var dir = file.Directory;
 				foreach (var siblingFile in dir.EnumerateFiles()) {
 					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
+					if (siblingFile.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
+					if (siblingFile.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
 					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
 				}
 			}

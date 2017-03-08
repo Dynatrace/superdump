@@ -49,6 +49,9 @@ namespace SuperDumpService.Models {
 		[Description("Results")]
 		DebugDiagResult,
 
+		[Description("Metadata")]
+		SuperDumpMetaData,
+
 		[Description("Logs")]
 		SuperDumpLogfile,
 
