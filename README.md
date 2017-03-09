@@ -37,7 +37,8 @@ Features
 <a href="doc/img/managedexception.png"><img src="doc/img/managedexception.png" title="managed exception" width="200"/></a>
 Demo
 ============
-http://superdump-demo.azurewebsites.net
+Demo-Video: https://youtu.be/XdyDjkW8MDk
+Demo-Deployment: http://superdump-demo.azurewebsites.net (older version though)
 
 Technologies
 ============
