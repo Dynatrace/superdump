@@ -54,7 +54,7 @@ namespace SuperDumpSelector {
 		}
 
 		private static async Task RunSuperDump(FileInfo superDumpPath, string dumpfile, string outputfile) {
-			using (var process = await ProcessRunner.Run(superDumpPath.FullName, superDumpPath.Directory, $"{dumpfile} {outputfile}")) {
+			using (var process = await ProcessRunner.Run(superDumpPath.FullName, superDumpPath.Directory, $"\"{dumpfile}\" \"{outputfile}\"")) {
 				//TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
 				Console.WriteLine($"stdout: {process.StdOut}");
 				Console.WriteLine($"stderr: {process.StdErr}");
