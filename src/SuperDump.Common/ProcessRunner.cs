@@ -28,14 +28,14 @@ namespace SuperDump.Common {
 			await Task.Run(() => {
 				try {
 					process.Start();
+					TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
+					StdOut = process.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
+					StdErr = process.StandardError.ReadToEnd();
+					process.WaitForExit();
+					ExitCode = process.ExitCode;
 				} catch (Exception e) {
 					throw new ProcessRunnerException($"An exception occurred while starting a process: {info}", e);
 				}
-				TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
-				StdOut = process.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
-				StdErr = process.StandardError.ReadToEnd();
-				process.WaitForExit();
-				ExitCode = process.ExitCode;
 			});
 			return this;
 		}
