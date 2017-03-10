@@ -60,10 +60,10 @@ Build
  * Prerequisites:
    * Visual Studio 2017
    * .NET Core Tooling 1.0
-   * .NET Core 1.1
+   * .NET Core 1.1.1
    * .NET Framework 4.6
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
-   * DebugDiag (optional, for automatic DebugDiag analysis)
+   * DebugDiag (for automatic DebugDiag analysis)
    * Windows Debugging Tools (`cdb.exe`) (optional, for interactive mode)
  * Build via `building/build.cmd`
  * Run via `build/runsuperdump.cmd` (defaults to port 5000)
