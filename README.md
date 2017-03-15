@@ -1,7 +1,7 @@
 SuperDump
 =========
 
-*SuperDump* is a service for **_automated Windows crash-dump analysis_**.
+*SuperDump* is a service for **_automated crash-dump analysis_**.
 
 SuperDump was made with these goals in mind: 
 
@@ -16,7 +16,7 @@ What SuperDump is not:
 Features
 ========
  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
- * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`*.dmp` files).
+ * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`.dmp` files).
  * `.zip` files containing multiple crash-dumps are also supported.
  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
  * SuperDump report shows: 
@@ -30,7 +30,10 @@ Features
  * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
  * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
  * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally.
-
+ * Linux coredumps (`.core`) are supported in a very limited way. They can be uploaded, and are prepared the same way windows crash dumps are prepared. Then a configurable command is invoked for analysis (`LinuxAnalysisCommand`). The actual analyis-scripts are *not* part of this repository (yet).
+ * "Interactive mode" for linux coredumps is possible as well, but again it's just a command that is invoked (`LinuxInteractiveCommand`). The actual helper-script for this is not part of this repository (yet).
+   * If anyone is interested in a _how-to-set-up-superdump-for-linux_ guide, please contact me on twitter (https://twitter.com/discostu105).
+ 
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
@@ -86,6 +89,7 @@ Some high-level ideas we've been poking around:
 
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
  * _Linux coredumps:_ Use Linux/GDB to automatically analyze linux coredumps, and use SuperDumpService as frontend (for file upload, REST-API, view reports).
+   * Some of this is already implemented. See "Features".
  * _Duplication Detection:_ Find a way to detect if the same crash has already been reported.
  * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. This is useful if a crash is entered as a bug in a ticket system.
 
