@@ -122,9 +122,13 @@ namespace SuperDump.Webterm {
 			while (this.process.HasExited == false) {
 				standart.Clear();
 
-				length = await this.process.StandardOutput.ReadAsync(buff, 0, buff.Length);
-				standart.Append(buff.SubArray(0, length));
-				this.OnStandartTextReceived(standart.ToString());
+				try {
+					length = await this.process.StandardOutput.ReadAsync(buff, 0, buff.Length);
+					standart.Append(buff.SubArray(0, length));
+					this.OnStandartTextReceived(standart.ToString());
+				} catch (Exception e) {
+					Console.WriteLine($"Exception in ReadOutputAsync: {e}");
+				}
 				Thread.Sleep(1);
 			}
 
@@ -135,11 +139,15 @@ namespace SuperDump.Webterm {
 			var sb = new StringBuilder();
 
 			do {
-				sb.Clear();
-				var buff = new char[1024];
-				int length = await this.process.StandardError.ReadAsync(buff, 0, buff.Length);
-				sb.Append(buff.SubArray(0, length));
-				this.OnErrorTextReceived(sb.ToString());
+				try {
+					sb.Clear();
+					var buff = new char[1024];
+					int length = await this.process.StandardError.ReadAsync(buff, 0, buff.Length);
+					sb.Append(buff.SubArray(0, length));
+					this.OnErrorTextReceived(sb.ToString());
+				} catch (Exception e) {
+					Console.WriteLine($"Exception in ReadOutputErrorAsync: {e}");
+				}
 				Thread.Sleep(1);
 			}
 			while (this.process.HasExited == false);
@@ -149,13 +157,17 @@ namespace SuperDump.Webterm {
 			while (this.process.HasExited == false) {
 				Thread.Sleep(1);
 
-				if (this.pendingWriteData != null) {
-					await this.process.StandardInput.WriteAsync(this.pendingWriteData);
-					await this.process.StandardInput.FlushAsync();
+				try {
+					if (this.pendingWriteData != null) {
+						await this.process.StandardInput.WriteAsync(this.pendingWriteData);
+						await this.process.StandardInput.FlushAsync();
 
-					lock (this.theLock) {
-						this.pendingWriteData = null;
+						lock (this.theLock) {
+							this.pendingWriteData = null;
+						}
 					}
+				} catch (Exception e) {
+					Console.WriteLine($"Exception in WriteInputTask: {e}");
 				}
 			}
 		}
