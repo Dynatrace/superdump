@@ -106,18 +106,19 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
-			string command = settings.Value.LinuxCommandTemplate;
+			string command = settings.Value.LinuxAnalysisCommand;
 
 			if (string.IsNullOrEmpty(command)) {
 				throw new ArgumentNullException("'LinuxCommandTemplate' setting is not configured.");
 			}
 
-			command = command.Replace("{coredump}", dumpFilePath);
-			command = command.Replace("{outputjson}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
+			command = command.Replace("{dumpdir}", workingDir.FullName);
+			command = command.Replace("{dumppath}", dumpFilePath);
+			command = command.Replace("{dumpname}", Path.GetFileName(dumpFilePath));
+			command = command.Replace("{outputpath}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
+			command = command.Replace("{outputname}", Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)));
 
-			var parts = command.Split(' ');
-			string executable = parts.First();
-			string arguments = string.Join(" ", parts.Skip(1).ToArray());
+			Utility.ExtractExe(command, out string executable, out string arguments);
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
 			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {

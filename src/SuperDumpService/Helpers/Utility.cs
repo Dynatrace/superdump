@@ -10,6 +10,8 @@ using System.IO.Compression;
 using SuperDumpService.Services;
 using System.Reflection;
 using System.ComponentModel;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -164,6 +166,15 @@ namespace SuperDumpService.Helpers {
 					Path.GetFullPath(path1).TrimEnd('\\'),
 					Path.GetFullPath(path2).TrimEnd('\\'),
 					StringComparison.OrdinalIgnoreCase);
+		}
+
+		public static void ExtractExe(string command, out string executable, out string arguments) {
+			var parts = Regex.Matches(command, @"[\""].+?[\""]|[^ ]+")
+				.Cast<Match>()
+				.Select(m => m.Value)
+				.ToList();
+			executable = parts.First();
+			arguments = string.Join(" ", parts.Skip(1).ToArray());
 		}
 	}
 }

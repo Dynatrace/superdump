@@ -80,7 +80,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public string GetDumpFilePath(string bundleId, string dumpId) {
-			var filename = GetSDFileInfos(bundleId, dumpId).Single(x => x.FileEntry.Type == SDFileType.PrimaryDump).FileInfo;
+			var filename = GetSDFileInfos(bundleId, dumpId).FirstOrDefault(x => x.FileEntry.Type == SDFileType.PrimaryDump).FileInfo;
+			if (filename == null) return null;
 			if (!filename.Exists) return null;
 			return filename.FullName;
 		}

@@ -145,10 +145,10 @@ namespace SuperDumpService.Controllers {
 		}
 
 		private string ReadCustomTextResult(DumpMetainfo dumpInfo) {
-			SDFileEntry customResultFile = dumpInfo.Files.SingleOrDefault(x => x.Type == SDFileType.CustomTextResult);
+			SDFileEntry customResultFile = dumpInfo.Files.FirstOrDefault(x => x.Type == SDFileType.CustomTextResult);
 			if (customResultFile == null) return null;
 			FileInfo file = dumpStorage.GetFile(dumpInfo.BundleId, dumpInfo.DumpId, customResultFile.FileName);
-			if (!file.Exists) return null;
+			if (file == null || !file.Exists) return null;
 			return System.IO.File.ReadAllText(file.FullName);
 		}
 

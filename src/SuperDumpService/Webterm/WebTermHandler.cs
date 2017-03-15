@@ -8,6 +8,8 @@ using WebSocketManager.Common;
 using SuperDumpService.Services;
 using SuperDumpService;
 using Microsoft.Extensions.Options;
+using System.IO;
+using SuperDumpService.Helpers;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
@@ -36,20 +38,32 @@ namespace SuperDump.Webterm {
 		}
 
 		private void StartCdb(string socketId, string dumpPath, bool is64Bit) {
-			string cdbPath;
-			if (is64Bit) {
-				cdbPath = settings.Value.Cdbx64;
-			} else {
-				cdbPath = settings.Value.Cdbx86;
-			}
-			var mgr = new ConsoleAppManager(cdbPath);
+			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
+			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
+			ConsoleAppManager mgr = RunConsoleApp(socketId, dumpPath, command);
+			mgr.WriteLine(".cordll -ve -u -l"); // load DAC and SOS
+		}
+
+		private void StartGdb(string socketId, string dumpPath, bool is64Bit) {
+			string command = settings.Value.LinuxInteractiveCommand;
+			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
+			RunConsoleApp(socketId, dumpPath, command);
+		}
+
+		private ConsoleAppManager RunConsoleApp(string socketId, string dumpPath, string command) {
+			command = command.Replace("{dumppath}", dumpPath);
+			command = command.Replace("{dumpname}", Path.GetFileName(dumpPath));
+			command = command.Replace("{dumpdir}", Path.GetDirectoryName(dumpPath));
+
+			Utility.ExtractExe(command, out string executable, out string arguments);
+
+			var mgr = new ConsoleAppManager(executable);
 			socketIdToProcess[socketId] = mgr;
 			processToSocketId[mgr] = socketId;
 			mgr.StandartTextReceived += Mgr_StandartTextReceived;
 			mgr.ErrorTextReceived += Mgr_ErrorTextReceived;
-			mgr.ExecuteAsync($"-z {dumpPath}");
-
-			mgr.WriteLine(".cordll -ve -u -l"); // load DAC and SOS
+			mgr.ExecuteAsync(arguments);
+			return mgr;
 		}
 
 		public void ReceiveMessage(string socketId, string input) {
@@ -60,6 +74,7 @@ namespace SuperDump.Webterm {
 			}
 		}
 
+		// called by WebSocketManager
 		public void StartSession(string socketId, string bundleId, string dumpId) {
 			try {
 				System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
@@ -68,7 +83,13 @@ namespace SuperDump.Webterm {
 				}
 				var dumpInfo = dumpRepo.Get(bundleId, dumpId);
 				bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
-				StartCdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
+				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
+					StartCdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
+				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
+					StartGdb(socketId, dumpRepo.GetDumpFilePath(bundleId, dumpId), is64bit);
+				} else {
+					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
+				}
 			} catch (Exception e) {
 				Console.WriteLine($"Error in StartSession: {e}");
 			}
@@ -77,10 +98,10 @@ namespace SuperDump.Webterm {
 		public async Task SendToClient(string socketId, string output, string error) {
 			try {
 				await InvokeClientMethodAsync(socketId, "receiveMessage", new object[] {
-				new {
-					Output = output,
-					Error = error
-				}}
+					new {
+						Output = output,
+						Error = error
+					}}
 				);
 			} catch (Exception e) {
 				Console.WriteLine($"Error in SendToClient: {e}");

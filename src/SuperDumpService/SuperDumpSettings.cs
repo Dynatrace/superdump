@@ -15,9 +15,10 @@ namespace SuperDumpService {
 		public bool DumpDownloadable { get; set; } = true;
 		public int MaxUploadSizeMB { get; set; } = 16000;
 		public bool IncludeOtherFilesInReport { get; set; }
-		public string LinuxCommandTemplate { get; set; }
 		public IEnumerable<string> BinPath { get; set; }
-		public string Cdbx86 { get; set; }
-		public string Cdbx64 { get; set; }
+		public string WindowsInteractiveCommandx86 { get; set; }
+		public string WindowsInteractiveCommandx64 { get; set; }
+		public string LinuxAnalysisCommand { get; set; }
+		public string LinuxInteractiveCommand { get; set; }
 	}
 }
