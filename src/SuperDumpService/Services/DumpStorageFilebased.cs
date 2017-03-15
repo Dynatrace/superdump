@@ -80,7 +80,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public string GetDumpFilePath(string bundleId, string dumpId) {
-			var filename = GetSDFileInfos(bundleId, dumpId).FirstOrDefault(x => x.FileEntry.Type == SDFileType.PrimaryDump).FileInfo;
+			var filename = GetSDFileInfos(bundleId, dumpId).FirstOrDefault(x => x.FileEntry.Type == SDFileType.PrimaryDump)?.FileInfo;
 			if (filename == null) return null;
 			if (!filename.Exists) return null;
 			return filename.FullName;
@@ -159,6 +159,10 @@ namespace SuperDumpService.Services {
 				return fileEntry;
 			}
 			if (fileInfo.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
+				fileEntry.Type = SDFileType.PrimaryDump;
+				return fileEntry;
+			}
+			if (fileInfo.Name.EndsWith(".core", StringComparison.OrdinalIgnoreCase)) {
 				fileEntry.Type = SDFileType.PrimaryDump;
 				return fileEntry;
 			}
