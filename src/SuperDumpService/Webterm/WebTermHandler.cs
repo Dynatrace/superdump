@@ -10,6 +10,7 @@ using SuperDumpService;
 using Microsoft.Extensions.Options;
 using System.IO;
 using SuperDumpService.Helpers;
+using System.Net;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
@@ -37,17 +38,16 @@ namespace SuperDump.Webterm {
 			}
 		}
 
-		private void StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
+		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
 			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
-			ConsoleAppManager mgr = RunConsoleApp(socketId, workingDir, dumpPath, command);
-			mgr.WriteLine(".cordll -ve -u -l"); // load DAC and SOS
+			return RunConsoleApp(socketId, workingDir, dumpPath, command);
 		}
 
-		private void StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
+		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
 			string command = settings.Value.LinuxInteractiveCommand;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
-			RunConsoleApp(socketId, workingDir, dumpPath, command);
+			return RunConsoleApp(socketId, workingDir, dumpPath, command);
 		}
 
 		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command) {
@@ -75,7 +75,7 @@ namespace SuperDump.Webterm {
 		}
 
 		// called by WebSocketManager
-		public void StartSession(string socketId, string bundleId, string dumpId) {
+		public void StartSession(string socketId, string bundleId, string dumpId, string initialCommand) {
 			try {
 				System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
 				if (string.IsNullOrEmpty(bundleId) || string.IsNullOrEmpty(dumpId)) {
@@ -87,16 +87,38 @@ namespace SuperDump.Webterm {
 				var workingDirectory = dumpFilePathInfo?.Directory;
 
 				bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
+				ConsoleAppManager mgr = null;
+				var initialCommands = new List<string>();
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
-					StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
+					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
+					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
 				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
-					StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
+					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
 				}
+				if (mgr != null && !string.IsNullOrEmpty(initialCommand)) {
+					initialCommands.Add(WebUtility.UrlDecode(initialCommand));
+				}
+				RunInitialCommandsAsync(socketId, mgr, initialCommands);
 			} catch (Exception e) {
 				Console.WriteLine($"Error in StartSession: {e}");
 			}
+		}
+
+		private void RunInitialCommandsAsync(string socketId, ConsoleAppManager mgr, List<string> initialCommands) {
+			Task.Run(async () => {
+				await Task.Delay(1000); // that's pretty ugly. we actually would need to wait until the console is ready for input, then run this command.
+				foreach (var cmd in initialCommands) {
+					await WriteLineAndTellClient(socketId, cmd, mgr);
+					await Task.Delay(1000); // that's pretty ugly. we actually would need to wait until the console is ready for input, then run this command.
+				}
+			});
+		}
+
+		private async Task WriteLineAndTellClient(string socketId, string line, ConsoleAppManager mgr) {
+			await SendToClient(socketId, line + "\n", null);
+			mgr.WriteLine(line);
 		}
 
 		public async Task SendToClient(string socketId, string output, string error) {
