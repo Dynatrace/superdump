@@ -115,11 +115,18 @@
 										} else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
 											rowClass = "custom-special";
 										}
+										string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
+										string disassemblyCmd = (frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8";
 										<tr class="@rowClass">
 											<td class="nobreak stacktype">@frame.Type.ToString()</td>
 											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
-											<td class="nobreak stackinstructionptr">@frame.InstructionPointer.ToString("x" + Model.PointerSize)</td>
+											
+											<td class="nobreak stackinstructionptr">
+												<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="@disassemblyCmd" class="alert-link">
+													@frame.InstructionPointer.ToString("x" + Model.PointerSize)
+												</a>
+											</td>
 											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
 											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
 												<td class="nobreak stackmethodname">[@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
@@ -129,7 +136,7 @@
 													tagclasses = "inline-tag " + string.Join(" ", frame.Tags.Select(x => "tag-" + x.Name));
 												}
 												<td class="nobreak stackmethodname">
-													<span class="@tagclasses">@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x")</span>
+													<span class="@tagclasses">@modulename</span>
 													@if (frame.SourceInfo != null) {
 														<span class="sourceinfo">@frame.SourceInfo.File:@frame.SourceInfo.Line</span>
 													}

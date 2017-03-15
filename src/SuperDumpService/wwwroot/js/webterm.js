@@ -85,7 +85,7 @@ function loadConsole() {
 
 	connection.connectionMethods.onConnected = () => {
 		console.log("You are now connected! Connection ID: " + connection.connectionId);
-		sendStartSession(getURLParameter("bundleId"), getURLParameter("dumpId"));
+		sendStartSession(getURLParameter("bundleId"), getURLParameter("dumpId"), getURLParameter("cmd"));
 	};
 
 	connection.connectionMethods.onDisconnected = () => {
@@ -105,9 +105,9 @@ function loadConsole() {
 		connection.invoke("ReceiveMessage", connection.connectionId, input);
 	}
 
-	function sendStartSession(bundleId, dumpId) {
+	function sendStartSession(bundleId, dumpId, initialCommand) {
 		console.log("_sendStartSession: " + bundleId + "," + dumpId);
-		connection.invoke("StartSession", connection.connectionId, bundleId, dumpId);
+		connection.invoke("StartSession", connection.connectionId, bundleId, dumpId, initialCommand);
 	}
 
 	function endsWith(str, suffix) {
