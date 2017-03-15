@@ -28,7 +28,13 @@
 			Interactive debug session for <strong>@Model.DumpInfo.DumpFileName</strong>.
 			<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId">Back to Report</a>
 		</div>
-		<div style="display:inline-block; float: right; padding: 8px;"><a href="http://windbg.info/doc/1-common-cmds.html">WinDbg Cheat Sheet</a></div>
+		<div style="display:inline-block; float: right; padding: 8px;">
+			@if (Model.DumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
+				<a href="http://windbg.info/doc/1-common-cmds.html">WinDbg Cheat Sheet</a>
+			} else {
+				<a href="http://darkdust.net/files/GDB%20Cheat%20Sheet.pdf">GDB Cheat Sheet</a>
+			}
+		</div>
 		<div id="webtermConsole" class="left-aligned"></div>
 	</div>
 </body>

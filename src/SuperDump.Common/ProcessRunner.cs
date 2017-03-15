@@ -23,7 +23,7 @@ namespace SuperDump.Common {
 		}
 
 		public async Task<ProcessRunner> Start() {
-			string info = $"starting process. exe: '{process.StartInfo.FileName}', args: '{process.StartInfo.Arguments}', workdir: '{process.StartInfo.WorkingDirectory}'";
+			string info = $"starting process. exe: '{process.StartInfo.FileName}' {process.StartInfo.Arguments}, workdir: '{process.StartInfo.WorkingDirectory}'";
 			Console.WriteLine(info);
 			await Task.Run(() => {
 				try {

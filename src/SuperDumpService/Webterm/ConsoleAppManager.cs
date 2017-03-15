@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,16 +9,16 @@ using System.Threading.Tasks;
 namespace SuperDump.Webterm {
 	// taken from http://stackoverflow.com/questions/21848271/redirecting-standard-input-of-console-application and slightly modified
 	public class ConsoleAppManager {
-		private readonly string appName;
+		private readonly string executable;
 		private readonly Process process = new Process();
 		private readonly object theLock = new object();
 		private SynchronizationContext context;
 		private string pendingWriteData;
 
-		public ConsoleAppManager(string appName) {
-			this.appName = appName;
-
-			this.process.StartInfo.FileName = this.appName;
+		public ConsoleAppManager(string executable, DirectoryInfo workingDir) {
+			this.executable = executable;
+			this.process.StartInfo.WorkingDirectory = workingDir.FullName;
+			this.process.StartInfo.FileName = this.executable;
 			this.process.StartInfo.RedirectStandardError = true;
 			this.process.StartInfo.StandardErrorEncoding = Encoding.UTF8;
 
@@ -52,11 +53,10 @@ namespace SuperDump.Webterm {
 			}
 
 			string arguments = string.Join(" ", args);
-
 			this.process.StartInfo.Arguments = arguments;
-
 			this.context = SynchronizationContext.Current;
 
+			Console.WriteLine($"Starting interactive session with: '\"{process.StartInfo.FileName}\" {process.StartInfo.Arguments}'");
 			this.process.Start();
 			this.Running = true;
 
