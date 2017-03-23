@@ -10,7 +10,7 @@ using SuperDump.Common;
 
 namespace SuperDumpSelector {
 	public static class Program {
-		public static void Main(string[] args) {
+		public static int Main(string[] args) {
 			string dumpfile;
 			if (args.Length > 0) {
 				dumpfile = args[0];
@@ -27,12 +27,19 @@ namespace SuperDumpSelector {
 			}
 
 			Console.WriteLine(Environment.CurrentDirectory);
-			if (File.Exists(dumpfile)) {
-				var superDumpPathInfo = FindSuperDumpPath(dumpfile);
-				RunSuperDump(superDumpPathInfo, dumpfile, outputfile).Wait();
-			} else {
-				throw new FileNotFoundException($"Dump file was not found at {dumpfile}. Please try again");
+
+			try {
+				if (File.Exists(dumpfile)) {
+					var superDumpPathInfo = FindSuperDumpPath(dumpfile);
+					RunSuperDump(superDumpPathInfo, dumpfile, outputfile).Wait();
+				} else {
+					throw new FileNotFoundException($"Dump file was not found at {dumpfile}. Please try again");
+				}
+			} catch (Exception e) {
+				Console.Error.WriteLine($"SuperDumpSelector failed: {e}");
+				return 1;
 			}
+			return 0;
 		}
 
 		private static FileInfo FindSuperDumpPath(string dumpfile) {

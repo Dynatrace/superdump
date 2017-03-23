@@ -15,7 +15,7 @@ namespace SuperDump {
 		private static DumpContext context;
 		private static DataTarget target;
 
-		private static void Main(string[] args) {
+		private static int Main(string[] args) {
 			using (context = new DumpContext()) {
 				Console.WriteLine("SuperDump - Windows dump analysis tool");
 				Console.WriteLine("--------------------------");
@@ -109,9 +109,10 @@ namespace SuperDump {
 					}
 				} catch (Exception e) {
 					context.WriteError($"Exception happened: {e}");
-					throw;
+					return 1;
 				}
 			}
+			return 0;
 		}
 
 		private static void LoadDump(string absoluteDumpFile) {
