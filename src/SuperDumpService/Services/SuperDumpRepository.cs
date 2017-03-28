@@ -48,8 +48,8 @@ namespace SuperDumpService.Services {
 			pathHelper.PrepareDirectories();
 		}
 
-		public SDResult GetResult(string bundleId, string dumpId) {
-			return dumpRepo.GetResult(bundleId, dumpId);
+		public SDResult GetResult(string bundleId, string dumpId, out string error) {
+			return dumpRepo.GetResult(bundleId, dumpId, out error);
 		}
 
 		public bool ContainsBundle(string bundleId) {

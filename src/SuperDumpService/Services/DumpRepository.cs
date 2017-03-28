@@ -40,7 +40,7 @@ namespace SuperDumpService.Services {
 					if (!dumpInfo.Is64Bit.HasValue) {
 						// this is done for repos, which did not store bitness information yet
 						// be aware that this will slow down startup considerable.
-						var res = storage.ReadResults(bundleId, dumpInfo.DumpId);
+						var res = storage.ReadResults(bundleId, dumpInfo.DumpId, out string error);
 						if (res != null) {
 							dumpInfo.Is64Bit = res.SystemContext.ProcessArchitecture.Contains("64");
 							storage.Store(dumpInfo);
@@ -118,8 +118,8 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		internal SDResult GetResult(string bundleId, string dumpId) {
-			return storage.ReadResults(bundleId, dumpId);
+		internal SDResult GetResult(string bundleId, string dumpId, out string error) {
+			return storage.ReadResults(bundleId, dumpId, out error);
 		}
 
 		internal IEnumerable<SDFileInfo> GetFileNames(string bundleId, string dumpId) {

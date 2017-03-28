@@ -127,7 +127,7 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 
-			SDResult res = superDumpRepo.GetResult(bundleId, dumpId);
+			SDResult res = superDumpRepo.GetResult(bundleId, dumpId, out string error);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -140,7 +140,8 @@ namespace SuperDumpService.Controllers {
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
 				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
-				CustomTextResult = ReadCustomTextResult(dumpInfo)
+				CustomTextResult = ReadCustomTextResult(dumpInfo),
+				SDResultReadError = error
 			});
 		}
 

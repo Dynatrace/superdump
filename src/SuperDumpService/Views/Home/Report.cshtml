@@ -76,6 +76,13 @@
 				<pre>Error: @Model.AnalysisError</pre>
 			} else if (Model.Result == null) {
 				if (Model.CustomTextResult != null) {
+					@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
+						<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>
+					} else {
+						<p>SuperDump Model is null, because of error:</p>
+						<pre>@Model.SDResultReadError</pre>
+						<p>Falling back to CustomTextResult.</p>
+					}
 					<section>
 						<pre>@Model.CustomTextResult</pre>
 					</section>

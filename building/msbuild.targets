@@ -18,7 +18,7 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
-		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=publish-profile" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.DebugDiag\SuperDump.DebugDiag.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDump.DebugDiag" Targets="Build" />
 	</Target>
@@ -32,7 +32,7 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build" />
-		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=publish-profile" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.DebugDiag\SuperDump.DebugDiag.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDump.DebugDiag" Targets="Build" />
 	</Target>
