@@ -19,6 +19,7 @@ namespace SuperDumpService.ViewModels {
 		public int PointerSize { get; set; }
 		public IDictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
 		public string CustomTextResult { get; set; }
+		public string SDResultReadError { get; set; }
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;

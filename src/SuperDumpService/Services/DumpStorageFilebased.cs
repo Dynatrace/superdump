@@ -52,7 +52,7 @@ namespace SuperDumpService.Services {
 				BundleId = bundleId,
 				DumpId = dumpId
 			};
-			var result = ReadResults(bundleId, dumpId);
+			var result = ReadResults(bundleId, dumpId, out string error);
 			if (result != null) {
 				metainfo.Status = DumpStatus.Finished;
 				metainfo.DumpFileName = result.AnalysisInfo.Path?.Replace(pathHelper.GetUploadsDir(), ""); // AnalysisInfo.FileName used to store full file names. e.g. "C:\superdump\uploads\myzipfilename\subdir\dump.dmp". lets only keep "myzipfilename\subdir\dump.dmp"
@@ -64,7 +64,8 @@ namespace SuperDumpService.Services {
 			WriteMetainfoFile(metainfo, pathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
-		public SDResult ReadResults(string bundleId, string dumpId) {
+		public SDResult ReadResults(string bundleId, string dumpId, out string error) {
+			error = string.Empty;
 			var filename = pathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) {
 				// fallback for older dumps
@@ -74,7 +75,8 @@ namespace SuperDumpService.Services {
 			try {
 				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
 			} catch (Exception e) {
-				Console.WriteLine($"could not deserialize {filename}: {e.Message}");
+				error = $"could not deserialize {filename}: {e.Message}";
+				Console.WriteLine(error);
 				return null;
 			}
 		}
