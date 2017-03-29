@@ -141,7 +141,8 @@ namespace SuperDumpService.Controllers {
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
 				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
 				CustomTextResult = ReadCustomTextResult(dumpInfo),
-				SDResultReadError = error
+				SDResultReadError = error,
+				DumpType = dumpInfo.DumpType
 			});
 		}
 
