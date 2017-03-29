@@ -116,7 +116,10 @@
 											rowClass = "custom-special";
 										}
 										string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
-										string disassemblyCmd = (frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8";
+
+										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ? 
+											(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
+											"disas 0x" + (frame.InstructionPointer).ToString("x");
 										<tr class="@rowClass">
 											<td class="nobreak stacktype">@frame.Type.ToString()</td>
 											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
