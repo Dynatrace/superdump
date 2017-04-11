@@ -112,6 +112,8 @@ namespace SuperDumpService.Services {
 				throw new ArgumentNullException("'LinuxCommandTemplate' setting is not configured.");
 			}
 
+			command = command.Replace("{bundleid}", dumpInfo.BundleId);
+			command = command.Replace("{dumpid}", dumpInfo.DumpId);
 			command = command.Replace("{dumpdir}", workingDir.FullName);
 			command = command.Replace("{dumppath}", dumpFilePath);
 			command = command.Replace("{dumpname}", Path.GetFileName(dumpFilePath));

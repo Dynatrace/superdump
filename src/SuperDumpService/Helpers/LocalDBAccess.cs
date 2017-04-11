@@ -11,7 +11,7 @@ namespace SuperDumpService.Helpers {
 				pathHelper.PrepareDirectories();
 				string outputFolder = pathHelper.GetHangfireDBDir();
 				string mdfFilename = dbName + ".mdf";
-				string dbFileName = Path.Combine(outputFolder, mdfFilename);
+				string dbFileName = Path.GetFullPath(new Uri(Path.Combine(pathHelper.GetWorkingDir(), Path.Combine(outputFolder, mdfFilename))).LocalPath);
 
 				// Create Data Directory If It Doesn't Already Exist.
 				if (!Directory.Exists(outputFolder)) {
@@ -69,7 +69,7 @@ namespace SuperDumpService.Helpers {
 		
 		public static bool DetachDatabase(IConfigurationRoot configuration, string dbName) {
 			try {
-				string connectionString = configuration.GetConnectionString("HangfireDB");
+				string connectionString = configuration.GetConnectionString("MasterDB");
 				using (var connection = new SqlConnection(connectionString)) {
 					connection.Open();
 					SqlCommand cmd = connection.CreateCommand();
