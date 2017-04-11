@@ -38,19 +38,22 @@ namespace SuperDump.Webterm {
 			}
 		}
 
-		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
+		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
 			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
-			return RunConsoleApp(socketId, workingDir, dumpPath, command);
+			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
-		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit) {
+		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
 			string command = settings.Value.LinuxInteractiveCommand;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
-			return RunConsoleApp(socketId, workingDir, dumpPath, command);
+			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
-		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command) {
+		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command, string bundleId, string dumpId) {
+
+			command = command.Replace("{bundleid}", bundleId);
+			command = command.Replace("{dumpid}", dumpId);
 			command = command.Replace("{dumppath}", dumpPath?.FullName);
 			command = command.Replace("{dumpname}", dumpPath?.Name);
 			command = command.Replace("{dumpdir}", workingDir?.FullName);
@@ -90,10 +93,10 @@ namespace SuperDump.Webterm {
 				ConsoleAppManager mgr = null;
 				var initialCommands = new List<string>();
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
+					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
 				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit);
+					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
 				}
