@@ -114,6 +114,8 @@ namespace SuperDumpService {
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
 			services.AddSingleton<UnpackService>();
+			services.AddSingleton<NotificationService>();
+			services.AddSingleton<SlackNotificationService>();
 			services.AddWebSocketManager();
 		}
 
