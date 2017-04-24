@@ -20,5 +20,7 @@ namespace SuperDumpService {
 		public string WindowsInteractiveCommandx64 { get; set; }
 		public string LinuxAnalysisCommand { get; set; }
 		public string LinuxInteractiveCommand { get; set; }
+		public string[] SlackNotificationUrls { get; set; }
+		public string SuperDumpUrl { get; set; }
 	}
 }

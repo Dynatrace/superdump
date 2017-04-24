@@ -56,6 +56,10 @@ namespace SuperDump.Models {
 			return equals;
 		}
 
+		public override string ToString() {
+			return $"{FileName} ({Version})";
+		}
+
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
