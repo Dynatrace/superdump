@@ -103,5 +103,9 @@ namespace SuperDump.Models {
 		public bool IsAgentFrame() {
 			return Tags.Contains(SDTag.DynatraceAgentTag);
 		}
+
+		public override string ToString() {
+			return $"{ModuleName}!{MethodName}+{OffsetInMethod:X}";
+		}
 	}
 }
