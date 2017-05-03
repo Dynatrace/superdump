@@ -22,8 +22,8 @@
 					@foreach (var module in Model.Result.SystemContext.Modules.OrderBy(x => x.FilePath)) {
 						<tr>
 							<td style="width:70%;">@module.FilePath @Html.Partial("Tags", @module.Tags)</td>
-							<td>@Model.SizeSuffix(module.FileSize)</td>
-							<td>@module.Version</td>
+							<td class="text-nowrap">@Model.SizeSuffix(module.FileSize)</td>
+							<td class="text-nowrap">@module.Version</td>
 						</tr>
 					}
 				</tbody>

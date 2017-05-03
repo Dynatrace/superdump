@@ -1,0 +1,26 @@
+﻿@model SuperDumpService.ViewModels.SlackMessageViewModel
+@using Humanizer
+
+*New dump analyzed: `@Model.DumpFilename` (_@string.Join(", ", @Model.TopProperties)_)*
+@if (Model.AgentModules.Count > 0) {
+    @: *Agents:* @string.Join(", ", @Model.AgentModules.Select(x => $"`{x}`"))
+}
+@if (Model.NumNativeExceptions > 0) {
+    @: @ToQuantityExtensions.ToQuantity("thread", Model.NumNativeExceptions) with native exceptions
+}
+@if(Model.NumManagedExceptions > 0) {
+    @: @ToQuantityExtensions.ToQuantity("thread", Model.NumManagedExceptions) with .NET exceptions
+}
+@if (Model.NumAssertErrors > 0) {
+    @: @ToQuantityExtensions.ToQuantity("thread", Model.NumAssertErrors) with assertion errors
+}
+@if (!string.IsNullOrEmpty(Model.LastEvent)) {
+    @: *LastEvent:* `@Model.LastEvent`
+}
+@if (!string.IsNullOrEmpty(Model.TopException)) {
+    @: *Exception:* `@Model.TopException`
+}
+@if (!string.IsNullOrEmpty(Model.Stacktrace)) {
+    @: *Stacktrace:* ```@Model.Stacktrace```
+}
+     *Link:* <@Model.Url>

@@ -120,9 +120,16 @@ namespace SuperDumpService {
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider) {
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns) {
 			app.ApplicationServices.GetService<BundleRepository>().Populate();
 			app.ApplicationServices.GetService<DumpRepository>().Populate();
+
+			//foreach(var b in app.ApplicationServices.GetService<BundleRepository>().GetAll()) {
+			//	foreach(var d in app.ApplicationServices.GetService<DumpRepository>().Get(b.BundleId)) {
+			//		var msg = sns.GetMessage2(d);
+			//		Console.WriteLine(msg);
+			//	}
+			//}
 
 			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 			loggerFactory.AddDebug();

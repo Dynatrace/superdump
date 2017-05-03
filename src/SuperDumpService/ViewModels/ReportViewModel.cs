@@ -2,7 +2,6 @@
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace SuperDumpService.ViewModels {
 	public class ReportViewModel {
@@ -29,7 +28,7 @@ namespace SuperDumpService.ViewModels {
 
 		private static readonly string[] sizeSuffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 		public string SizeSuffix(ulong value) {
-			if (value == 0) { return "0 bytes"; }
+			if (value == 0) { return "0.0B"; }
 
 			int mag = (int)Math.Log(value, 1024);
 			decimal adjustedSize = (decimal)value / (1L << (mag * 10));

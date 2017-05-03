@@ -11,6 +11,9 @@
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="Views\SlackMessage.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="wwwroot\js\jquery.console.js" />
   </ItemGroup>
   <ItemGroup>
@@ -24,6 +27,7 @@
     <PackageReference Include="Hangfire" Version="1.6.9" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.6.9" />
     <PackageReference Include="Hangfire.MemoryStorage.Core" Version="1.4.0" />
+    <PackageReference Include="Humanizer" Version="2.1.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.2" />
@@ -38,6 +42,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="1.1.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink.Loader" Version="14.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.2-beta2" />
+    <PackageReference Include="RazorLight" Version="1.0.1" />
     <PackageReference Include="Slack.Webhooks.Core" Version="1.0.1" />
     <PackageReference Include="Swashbuckle" Version="6.0.0-beta902" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
@@ -50,6 +55,9 @@
   </Target>
   <ItemGroup>
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.2.301" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ViewModels\SlackMessage.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SuperDump.Common\SuperDump.Common.csproj" />
