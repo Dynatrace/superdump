@@ -1,9 +1,23 @@
-﻿@model IEnumerable<SuperDumpService.ViewModels.BundleViewModel>
+﻿@model SuperDumpService.ViewModels.OverviewViewModel
 @{
 	ViewData["Title"] = "Overview";
 }
-<h2>Overview of all dumps found on server</h2>
+<h2>All dumps</h2>
 <div class="container">
+
+	<form asp-action="Overview" method="get">
+		<div class="form-actions no-color">
+			<p>
+				<input type="text" name="searchFilter" value="@ViewData["searchFilter"]" />
+				<input type="submit" value="Search" class="btn" />
+				@if (!string.IsNullOrEmpty(ViewData["searchFilter"] as string)) {
+					<a asp-action="Overview">Clear search</a>
+				}
+			</p>
+			<p>Showing @Model.Filtered.Sum(b => b.DumpInfos.Count()) dumps.</p>
+		</div>
+	</form>
+
 	<table class="table table-striped table-word-break">
 		<thead>
 			<tr>
@@ -15,7 +29,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			@foreach (var bundle in @Model.OrderByDescending(bundle => bundle.Created)) {
+			@foreach (var bundle in @Model.Paged.OrderByDescending(bundle => bundle.Created)) {
 				<tr>
 					<td>
 						@Html.ActionLink(bundle.BundleId, "BundleCreated", "Home", new { bundleId = bundle.BundleId })
@@ -43,6 +57,7 @@
 					<td>@bundle.Created</td>
 				</tr>}
 		</tbody>
-
 	</table>
+
+	<pager source="@Model.Paged" />
 </div>

@@ -12,6 +12,7 @@ using SuperDumpService.Services;
 using SuperDump.Models;
 using SuperDumpService.ViewModels;
 using System.Collections.Generic;
+using Sakura.AspNetCore;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
@@ -99,8 +100,37 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public IActionResult Overview() {
-			return View(bundleRepo.GetAll().Select(r => new BundleViewModel(r, dumpRepo.Get(r.BundleId))));
+		public IActionResult Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false) {
+			IEnumerable<BundleViewModel> bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, dumpRepo.Get(r.BundleId))).OrderByDescending(b => b.Created);
+
+			var filtered = Search(searchFilter, bundles);
+			filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
+
+			ViewData["searchFilter"] = searchFilter;
+			return View(new OverviewViewModel {
+				All = bundles,
+				Filtered = filtered,
+				Paged = filtered.ToPagedList(pagesize, page)
+			});
+		}
+
+		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
+			if (includeEmptyBundles) return bundles;
+
+			return bundles.Where(b => b.DumpInfos.Count() > 0);
+		}
+
+		private IEnumerable<BundleViewModel> Search(string searchFilter, IEnumerable<BundleViewModel> bundles) {
+			if (searchFilter == null) return bundles;
+
+			return bundles.Where(b =>
+				b.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+				|| b.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+				|| b.DumpInfos.Any(d =>
+					d.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+					|| (d.DumpFileName != null && d.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+				));
+			
 		}
 
 		public IActionResult GetReport() {
