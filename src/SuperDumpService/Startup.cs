@@ -21,6 +21,7 @@ using SuperDumpService.Services;
 using System.Linq;
 using SuperDump.Webterm;
 using WebSocketManager;
+using Sakura.AspNetCore.Mvc;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -98,6 +99,11 @@ namespace SuperDumpService {
 				if (xmlDocFile.Exists) {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
+			});
+
+			// for pagination list
+			services.AddBootstrapPagerGenerator(options => {
+				options.ConfigureDefault();
 			});
 
 			// App Insights
