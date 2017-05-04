@@ -33,47 +33,45 @@
 		@if (Model.Result.DeadlockInformation.Count > 0) {
 			noAnomalies = false;
 			<h4>Deadlock detection:</h4>
-						@foreach (var d in Model.Result.DeadlockInformation) {
-							<p>
-								Thread
-								<a href="#@d.lastThreadId" class="thread-link">#@Model.Result.ThreadInformation.Values.Single(x => x.OsId == d.lastThreadId).EngineId</a> waits for Thread
-								<a href="#@d.lockedOnThreadId" class="thread-link">@d.lockedOnThreadId</a>
-							</p>
-						}}
+			@foreach (var d in Model.Result.DeadlockInformation) {
+				<p>
+					Thread
+					<a href="#@d.lastThreadId" class="thread-link">#@Model.Result.ThreadInformation.Values.Single(x => x.OsId == d.lastThreadId).EngineId</a> waits for Thread
+					<a href="#@d.lockedOnThreadId" class="thread-link">@d.lockedOnThreadId</a>
+				</p>
+			}}
 		@if (Model.Result.ExceptionRecord.Count > 0) {
 			noAnomalies = false;
 			<h4>Exception report:</h4>
-						<table class="table table-bordered">
-							<thead>
-								<tr>
-									<th>Engine thread ID</th>
-									<th>Exception Type</th>
-									<th>Message</th>
-									<th>Stacktrace</th>
-								</tr>
-							</thead>
-							<tbody>
-								@foreach (var ex in Model.Result.ExceptionRecord) {
-									<tr>
-										<td><a class="thread-link" href="#@ex.OSThreadId">#@Model.Result.ThreadInformation.Values.Single(x => x.OsId == ex.OSThreadId).EngineId</a></td>
-										<td>@ex.Type</td>
-										<td>@ex.Message</td>
-										@if (ex.StackTrace != null && ex.StackTrace.Count > 0) {
-											<td>
-												<ul>
-													@foreach (var f in ex.StackTrace) {
-														<li>@f.ModuleName!@f.MethodName</li>
-													}
-												</ul>
-											</td>
-										} else {
-											<td>Not avaliable</td>
-										}
-									</tr>
-								}
-							</tbody>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>Engine thread ID</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var ex in Model.Result.ExceptionRecord) {
+						<tr>
+							<td><a class="thread-link" href="#@ex.OSThreadId">#@Model.Result.ThreadInformation.Values.Single(x => x.OsId == ex.OSThreadId).EngineId</a></td>
+							<td>
+								<p><strong>Type: </strong>@ex.Type</p>
+								<p><strong>Message: </strong>@ex.Message</p>
+								<p>
+									<strong>Stacktrace:</strong>
+								</p>
+								@if (ex.StackTrace != null && ex.StackTrace.Count > 0) {
 
-						</table>
+									<p>@Html.Partial("_StacktracePlain", @ex.StackTrace)</p>
+
+								} else {
+									<p>Not avaliable</p>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
 		}
 		@if (noAnomalies) {
 			<h4>No special anomalies found</h4>
