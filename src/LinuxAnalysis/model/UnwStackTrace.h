@@ -1,12 +1,13 @@
 #include <vector>
 
+#include "JsonObject.h"
 #include "StackFrame.h"
-#include "../SharedLibFile.h"
+#include "SharedLibFile.h"
 
 using namespace std;
 
 #pragma once
-class UnwStackTrace
+class UnwStackTrace : public JsonObject
 {
 protected:
 	vector<StackFrame> stackFrames;

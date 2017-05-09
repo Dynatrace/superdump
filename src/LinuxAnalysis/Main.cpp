@@ -3,25 +3,31 @@
 #include <string.h>
 #include <vector>
 
-#include <unistd.h>
+#include <iostream>
+#include <fstream>
 
-#include "SharedLibFile.h"
+#include "model/SharedLibFile.h"
 #include "SharedLibResolver.h"
 #include "unwind/UnwindContext.h"
-#include "unwind/ThreadVector.h"
+#include "model/ThreadVector.h"
 
 #include "extracting/ArchiveExtractor.h"
 
 #include "helper/FileSystemHelper.h"
+
+#include "model/AnalysisResult.h"
+#include "model/AnalysisInfo.h"
+#include "model/SystemContext.h"
+#include "model/BlockingObjects.h"
+#include "model/DeadlockInformation.h"
+#include "model/LastEvent.h"
+#include "model/MemoryInformation.h"
 
 using namespace std;
 
 void debug(string dumppath);
 
 int main(int argc, char** argv) {
-	char cwd[1024];
-	getcwd(cwd, sizeof(cwd));
-
 	if (argc >= 2) {
 		ArchiveExtractor extractor;
 		printf("Extracting \"%s\".\r\n", argv[1]);
@@ -49,7 +55,20 @@ void debug(string dumppath) {
 	printf("\r\nDebugging core dump file: %s\r\n\r\n", dumppath.c_str());
 	ThreadVector threads(unwindContext);
 	threads.printAllStackTraces();
-	printf("\r\n\r\nJSON:\r\n{%s}", threads.toJson().c_str());
+
+	string timestamp = string("0001-01-01T00:00:00");
+	AnalysisInfo analysisInfo = AnalysisInfo(&dumppath, &dumppath, NULL, NULL, &timestamp);
+	SystemContext systemContext = SystemContext(NULL, NULL, NULL, NULL, NULL, NULL, 0, sharedLibs);
+	LastEvent lastEvent = LastEvent("EXCEPTION", "Unknown", 0);
+	DeadlockInformation deadlocks = DeadlockInformation();
+	BlockingObjects blockingObjects = BlockingObjects();
+	MemoryInformation memInfo = MemoryInformation();
+
+	AnalysisResult result = AnalysisResult(false, 1, analysisInfo, systemContext, lastEvent, threads, deadlocks, blockingObjects, memInfo);
+	ofstream outfile;
+	outfile.open("superdump-result.json");
+	outfile << result.toJson();
+	outfile.close();
 	delete unwindContext;
 }
 

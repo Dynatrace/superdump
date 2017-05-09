@@ -1,10 +1,13 @@
-#include "UnwStackTrace.h"
+#pragma once
 
 #include <string>
+#include <vector>
+
+#include "../model/SharedLibFile.h"
+#include "../model/UnwStackTrace.h"
 
 using namespace std;
 
-#pragma once
 class StacktraceUnwinder
 {
 public:

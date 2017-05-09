@@ -62,35 +62,53 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="model\JsonObject.cpp" />
+    <ClCompile Include="model\AnalysisInfo.cpp" />
+    <ClCompile Include="model\AnalysisResult.cpp" />
+    <ClCompile Include="model\BlockingObjects.cpp" />
+    <ClCompile Include="model\DeadlockInformation.cpp" />
     <ClCompile Include="extracting\ArchiveExtractor.cpp" />
     <ClCompile Include="extracting\FileExtractor.cpp" />
     <ClCompile Include="helper\FileSystemHelper.cpp" />
     <ClCompile Include="helper\StringHelper.cpp" />
+    <ClCompile Include="model\LastEvent.cpp" />
+    <ClCompile Include="model\MemoryInformation.cpp" />
+    <ClCompile Include="model\SystemContext.cpp" />
+    <ClCompile Include="model\TagVector.cpp" />
     <ClCompile Include="unwind\ThreadUnwinder.cpp" />
     <ClCompile Include="unwind\StacktraceUnwinder.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="SharedLibResolver.cpp" />
-    <ClCompile Include="unwind\ThreadVector.cpp" />
-    <ClCompile Include="unwind\Thread.cpp" />
-    <ClCompile Include="unwind\StackFrame.cpp" />
-    <ClCompile Include="SharedLibFile.cpp" />
+    <ClCompile Include="model\ThreadVector.cpp" />
+    <ClCompile Include="model\Thread.cpp" />
+    <ClCompile Include="model\StackFrame.cpp" />
+    <ClCompile Include="model\SharedLibFile.cpp" />
     <ClCompile Include="unwind\UnwindContext.cpp" />
-    <ClCompile Include="unwind\UnwStackTrace.cpp" />
+    <ClCompile Include="model\UnwStackTrace.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="model\JsonObject.h" />
+    <ClInclude Include="model\AnalysisInfo.h" />
+    <ClInclude Include="model\AnalysisResult.h" />
+    <ClInclude Include="model\BlockingObjects.h" />
+    <ClInclude Include="model\DeadlockInformation.h" />
     <ClInclude Include="extracting\ArchiveExtractor.h" />
     <ClInclude Include="extracting\FileExtractor.h" />
     <ClInclude Include="helper\FileSystemHelper.h" />
     <ClInclude Include="helper\StringHelper.h" />
+    <ClInclude Include="model\LastEvent.h" />
+    <ClInclude Include="model\MemoryInformation.h" />
+    <ClInclude Include="model\SystemContext.h" />
+    <ClInclude Include="model\TagVector.h" />
     <ClInclude Include="unwind\ThreadUnwinder.h" />
     <ClInclude Include="unwind\StacktraceUnwinder.h" />
     <ClInclude Include="SharedLibResolver.h" />
-    <ClInclude Include="unwind\ThreadVector.h" />
-    <ClInclude Include="unwind\Thread.h" />
-    <ClInclude Include="unwind\StackFrame.h" />
-    <ClInclude Include="SharedLibFile.h" />
+    <ClInclude Include="model\ThreadVector.h" />
+    <ClInclude Include="model\Thread.h" />
+    <ClInclude Include="model\StackFrame.h" />
+    <ClInclude Include="model\SharedLibFile.h" />
     <ClInclude Include="unwind\UnwindContext.h" />
-    <ClInclude Include="unwind\UnwStackTrace.h" />
+    <ClInclude Include="model\UnwStackTrace.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>

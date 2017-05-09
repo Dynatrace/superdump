@@ -22,13 +22,10 @@ void UnwStackTrace::writeJson(std::ostream& os) {
 }
 
 string UnwStackTrace::toJson() {
-	string json = "trace: { frames: [";
+	string json = "[";
 	for (StackFrame stackFrame : stackFrames) {
 		json += "{" + stackFrame.toJson() + "},";
 	}
-	json = json.substr(0, json.length() - 1);
-	json += "], overflow:";
-	json += (overflow ? "true" : "false");
-	json += "}";
+	json = json.substr(0, json.length() - 1) + "]";
 	return json;
 }

@@ -75,7 +75,7 @@ vector<SharedLibFile> SharedLibResolver::findSharedLibs(string corePath) {
 		unsigned long startAddr, endAddr, offset;
 		char path[512];
 		if (4 == sscanf(line.c_str(), " 0x%lX 0x%lX 0x%lX %s", &startAddr, &endAddr, &offset, path)) {
-			sharedLibs.push_back(SharedLibFile(path, startAddr, endAddr, offset));
+			sharedLibs.push_back(SharedLibFile(path, startAddr, endAddr, offset, "", 0, 0, false, 0));
 		}
 	}
 

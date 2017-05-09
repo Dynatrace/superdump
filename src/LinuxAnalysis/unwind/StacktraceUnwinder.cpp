@@ -3,13 +3,11 @@
 #include <cxxabi.h>
 #include <string.h>
 
-StacktraceUnwinder::StacktraceUnwinder()
-{
+StacktraceUnwinder::StacktraceUnwinder() {
 }
 
 
-StacktraceUnwinder::~StacktraceUnwinder()
-{
+StacktraceUnwinder::~StacktraceUnwinder() {
 }
 
 UnwStackTrace StacktraceUnwinder::unwind(unw_cursor_t cursor, vector<SharedLibFile> sharedLibs) {
@@ -46,14 +44,14 @@ UnwStackTrace StacktraceUnwinder::unwind(unw_cursor_t cursor, vector<SharedLibFi
 		}
 
 		if (oldIp != 0) {
-			stackFrames.push_back(StackFrame("Native", oldSp, oldIp, ip, oldProcName, oldMethodOffset, findModule(sharedLibs, oldIp)));
+			stackFrames.push_back(StackFrame("Native", oldSp, oldIp, ip, oldProcName, oldMethodOffset, findModule(sharedLibs, oldIp), 0, TagVector(), NULL, 0));
 		}
 		oldIp = ip;
 		oldSp = sp;
 		oldMethodOffset = methodOffset;
 		strcpy(oldProcName, procName);
 	} while (unw_step(&cursor) > 0 && stackFrames.size() < 256);
-	stackFrames.push_back(StackFrame("Native", oldSp, oldIp, 0, oldProcName, oldMethodOffset, findModule(sharedLibs, oldIp)));
+	stackFrames.push_back(StackFrame("Native", oldSp, oldIp, 0, oldProcName, oldMethodOffset, findModule(sharedLibs, oldIp), 0, TagVector(), NULL, 0));
 
 	bool overflow = stackFrames.size() >= 256;
 

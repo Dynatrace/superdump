@@ -1,6 +1,6 @@
 #include "ThreadVector.h"
 
-#include "ThreadUnwinder.h"
+#include "../unwind/ThreadUnwinder.h"
 
 ThreadVector::ThreadVector(UnwindContext* unwindContext) {
 	int threadCount = _UCD_get_num_threads(unwindContext->getUcdInfo());
@@ -27,11 +27,10 @@ void ThreadVector::writeJson(std::ostream& os) {
 }
 
 string ThreadVector::toJson() {
-	string json = "threads: [ ";
-
+	string json;
 	for (Thread thread : threads) {
-		json += "{ " + thread.toJson() + "},";
+		json += "\"" + fromInt(thread.getId()) + "\": { " + thread.toJson() + "},";
 	}
 
-	return json.substr(0, json.length() - 1) + "]";
+	return json.substr(0, json.length() - 1);
 }

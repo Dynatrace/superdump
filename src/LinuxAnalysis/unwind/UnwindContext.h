@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <string>
 
@@ -5,11 +7,10 @@
 
 #include <libunwind-coredump.h>
 
-#include "../SharedLibFile.h"
+#include "../model/SharedLibFile.h"
 
 using namespace std;
 
-#pragma once
 class UnwindContext
 {
 	unw_addr_space_t addressSpace;
