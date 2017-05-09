@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	class ArchiveHelper {
+	public class ArchiveHelper {
 		public static bool TryExtract(String file) {
 			if (file.EndsWith(".zip")) {
 				using (var archive = ZipArchive.Open(file)) {

@@ -13,7 +13,7 @@ using SuperDump.Models;
 using SuperDumpModels;
 
 namespace CoreDumpAnalysis {
-	class Program {
+	public class Program {
 		static void Main(string[] args) {
 			Console.WriteLine("SuperDump - Dump analysis tool");
 			Console.WriteLine("--------------------------");

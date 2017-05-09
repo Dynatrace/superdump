@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	class CoreDumpAnalysis {
+	public class CoreDumpAnalysis {
 		public const int MAX_FRAMES = 128;
 
 		[DllImport(Constants.WRAPPER)]

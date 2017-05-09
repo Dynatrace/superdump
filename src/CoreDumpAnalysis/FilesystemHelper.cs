@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	class FilesystemHelper {
+	public class FilesystemHelper {
 		public static String GetParentDirectory(String dir) {
 			int idx = dir.LastIndexOfAny(new char[] { '/', '\\' });
 			if (idx >= 0) {

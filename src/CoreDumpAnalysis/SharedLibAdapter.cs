@@ -6,7 +6,7 @@ using System.IO;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	class SharedLibAdapter {
+	public class SharedLibAdapter {
 		public SDCDModule Adapt(SharedLib lib) {
 			SDCDModule module = new SDCDModule();
 			module.FilePath = Utf8ArrayToString(lib.Path, 512);

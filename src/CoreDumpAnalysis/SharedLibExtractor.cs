@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	class SharedLibExtractor {
+	public class SharedLibExtractor {
 		[DllImport(Constants.WRAPPER, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.I1)]
 		private static extern bool getSharedLibs(out int size, out IntPtr libs);
