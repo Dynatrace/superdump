@@ -3,30 +3,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-SharedLibFile::SharedLibFile(string path, unsigned long startAddress)
-	: path(path), startAddress(startAddress) {
+SharedLibFile::SharedLibFile(char* path, unsigned long offset, unsigned long startAddress, unsigned long endAddress, char* version)
+	: path(path), offset(offset), startAddress(startAddress), endAddress(endAddress), version(version) {
 }
 
 SharedLibFile::~SharedLibFile() {
 }
 
-string SharedLibFile::getPath() {
+char* SharedLibFile::getPath() {
 	return path;
 }
 
-unsigned long SharedLibFile::getAddress() {
+unsigned long SharedLibFile::getOffset() {
+	return offset;
+}
+
+unsigned long SharedLibFile::getStartAddress() {
 	return startAddress;
 }
 
-string SharedLibFile::getName() {
-	int lastSlash = this->path.find_last_of('/');
-	if (lastSlash == -1) {
-		return path;
-	}
-	string name = this->path.substr(lastSlash + 1);
-	int firstDot = name.find(".so");
-	if (firstDot > 0) {
-		name = name.substr(0, firstDot);
-	}
-	return name;
+unsigned long SharedLibFile::getEndAddress() {
+	return endAddress;
+}
+
+char* SharedLibFile::getVersion() {
+	return version;
 }

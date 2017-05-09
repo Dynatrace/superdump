@@ -5,12 +5,18 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="sharpcompress" Version="0.15.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj" />
+    <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj">
+      <Private>true</Private>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

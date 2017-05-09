@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SharedLibFile.h"
+
 #ifndef MYAPI
 #define MYAPI 
 #endif
@@ -25,6 +27,12 @@ MYAPI char* getProcedureName();
 MYAPI unsigned long getProcedureOffset();
 
 MYAPI bool step();
+
+MYAPI unsigned long getAuxvValue(int type);
+
+MYAPI const char* getAuxvString(int type);
+
+MYAPI bool getSharedLibs(int* size, SharedLibFile** libs);
 
 #ifdef __cplusplus
 }

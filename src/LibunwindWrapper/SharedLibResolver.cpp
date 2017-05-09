@@ -36,8 +36,8 @@ vector<string> split(const string &s, char delim) {
 	return elems;
 }
 
-vector<SharedLibFile> SharedLibResolver::findSharedLibs(string corePath) {
-	vector<SharedLibFile> sharedLibs;
+vector<SharedLibFile>* SharedLibResolver::findSharedLibs(string corePath) {
+	vector<SharedLibFile>* sharedLibs = new vector<SharedLibFile>();
 	string unstripCmd = "readelf -n  " + corePath;
 	printf("Executing readelf command: %s\r\n", unstripCmd.c_str());
 	
@@ -56,26 +56,27 @@ vector<SharedLibFile> SharedLibResolver::findSharedLibs(string corePath) {
 	pclose(handle);
 
 	vector<string> lines = split(unstripOut, '\n');
-	bool aligned = false;
-	for (int i = 0; i + 1 < lines.size(); i++) {
-		string line = lines.at(i);
-		if (!aligned) {
-			if (line.find("Page size:") != string::npos) {
-				aligned = true;
-				i++;
-				continue;
-			}
-			else {
-				continue;
-			}
+	uint i;
+	for (i = 0; i + 1 < lines.size(); i++) 
+	{
+		if (lines.at(i).find("Page size:") != string::npos) {
+			break;
 		}
+	}
+	
+	for (i+=2; i + 1 < lines.size(); i += 2) {
+		string line = lines.at(i);
 		line.append(" ").append(lines.at(i + 1));
-		i++;
 
 		unsigned long startAddr, endAddr, offset;
-		char path[512];
+		char* path = (char*) malloc(1024);
 		if (4 == sscanf(line.c_str(), " 0x%lX 0x%lX 0x%lX %s", &startAddr, &endAddr, &offset, path)) {
-			sharedLibs.push_back(SharedLibFile(path, startAddr, endAddr, offset, "", 0, 0, false, 0));
+			SharedLibFile* slf = new SharedLibFile();
+			strncpy(slf->path, path, 512);
+			slf->offset = offset;
+			slf->startAddress = startAddr;
+			slf->endAddress = endAddr;
+			sharedLibs->push_back(*slf);
 		}
 	}
 

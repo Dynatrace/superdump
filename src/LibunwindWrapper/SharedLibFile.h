@@ -4,15 +4,8 @@
 
 using namespace std;
 
-class SharedLibFile {
-	string path;
-	unsigned long startAddress;
-
-public:
-	SharedLibFile(string path, unsigned long startAddress);
-	~SharedLibFile();
-
-	string getPath();
-	unsigned long getAddress();
-	string getName();
+struct SharedLibFile {
+	char path[512];
+	unsigned long offset;
+	unsigned long startAddress, endAddress;
 };

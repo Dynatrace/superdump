@@ -2,12 +2,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fstream>
 #include <cxxabi.h>
 
 char* demangle(char* procName);
+int getAuxvInt(int idx);
 
-LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) {
+LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) 
+	: filepath(filepath) {
 	printf("Initializing libunwind wrapper...\r\n");
 	fflush(stdout);
 	this->addressSpace = unw_create_addr_space(&_UCD_accessors, 0);
@@ -24,6 +27,10 @@ LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) {
 
 
 LibunwindWrapper::~LibunwindWrapper() {
+}
+
+string LibunwindWrapper::getFilepath() {
+	return filepath;
 }
 
 int LibunwindWrapper::getNumberOfThreads()
@@ -84,6 +91,37 @@ unsigned long LibunwindWrapper::getProcedureOffset() {
 
 bool LibunwindWrapper::step() {
 	return unw_step(&cursor) == 0;
+}
+
+unsigned long LibunwindWrapper::getAuxvValue(int type) {
+	unw_word_t val;
+	if (!_UCD_get_auxv_value(ucdInfo, type, &val)) {
+		return 0;
+	}
+	return val;
+}
+
+const char* LibunwindWrapper::getAuxvString(int type) {
+	unw_word_t val;
+	if (!_UCD_get_auxv_value(ucdInfo, type, &val)) {
+		printf("AUXV does not contain value for type %d.", type);
+		return 0;
+	}
+
+	unw_word_t str;
+	string result = "";
+	for (;; val += sizeof(unw_word_t)) {
+		_UCD_access_mem(addressSpace, val, &str, 0, ucdInfo);
+		int shift = 0;
+		for (unw_word_t bitmask = 0xFF; bitmask != 0; bitmask <<= 8, shift += 8) {
+			if ((str & bitmask) == 0) {
+				char* dyn = (char*) malloc(result.size());
+				strncpy(dyn, result.c_str(), result.size());
+				return dyn;
+			}
+			result = result + (char)((str & bitmask) >> shift);
+		}
+	}
 }
 
 char* demangle(char* procName) {
