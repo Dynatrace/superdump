@@ -5,7 +5,7 @@
 	<div class="panel-body">
 		<!--anomalies-->
 		@{bool noAnomalies = true;}
-		@if (!Model.Result.IsManagedProcess) {
+		@if (!Model.Result.IsManagedProcess && Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
 			<h4>Info: No CLR was loaded in that process!</h4>
 		}
 

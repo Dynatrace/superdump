@@ -11,25 +11,48 @@
 	<div id="system-info" class="panel-collapse in">
 		<div class="panel-body">
 			<dl class="dl-horizontal">
-				<dt>OS version:</dt>
-				<dd>@Model.Result.SystemContext.OSVersion</dd>
+                @if (Model.Result.SystemContext.GetType() == typeof(SuperDump.Models.SDCDSystemContext))
+                {
+                    // Linux Core Dump
+                    <dt>Platform</dt>
+                    <dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).SystemArchitecture)</dd>
 
-				<dt>Architecture:</dt>
-				<dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+                    <dt>User ID</dt>
+                    <dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Uid)</dd>
 
-				@foreach (var clr in Model.Result.SystemContext.ClrVersions) {
-					<dt>.NET CLR:</dt>
-					<dd>@clr.Version (@clr.ClrFlavor)</dd>
-				}
+                    <dt>Group ID</dt>
+                    <dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Gid)</dd>
 
-				<dt>Process up-time:</dt>
-				<dd>@Model.Result.SystemContext.ProcessUpTime</dd>
+                    <dt>Entry Point</dt>
+                    <dd>@String.Format("0x{0:x}", ((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).EntryPoint)</dd>
 
-				<dt>System up-time:</dt>
-				<dd>@Model.Result.SystemContext.SystemUpTime</dd>
+                    <dt>Page Size</dt>
+                    <dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).PageSize) bytes</dd>
+                }
+                else
+                {
+                    // Windows Crash Dump
+                    <dt>OS version:</dt>
+                    <dd>@Model.Result.SystemContext.OSVersion</dd>
 
-				<dt># of logical processors:</dt>
-				<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
+                    <dt>Architecture:</dt>
+                    <dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+
+                    <dt>Process up-time:</dt>
+                    <dd>@Model.Result.SystemContext.ProcessUpTime</dd>
+
+                    <dt>System up-time:</dt>
+                    <dd>@Model.Result.SystemContext.SystemUpTime</dd>
+
+                    <dt># of logical processors:</dt>
+                    <dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
+                }
+
+                @foreach (var clr in Model.Result.SystemContext.ClrVersions)
+                {
+                    <dt>.NET CLR:</dt>
+                    <dd>@clr.Version (@clr.ClrFlavor)</dd>
+                }
 			</dl>
 			<dl class="dl-horizontal">
 				<dt># of modules:</dt>

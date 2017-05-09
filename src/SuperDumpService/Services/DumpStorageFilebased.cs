@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SuperDump.Models;
 using Microsoft.Extensions.Options;
+using SuperDumpModels;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -73,7 +74,7 @@ namespace SuperDumpService.Services {
 				if (!File.Exists(filename)) return null;
 			}
 			try {
-				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename));
+				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename), new SDSystemContextConverter(), new SDModuleConverter());
 			} catch (Exception e) {
 				error = $"could not deserialize {filename}: {e.Message}";
 				Console.WriteLine(error);
