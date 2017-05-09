@@ -51,6 +51,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -62,7 +63,14 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetExt>.o</TargetExt>
+    <TargetExt>.so</TargetExt>
+    <TargetName>$(ProjectName)</TargetName>
+    <RemoteLinkLocalCopyOutput>false</RemoteLinkLocalCopyOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>$(ProjectName)</TargetName>
+    <TargetExt>.so</TargetExt>
+    <RemoteLinkLocalCopyOutput>false</RemoteLinkLocalCopyOutput>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="LibunwindWrapper.h" />
@@ -73,10 +81,38 @@
   <ItemGroup>
     <ClCompile Include="LibunwindWrapper.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="SharedLibFile.cpp" />
     <ClCompile Include="SharedLibResolver.cpp" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/opt/libunwind/include</AdditionalIncludeDirectories>
+      <PositionIndependentCode>true</PositionIndependentCode>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/opt/libunwind/bin/libunwind-coredump.a</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);/usr/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu</AdditionalLibraryDirectories>
+      <LibraryDependencies>unwind-x86_64</LibraryDependencies>
+      <OutputFile>/usr/lib/unwindwrapper.so</OutputFile>
+    </Link>
+    <RemotePostBuildEvent>
+      <Command>
+      </Command>
+      <AdditionalSourcesToCopyMapping>
+      </AdditionalSourcesToCopyMapping>
+    </RemotePostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/opt/libunwind/include</AdditionalIncludeDirectories>
+      <PositionIndependentCode>true</PositionIndependentCode>
+    </ClCompile>
+    <Link>
+      <OutputFile>/usr/lib/unwindwrapper.so</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);/usr/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu</AdditionalLibraryDirectories>
+      <LibraryDependencies>unwind-x86_64</LibraryDependencies>
+      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/opt/libunwind/bin/libunwind-coredump.a</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
