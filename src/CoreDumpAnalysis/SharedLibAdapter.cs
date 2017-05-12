@@ -10,6 +10,9 @@ namespace CoreDumpAnalysis {
 		public SDCDModule Adapt(SharedLib lib) {
 			SDCDModule module = new SDCDModule();
 			module.FilePath = Utf8ArrayToString(lib.Path, 512);
+			if(IsBlacklistedPath(module.FilePath)) {
+				return null;
+			}
 			module.FileName = GetFilenameFromPath(module.FilePath);
 			module.Version = GetVersionFromFilename(module.FileName);
 			module.FileSize = (uint)GetFileSizeFromPath(module.FilePath);
@@ -18,6 +21,10 @@ namespace CoreDumpAnalysis {
 			module.StartAddress = lib.StartAddress;
 			module.EndAddress = lib.EndAddress;
 			return module;
+		}
+
+		private bool IsBlacklistedPath(string filepath) {
+			return filepath == "/dev/zero";
 		}
 
 		public static string Utf8ArrayToString(byte[] buffer, int len) {
