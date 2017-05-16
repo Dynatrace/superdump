@@ -1,16 +1,9 @@
-﻿using SharpCompress.Archives;
-using SharpCompress.Archives.Zip;
-using SharpCompress.Archives.GZip;
-using SharpCompress.Archives.Tar;
-using SharpCompress.Readers;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 
 using SuperDump.Models;
-using SuperDumpModels;
+using CoreDumpAnalysis;
+using SuperDump.Analyzers;
 
 namespace CoreDumpAnalysis {
 	public class Program {
@@ -27,22 +20,7 @@ namespace CoreDumpAnalysis {
 		}
 
 		private void AnalyzeDirectory(string inputFile, string outputFile) {
-			string coredump;
-			string directory = FilesystemHelper.GetParentDirectory(inputFile);
-			if (!File.Exists(inputFile)) {
-				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
-				coredump = FindCoredumpOrNull(directory);
-			} else if (inputFile.EndsWith(".tar") || inputFile.EndsWith(".gz") || inputFile.EndsWith(".tgz") || inputFile.EndsWith(".tar") || inputFile.EndsWith(".zip")) {
-				Console.WriteLine("Extracting archives in directory " + directory);
-				ExtractArchivesInDir(directory);
-				coredump = FindCoredumpOrNull(directory);
-			} else if (inputFile.EndsWith(".core")) {
-				coredump = inputFile;
-			} else {
-				Console.WriteLine("Failed to interpret input file. Assuming it is a core dump.");
-				coredump = inputFile;
-			}
-
+			string coredump = GetCoreDumpFilePath(inputFile);
 			if (coredump == null) {
 				Console.WriteLine("No core dump found.");
 				// TODO write empty json?
@@ -50,8 +28,28 @@ namespace CoreDumpAnalysis {
 			}
 			Console.WriteLine("Processing core dump file: " + coredump);
 
-			SDResult analysisResult = new CoreDumpAnalysis().Debug(coredump);
+			SDResult analysisResult = new SDResult();
+			new UnwindAnalysis(coredump, analysisResult).DebugAndSetResultFields();
+			new DebugSymbolAnalysis(coredump, analysisResult).DebugAndSetResultFields();
+			new DefaultFieldsSetter(coredump, analysisResult).DebugAndSetResultFields();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());
+		}
+
+		private String GetCoreDumpFilePath(string inputFile) {
+			string directory = FilesystemHelper.GetParentDirectory(inputFile);
+			if (!File.Exists(inputFile)) {
+				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
+				return FindCoredumpOrNull(directory);
+			} else if (inputFile.EndsWith(".tar") || inputFile.EndsWith(".gz") || inputFile.EndsWith(".tgz") || inputFile.EndsWith(".tar") || inputFile.EndsWith(".zip")) {
+				Console.WriteLine("Extracting archives in directory " + directory);
+				ExtractArchivesInDir(directory);
+				return FindCoredumpOrNull(directory);
+			} else if (inputFile.EndsWith(".core")) {
+				return inputFile;
+			} else {
+				Console.WriteLine("Failed to interpret input file. Assuming it is a core dump.");
+				return inputFile;
+			}
 		}
 
 		private void ExtractArchivesInDir(String directory) {
@@ -59,7 +57,6 @@ namespace CoreDumpAnalysis {
 			while (workDone) {
 				workDone = false;
 				foreach (String file in FilesystemHelper.FilesInDirectory(directory)) {
-					Console.WriteLine("Checking file " + file);
 					workDone |= ArchiveHelper.TryExtract(file);
 				}
 			}

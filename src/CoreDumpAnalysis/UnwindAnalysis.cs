@@ -2,11 +2,14 @@
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CoreDumpAnalysis {
-	public class CoreDumpAnalysis {
+	public class UnwindAnalysis {
 		public const int MAX_FRAMES = 128;
 
 		[DllImport(Constants.WRAPPER)]
@@ -42,24 +45,29 @@ namespace CoreDumpAnalysis {
 		[DllImport(Constants.WRAPPER)]
 		private static extern string getAuxvString(int type);
 
-		public SDResult Debug(String coredump) {
-			String parent = FilesystemHelper.GetParentDirectory(coredump);
-			parent = parent.Substring(0, parent.Length - 1);
-			init(coredump, parent);
+		private readonly SDResult analysisResult;
+		private readonly String coredump;
 
-			SDCDSystemContext context = BuildContext();
-			List<string> notLoadedSymbols = new List<string>();
-			List<SDDeadlockContext> deadlocks = new List<SDDeadlockContext>();
-			Dictionary<ulong, SDMemoryObject> memoryObjects = new Dictionary<ulong, SDMemoryObject>();
-			Dictionary<uint, SDThread> threads = UnwindThreads(context);
-			List<SDClrException> exceptions = new List<SDClrException>();
-			SDLastEvent lastEvent = null;
+		private readonly DebugSymbolResolver symbolResolver;
 
-			return new SDResult(context, lastEvent, exceptions, threads, memoryObjects, deadlocks, notLoadedSymbols);
+		public UnwindAnalysis(String coredump, SDResult result) {
+			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
+			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
+			this.symbolResolver = new DebugSymbolResolver();
 		}
 
-		private SDCDSystemContext BuildContext() {
-			SDCDSystemContext context = new SDCDSystemContext();
+		public void DebugAndSetResultFields() {
+			String parent = FilesystemHelper.GetParentDirectory(coredump);
+			parent = parent.Substring(0, parent.Length - 1);
+			init(this.coredump, parent);
+
+			SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
+			SetContextFields(context);
+			this.analysisResult.SystemContext = context;
+			this.analysisResult.ThreadInformation = UnwindThreads(context);
+		}
+
+		private SDCDSystemContext SetContextFields(SDCDSystemContext context) {
 			context.ProcessArchitecture = "N/A";
 			context.SystemUpTime = "Could not be obtained.";
 			context.Modules = new List<SDModule>();
@@ -68,8 +76,12 @@ namespace CoreDumpAnalysis {
 			SetAuxvFields(context);
 			SharedLibAdapter sharedLibAdapter = new SharedLibAdapter();
 			new SharedLibExtractor().ExtractSharedLibs().ForEach(lib => {
-				context.Modules.Add(sharedLibAdapter.Adapt(lib));
+				SDCDModule sharedLib = sharedLibAdapter.Adapt(lib);
+				if (sharedLib != null) {
+					context.Modules.Add(sharedLib);
+				}
 			});
+			symbolResolver.Resolve(context.Modules);
 			return context;
 		}
 
@@ -77,53 +89,40 @@ namespace CoreDumpAnalysis {
 			Dictionary<uint, SDThread> threads = new Dictionary<uint, SDThread>();
 
 			int nThreads = getNumberOfThreads();
-			Console.WriteLine("Threads: " + nThreads);
-			Console.WriteLine("Instruction Pointer\tStack Pointer\t\tProcedure Name + Offset");
-			for (uint i = 0; i < nThreads; i++) {
+			for (uint i = 1; i <= nThreads; i++) {
 				selectThread(i);
-				Console.WriteLine();
-				Console.WriteLine("Thread: " + i);
-				List<SDCombinedStackFrame> frames = new List<SDCombinedStackFrame>();
-
-				ulong ip, oldIp = 0, sp, oldSp = 0, offset, oldOffset = 0;
-				String procName, oldProcName = null;
-				int nFrames = 0;
-				do {
-					ip = getInstructionPointer();
-					sp = getStackPointer();
-					procName = getProcedureName();
-					offset = getProcedureOffset();
-
-					if (oldProcName != null) {
-						Console.WriteLine("{0:X16}\t{1:X16}\t{2}+{3}", getInstructionPointer(), getStackPointer(), getProcedureName(), getProcedureOffset());
-
-						String curModuleName = "";
-						foreach (SDModule module in context.Modules) {
-							if (module.GetType() != typeof(SDCDModule)) {
-								throw new InvalidCastException("Plain SDModule found in module list. SDCDModule expected.");
-							}
-							SDCDModule cdModule = (SDCDModule)module;
-							if (cdModule.StartAddress < oldIp && cdModule.EndAddress > oldIp) {
-								curModuleName = cdModule.FileName;
-								break;
-							}
-						}
-						frames.Add(new SDCombinedStackFrame(StackFrameType.Native, curModuleName, oldProcName, oldOffset, oldIp, oldSp, ip, 0, null));
-					}
-					oldIp = ip;
-					oldSp = sp;
-					oldOffset = offset;
-					oldProcName = procName;
-				} while (!step() && ++nFrames < MAX_FRAMES);
-
-				SDThread thread = new SDThread(i);
+				SDThread thread = new SDThread();
 				thread.EngineId = i;
 				thread.OsId = i;
 				thread.Index = i;
-				thread.StackTrace = new SDCombinedStackTrace(frames);
+				UnwindCurrentThread(context, thread);
 				threads.Add(i, thread);
 			}
 			return threads;
+		}
+
+		private void UnwindCurrentThread(SDCDSystemContext context, SDThread thread) {
+			List<SDCombinedStackFrame> frames = new List<SDCombinedStackFrame>();
+
+			ulong ip, oldIp = 0, sp, oldSp = 0, offset, oldOffset = 0;
+			String procName, oldProcName = null;
+			int nFrames = 0;
+			do {
+				ip = getInstructionPointer();
+				sp = getStackPointer();
+				procName = getProcedureName();
+				offset = getProcedureOffset();
+
+				if (oldProcName != null) {
+					frames.Add(new SDCombinedStackFrame(StackFrameType.Native, "", oldProcName, oldOffset, oldIp, oldSp, ip, 0, null));
+				}
+				oldIp = ip;
+				oldSp = sp;
+				oldOffset = offset;
+				oldProcName = procName;
+			} while (!step() && ++nFrames < MAX_FRAMES);
+
+			thread.StackTrace = new SDCombinedStackTrace(frames);
 		}
 
 		private void SetAuxvFields(SDCDSystemContext context) {

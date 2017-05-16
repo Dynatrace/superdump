@@ -11,7 +11,7 @@ int getAuxvInt(int idx);
 
 LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) 
 	: filepath(filepath) {
-	printf("Initializing libunwind wrapper...\r\n");
+	printf("Initializing libunwind wrapper...\n");
 	fflush(stdout);
 	this->addressSpace = unw_create_addr_space(&_UCD_accessors, 0);
 	this->ucdInfo = _UCD_create(filepath.c_str());
@@ -21,7 +21,7 @@ LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir)
 	_UCD_set_backing_files_sysroot(this->ucdInfo, workingDir.c_str());
 	_UCD_add_backing_files_from_file_note(this->ucdInfo);
 
-	printf("Initialization success\r\n");
+	printf("Initialization success\n");
 	fflush(stdout);
 }
 
@@ -46,7 +46,7 @@ void LibunwindWrapper::selectThread(unsigned int threadNumber) {
 	_UCD_select_thread(ucdInfo, threadNumber);
 	int ret = unw_init_remote(&cursor, addressSpace, ucdInfo);
 	if (ret != 0) {
-		printf("Failed to initiate remote session for thread %d: %d", threadNumber, ret);
+		printf("Failed to initiate remote session for thread %d: %d\n", threadNumber, ret);
 		return;
 	}
 }
@@ -104,7 +104,7 @@ unsigned long LibunwindWrapper::getAuxvValue(int type) {
 const char* LibunwindWrapper::getAuxvString(int type) {
 	unw_word_t val;
 	if (!_UCD_get_auxv_value(ucdInfo, type, &val)) {
-		printf("AUXV does not contain value for type %d.", type);
+		printf("AUXV does not contain value for type %d.\n", type);
 		return 0;
 	}
 

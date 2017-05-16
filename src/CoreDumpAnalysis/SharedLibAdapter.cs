@@ -14,12 +14,14 @@ namespace CoreDumpAnalysis {
 				return null;
 			}
 			module.FileName = GetFilenameFromPath(module.FilePath);
+			module.LocalPath = GetLocalPathFromPath(module.FilePath);
 			module.Version = GetVersionFromFilename(module.FileName);
-			module.FileSize = (uint)GetFileSizeFromPath(module.FilePath);
+			module.FileSize = (uint)GetFileSizeFromPath(module.LocalPath);
 			module.ImageBase = 0;
 			module.Offset = lib.BindingOffset;
 			module.StartAddress = lib.StartAddress;
 			module.EndAddress = lib.EndAddress;
+
 			return module;
 		}
 
@@ -44,6 +46,16 @@ namespace CoreDumpAnalysis {
 			}
 		}
 
+		private string GetLocalPathFromPath(string filepath) {
+			if (File.Exists("." + filepath)) {
+				return "." + filepath;
+			} else if (File.Exists(filepath)) {
+				return filepath;
+			} else {
+				return null;
+			}
+		}
+
 		private string GetVersionFromFilename(string filename) {
 			int lastDot = filename.LastIndexOf('.');
 			int lastDash = filename.LastIndexOf('-');
@@ -54,13 +66,7 @@ namespace CoreDumpAnalysis {
 		}
 
 		private long GetFileSizeFromPath(string filepath) {
-			string lib = "." + filepath;
-			// First check if the library can be found in the local directory
-			if (File.Exists(lib)) {
-				return new FileInfo(lib).Length;
-			}
-			// Alternatively, take the library from the filesystem
-			if (File.Exists(filepath)) {
+			if (filepath != null && File.Exists(filepath)) {
 				return new FileInfo(filepath).Length;
 			}
 			return 0;
