@@ -8,6 +8,7 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System.Diagnostics;
 using SuperDump.Models;
+using Hangfire;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
@@ -35,6 +36,7 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
+		[DisableConcurrentExecution(600)]
 		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
@@ -137,7 +139,6 @@ namespace SuperDumpService.Services {
 			command = command.Replace("{dumpname}", Path.GetFileName(dumpFilePath));
 			command = command.Replace("{outputpath}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
 			command = command.Replace("{outputname}", Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)));
-			command = command.Replace("{config}", "../../../../conf/appsettings.json");
 
 			Utility.ExtractExe(command, out string executable, out string arguments);
 			string[] argArray = arguments.Split('^');
@@ -153,7 +154,7 @@ namespace SuperDumpService.Services {
             }*/
 			ProcessStartInfo psi = new ProcessStartInfo(executable, arguments);
 			psi.WorkingDirectory = workingDir.FullName;
-			Process.Start(psi);
+			Process.Start(psi).WaitForExit();
 		}
 	}
 }
