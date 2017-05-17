@@ -2,7 +2,6 @@
 using System.IO;
 
 using SuperDump.Models;
-using CoreDumpAnalysis;
 using SuperDump.Analyzers;
 
 namespace CoreDumpAnalysis {
@@ -15,7 +14,7 @@ namespace CoreDumpAnalysis {
 				Console.WriteLine("Output File: " + args[1]);
 				new Program().AnalyzeDirectory(args[0], args[1]);
 			} else {
-				Console.WriteLine("Invalid argument count! exe <coredump-directory>");
+				Console.WriteLine("Invalid argument count! CoreDumpAnalysis <coredump> <working-dir>");
 			}
 		}
 
@@ -30,9 +29,14 @@ namespace CoreDumpAnalysis {
 
 			SDResult analysisResult = new SDResult();
 			new UnwindAnalysis(coredump, analysisResult).DebugAndSetResultFields();
+			Console.WriteLine("Resolving debug symbols ...");
 			new DebugSymbolAnalysis(coredump, analysisResult).DebugAndSetResultFields();
+			Console.WriteLine("Setting tags ...");
+			new TagAnalyzer(analysisResult).Analyze();
+			Console.WriteLine("Setting default fields ...");
 			new DefaultFieldsSetter(coredump, analysisResult).DebugAndSetResultFields();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());
+			Console.WriteLine("Finished coredump analysis.");
 		}
 
 		private String GetCoreDumpFilePath(string inputFile) {
@@ -72,3 +76,4 @@ namespace CoreDumpAnalysis {
 		}
 	}
 }
+ 
