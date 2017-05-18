@@ -36,7 +36,6 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
-		[DisableConcurrentExecution(600)]
 		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
@@ -44,7 +43,6 @@ namespace SuperDumpService.Services {
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
-					PrepareLinuxAsync(dumpInfo, new DirectoryInfo(analysisWorkingDir));
 					AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
@@ -110,23 +108,6 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private void PrepareLinuxAsync(DumpMetainfo dumpInfo, DirectoryInfo workingDir) {
-			string command = settings.Value.LinuxPreparationCommand;
-
-			if (string.IsNullOrEmpty(command)) {
-				Console.WriteLine("No preparation command given. Assuming no preparation is required.");
-				return;
-			}
-
-			Utility.ExtractExe(command, out string executable, out string arguments);
-
-			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
-			Process.Start(executable, arguments).WaitForExit();
-			//var process = ProcessRunner.Run(executable, workingDir, arguments);
-			//process.Wait();
-			Console.WriteLine("finished prepartion");
-		}
-
 		private void AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string command = settings.Value.LinuxAnalysisCommand;
 
@@ -154,7 +135,7 @@ namespace SuperDumpService.Services {
             }*/
 			ProcessStartInfo psi = new ProcessStartInfo(executable, arguments);
 			psi.WorkingDirectory = workingDir.FullName;
-			Process.Start(psi).WaitForExit();
+			Process.Start(psi);
 		}
 	}
 }
