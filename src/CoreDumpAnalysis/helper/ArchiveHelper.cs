@@ -10,12 +10,19 @@ using System.Linq;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	public class ArchiveHelper {
-		public static bool TryExtract(String file) {
+	public class ArchiveHelper : IArchiveHelper {
+
+		private readonly IFilesystemHelper filesystemHelper;
+
+		public ArchiveHelper(IFilesystemHelper filesystemHelper) {
+			this.filesystemHelper = filesystemHelper;
+		}
+
+		public bool TryExtract(String file) {
 			if (file.EndsWith(".zip")) {
 				using (var archive = ZipArchive.Open(file)) {
 					Console.WriteLine("Extracting ZIP archive " + file);
-					ExtractArchiveTo(archive, FilesystemHelper.GetParentDirectory(file));
+					ExtractArchiveTo(archive, filesystemHelper.GetParentDirectory(file));
 				}
 				File.Delete(file);
 				return true;
@@ -29,7 +36,7 @@ namespace CoreDumpAnalysis {
 			} else if (file.EndsWith(".tar")) {
 				using (var archive = TarArchive.Open(file)) {
 					Console.WriteLine("Extracting TAR archive " + file);
-					ExtractArchiveTo(archive, FilesystemHelper.GetParentDirectory(file));
+					ExtractArchiveTo(archive, filesystemHelper.GetParentDirectory(file));
 				}
 				File.Delete(file);
 				return true;
@@ -37,7 +44,7 @@ namespace CoreDumpAnalysis {
 			return false;
 		}
 
-		private static void ExtractArchiveTo(IArchive archive, string parentDirectory) {
+		private void ExtractArchiveTo(IArchive archive, string parentDirectory) {
 			foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory)) {
 				entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
 					ExtractFullPath = true,
@@ -46,7 +53,7 @@ namespace CoreDumpAnalysis {
 			}
 		}
 
-		private static void ExtractSingleEntryToFile(IArchive archive, string file) {
+		private void ExtractSingleEntryToFile(IArchive archive, string file) {
 			var entry = archive.Entries.Single();
 			entry.WriteToFile(file, new ExtractionOptions() {
 				ExtractFullPath = true,

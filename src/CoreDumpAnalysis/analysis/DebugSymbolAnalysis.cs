@@ -3,26 +3,30 @@ using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace CoreDumpAnalysis
 {
-    class DebugSymbolAnalysis {
+    public class DebugSymbolAnalysis {
+		private readonly IFilesystemHelper filesystemHelper;
+		private readonly IProcessHelper processHelper;
+
 		private readonly String coredump;
 		private readonly SDResult analysisResult;
 
-		public DebugSymbolAnalysis(String coredump, SDResult result) {
+		public DebugSymbolAnalysis(IFilesystemHelper filesystemHelper, IProcessHelper processHelper, String coredump, SDResult result) {
+			this.filesystemHelper = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
+			this.processHelper = processHelper ?? throw new ArgumentNullException("ProcessHelper must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
 
 		public void DebugAndSetResultFields() {
 			if(this.analysisResult?.ThreadInformation == null) {
-				Console.WriteLine("Cannot add information from debug symbols because there is no thread information present!");
-				return;
+				throw new ArgumentNullException("Debug symbol analysis can only be executed when thread information is set!");
 			}
 			if(this.analysisResult?.SystemContext?.Modules == null) {
-				Console.WriteLine("Cannot add information from debug symbols because there is no system context information present!");
-				return;
+				throw new ArgumentNullException("Debug symbol analysis can only be executed when modules are set!");
 			}
 			Analyze();
 		}
@@ -31,7 +35,7 @@ namespace CoreDumpAnalysis
 			foreach (var threadInfo in this.analysisResult.ThreadInformation) {
 				foreach (var stackFrame in threadInfo.Value.StackTrace) {
 					SDCDModule module = FindModuleAtAddress(this.analysisResult.SystemContext.Modules, stackFrame.InstructionPointer);
-					if (module != null) {
+					if (module?.LocalPath != null) {
 						stackFrame.ModuleName = module.FileName;
 						AddSourceInfo(stackFrame, module);
 					}
@@ -45,7 +49,9 @@ namespace CoreDumpAnalysis
 			string methodName = methodSource.Item2;
 			if (methodName != "??") {
 				stackFrame.MethodName = methodName;
-				stackFrame.SourceInfo = sourceInfo;
+				if (sourceInfo.File != "??") {
+					stackFrame.SourceInfo = sourceInfo;
+				}
 			}
 		}
 
@@ -65,21 +71,24 @@ namespace CoreDumpAnalysis
 		private Tuple<SDFileAndLineNumber, string> Address2MethodSource(ulong instrPtr, SDCDModule module) {
 			ulong relativeIp = instrPtr - module.StartAddress;
 
-			var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					FileName = "addr2line",
-					Arguments = "-f -C -e " + module.LocalPath + " 0x" + relativeIp.ToString("X"),
-					UseShellExecute = false,
-					RedirectStandardOutput = true,
-					CreateNoWindow = true
-				}
-			};
-			process.Start();
-			string dbg = module.LocalPath.Substring(0, module.LocalPath.Length - 2) + "dbg";
-			string methodName = process.StandardOutput.ReadLine();
-			string fileLine = process.StandardOutput.ReadLine();
+			if (module.DebugSymbolPath != null && module.DebugSymbolPath != "") {
+				// If there is a debug file, link it (required for addr2line to find the dbg file)
+				LinkDebugFile(module.LocalPath, module.DebugSymbolPath);
+			}
+			StreamReader reader = processHelper.StartProcessAndRead("addr2line", "-f -C -e " + module.LocalPath + " 0x" + relativeIp.ToString("X"));
+			string methodName = reader.ReadLine();
+			string fileLine = reader.ReadLine();
 			SDFileAndLineNumber sourceInfo = RetrieveSourceInfo(fileLine);
 			return Tuple.Create(sourceInfo, methodName);
+		}
+
+		private void LinkDebugFile(string localPath, string debugPath) {
+			string targetDebugFile = Path.GetDirectoryName(localPath) + "/" + DebugSymbolResolver.DebugFileName(localPath);
+			if(filesystemHelper.FileExists(targetDebugFile)) {
+				return;
+			}
+			Console.WriteLine("Creating symbolic link: " + debugPath + ", " + targetDebugFile);
+			filesystemHelper.CreateSymbolicLink(debugPath, targetDebugFile);
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {

@@ -6,7 +6,8 @@ namespace SuperDump.Models {
 		public ulong Offset { get; set; } = 0;
 		public ulong StartAddress { get; set; } = 0;
 		public ulong EndAddress { get; set; } = 0;
-		public string LocalPath { get; set; } = "";
+		public string LocalPath { get; set; } = null;
+		public string DebugSymbolPath { get; set; } = null;
 
 		public override bool Equals(object obj) {
 			if (obj is SDCDModule) {

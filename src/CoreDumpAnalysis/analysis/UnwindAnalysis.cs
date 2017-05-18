@@ -45,19 +45,18 @@ namespace CoreDumpAnalysis {
 		[DllImport(Constants.WRAPPER)]
 		private static extern string getAuxvString(int type);
 
+		private readonly IFilesystemHelper filesystemHelper;
 		private readonly SDResult analysisResult;
 		private readonly String coredump;
 
-		private readonly DebugSymbolResolver symbolResolver;
-
-		public UnwindAnalysis(String coredump, SDResult result) {
+		public UnwindAnalysis(IFilesystemHelper filesystemHelper, String coredump, SDResult result) {
+			this.filesystemHelper = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
-			this.symbolResolver = new DebugSymbolResolver();
 		}
 
 		public void DebugAndSetResultFields() {
-			String parent = FilesystemHelper.GetParentDirectory(coredump);
+			String parent = filesystemHelper.GetParentDirectory(coredump);
 			parent = parent.Substring(0, parent.Length - 1);
 			init(this.coredump, parent);
 
@@ -81,7 +80,6 @@ namespace CoreDumpAnalysis {
 					context.Modules.Add(sharedLib);
 				}
 			});
-			symbolResolver.Resolve(context.Modules);
 			return context;
 		}
 
