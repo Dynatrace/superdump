@@ -8,15 +8,15 @@ using System.IO;
 namespace CoreDumpAnalysis
 {
     public class DebugSymbolAnalysis {
-		private readonly IFilesystemHelper filesystemHelper;
-		private readonly IProcessHelper processHelper;
+		private readonly IFilesystem filesystem;
+		private readonly IProcessHandler processHandler;
 
 		private readonly String coredump;
 		private readonly SDResult analysisResult;
 
-		public DebugSymbolAnalysis(IFilesystemHelper filesystemHelper, IProcessHelper processHelper, String coredump, SDResult result) {
-			this.filesystemHelper = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
-			this.processHelper = processHelper ?? throw new ArgumentNullException("ProcessHelper must not be null!");
+		public DebugSymbolAnalysis(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
+			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
+			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
@@ -75,7 +75,7 @@ namespace CoreDumpAnalysis
 				// If there is a debug file, link it (required for addr2line to find the dbg file)
 				LinkDebugFile(module.LocalPath, module.DebugSymbolPath);
 			}
-			StreamReader reader = processHelper.StartProcessAndRead("addr2line", "-f -C -e " + module.LocalPath + " 0x" + relativeIp.ToString("X"));
+			StreamReader reader = processHandler.StartProcessAndRead("addr2line", "-f -C -e " + module.LocalPath + " 0x" + relativeIp.ToString("X"));
 			string methodName = reader.ReadLine();
 			string fileLine = reader.ReadLine();
 			SDFileAndLineNumber sourceInfo = RetrieveSourceInfo(fileLine);
@@ -84,11 +84,11 @@ namespace CoreDumpAnalysis
 
 		private void LinkDebugFile(string localPath, string debugPath) {
 			string targetDebugFile = Path.GetDirectoryName(localPath) + "/" + DebugSymbolResolver.DebugFileName(localPath);
-			if(filesystemHelper.FileExists(targetDebugFile)) {
+			if(filesystem.FileExists(targetDebugFile)) {
 				return;
 			}
 			Console.WriteLine("Creating symbolic link: " + debugPath + ", " + targetDebugFile);
-			filesystemHelper.CreateSymbolicLink(debugPath, targetDebugFile);
+			filesystem.CreateSymbolicLink(debugPath, targetDebugFile);
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {

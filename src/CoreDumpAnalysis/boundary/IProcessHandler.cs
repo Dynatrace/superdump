@@ -1,7 +1,7 @@
 ﻿using System.IO;
 
 namespace CoreDumpAnalysis {
-	public interface IProcessHelper {
+	public interface IProcessHandler {
 		StreamReader StartProcessAndRead(string fileName, string arguments);
 	}
 }

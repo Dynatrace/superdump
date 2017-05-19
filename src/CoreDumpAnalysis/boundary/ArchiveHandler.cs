@@ -10,19 +10,19 @@ using System.Linq;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	public class ArchiveHelper : IArchiveHelper {
+	public class ArchiveHandler : IArchiveHandler {
 
-		private readonly IFilesystemHelper filesystemHelper;
+		private readonly IFilesystem filesystem;
 
-		public ArchiveHelper(IFilesystemHelper filesystemHelper) {
-			this.filesystemHelper = filesystemHelper;
+		public ArchiveHandler(IFilesystem filesystem) {
+			this.filesystem = filesystem;
 		}
 
 		public bool TryExtract(String file) {
 			if (file.EndsWith(".zip")) {
 				using (var archive = ZipArchive.Open(file)) {
 					Console.WriteLine("Extracting ZIP archive " + file);
-					ExtractArchiveTo(archive, filesystemHelper.GetParentDirectory(file));
+					ExtractArchiveTo(archive, filesystem.GetParentDirectory(file));
 				}
 				File.Delete(file);
 				return true;
@@ -36,7 +36,7 @@ namespace CoreDumpAnalysis {
 			} else if (file.EndsWith(".tar")) {
 				using (var archive = TarArchive.Open(file)) {
 					Console.WriteLine("Extracting TAR archive " + file);
-					ExtractArchiveTo(archive, filesystemHelper.GetParentDirectory(file));
+					ExtractArchiveTo(archive, filesystem.GetParentDirectory(file));
 				}
 				File.Delete(file);
 				return true;
@@ -44,7 +44,7 @@ namespace CoreDumpAnalysis {
 			return false;
 		}
 
-		private void ExtractArchiveTo(IArchive archive, string parentDirectory) {
+		private void ExtractArchiveTo(SharpCompress.Archives.IArchive archive, string parentDirectory) {
 			foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory)) {
 				entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
 					ExtractFullPath = true,
@@ -53,7 +53,7 @@ namespace CoreDumpAnalysis {
 			}
 		}
 
-		private void ExtractSingleEntryToFile(IArchive archive, string file) {
+		private void ExtractSingleEntryToFile(SharpCompress.Archives.IArchive archive, string file) {
 			var entry = archive.Entries.Single();
 			entry.WriteToFile(file, new ExtractionOptions() {
 				ExtractFullPath = true,

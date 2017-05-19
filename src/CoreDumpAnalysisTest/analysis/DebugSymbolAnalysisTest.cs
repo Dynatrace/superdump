@@ -13,15 +13,15 @@ namespace CoreDumpAnalysisTest {
 		private DebugSymbolAnalysis analysis;
 
 		private SDResult result;
-		private FilesystemHelperDouble filesystemHelper;
-		private ProcessHelperDouble processHelper;
+		private FilesystemDouble filesystem;
+		private ProcessHandlerDouble processHandler;
 
 		[TestInitialize]
 		public void InitAnalysis() {
 			result = new SDResult();
-			filesystemHelper = new FilesystemHelperDouble();
-			processHelper = new ProcessHelperDouble();
-			analysis = new DebugSymbolAnalysis(filesystemHelper, processHelper, "dump.core", result);
+			filesystem = new FilesystemDouble();
+			processHandler = new ProcessHandlerDouble();
+			analysis = new DebugSymbolAnalysis(filesystem, processHandler, "dump.core", result);
 		}
 
 		[TestMethod]
@@ -50,7 +50,7 @@ namespace CoreDumpAnalysisTest {
 		public void TestModuleNameUpdated() {
 			PrepareModuleWithBinary(1234, "actual module name");
 			PrepareSampleThread(1234);
-			processHelper.SetOutputForCommand("addr2line", "??\n??:0");
+			processHandler.SetOutputForCommand("addr2line", "??\n??:0");
 			analysis.DebugAndSetResultFields();
 			Assert.AreEqual("actual module name", GetFirstStackFrame().ModuleName);
 			Assert.IsNull(GetFirstStackFrame().SourceInfo);
@@ -60,24 +60,24 @@ namespace CoreDumpAnalysisTest {
 		public void TestModuleSourceInfoUpdated() {
 			PrepareModuleWithBinary(1234, "actual module name");
 			PrepareSampleThread(1234);
-			processHelper.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
+			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
 			analysis.DebugAndSetResultFields();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			Assert.IsFalse(filesystemHelper.LinkCreated);
+			Assert.IsFalse(filesystem.LinkCreated);
 		}
 
 		[TestMethod]
 		public void TestModuleWithDebugInfo() {
 			PrepareModuleWithDebugInfo(1234, "actual module name");
 			PrepareSampleThread(1234);
-			processHelper.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
+			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
 			analysis.DebugAndSetResultFields();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			Assert.IsTrue(filesystemHelper.LinkCreated);
+			Assert.IsTrue(filesystem.LinkCreated);
 		}
 
 		private SDCDModule PrepareModuleWithDebugInfo(ulong instrPtr, string moduleName) {

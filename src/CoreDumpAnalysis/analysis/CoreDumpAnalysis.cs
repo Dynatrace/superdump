@@ -1,4 +1,5 @@
-﻿using SuperDump.Analyzers;
+﻿using CoreDumpAnalysis.boundary;
+using SuperDump.Analyzers;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
@@ -7,14 +8,16 @@ using System.Text;
 
 namespace CoreDumpAnalysis {
 	public class CoreDumpAnalysis {
-		private readonly IArchiveHelper archiveHelper;
-		private readonly IFilesystemHelper filesystemHelper;
-		private readonly IProcessHelper processHelper;
+		private readonly IArchiveHandler archiveHandler;
+		private readonly IFilesystem filesystem;
+		private readonly IProcessHandler processHandler;
+		private readonly IHttpRequestHandler requestHandler;
 
-		public CoreDumpAnalysis(IArchiveHelper archiveHelper, IFilesystemHelper filesystemHelper, IProcessHelper processHelper) {
-			this.archiveHelper = archiveHelper ?? throw new ArgumentNullException("ArchiveHelper must not be null!"); ;
-			this.filesystemHelper = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
-			this.processHelper = processHelper ?? throw new ArgumentNullException("ProcessHelper must not be null!");
+		public CoreDumpAnalysis(IArchiveHandler archiveHandler, IFilesystem filesystem, IProcessHandler processHandler, IHttpRequestHandler requestHandler) {
+			this.archiveHandler = archiveHandler ?? throw new ArgumentNullException("ArchiveHandler must not be null!"); ;
+			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
+			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
+			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
 		}
 
 		public void AnalyzeDirectory(string inputFile, string outputFile) {
@@ -27,9 +30,11 @@ namespace CoreDumpAnalysis {
 			Console.WriteLine("Processing core dump file: " + coredump);
 
 			SDResult analysisResult = new SDResult();
-			new UnwindAnalysis(filesystemHelper, coredump, analysisResult).DebugAndSetResultFields();
+			new UnwindAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			Console.WriteLine("Fetching debug symbols ...");
+			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
-			new DebugSymbolAnalysis(filesystemHelper, processHelper, coredump, analysisResult).DebugAndSetResultFields();
+			new DebugSymbolAnalysis(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Setting tags ...");
 			new TagAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Setting default fields ...");
@@ -39,8 +44,8 @@ namespace CoreDumpAnalysis {
 		}
 
 		private String GetCoreDumpFilePath(string inputFile) {
-			string directory = filesystemHelper.GetParentDirectory(inputFile);
-			if (!File.Exists(inputFile)) {
+			string directory = filesystem.GetParentDirectory(inputFile);
+			if (!filesystem.FileExists(inputFile)) {
 				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
 				return FindCoredumpOrNull(directory);
 			} else if (inputFile.EndsWith(".tar") || inputFile.EndsWith(".gz") || inputFile.EndsWith(".tgz") || inputFile.EndsWith(".tar") || inputFile.EndsWith(".zip")) {
@@ -59,14 +64,14 @@ namespace CoreDumpAnalysis {
 			bool workDone = true;
 			while (workDone) {
 				workDone = false;
-				foreach (String file in filesystemHelper.FilesInDirectory(directory)) {
-					workDone |= archiveHelper.TryExtract(file);
+				foreach (String file in filesystem.FilesInDirectory(directory)) {
+					workDone |= archiveHandler.TryExtract(file);
 				}
 			}
 		}
 
 		private String FindCoredumpOrNull(String directory) {
-			foreach (String file in filesystemHelper.FilesInDirectory(directory)) {
+			foreach (String file in filesystem.FilesInDirectory(directory)) {
 				if (file.EndsWith(".core")) {
 					return file;
 				}

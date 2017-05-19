@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	public class FilesystemHelper : IFilesystemHelper {
+	public class Filesystem : IFilesystem {
 		public String GetParentDirectory(String dir) {
 			int idx = dir.LastIndexOfAny(new char[] { '/', '\\' });
 			if (idx >= 0) {
@@ -48,6 +50,25 @@ namespace CoreDumpAnalysis {
 
 		public bool FileExists(string path) {
 			return File.Exists(path);
+		}
+
+		public string Md5FromFile(string path) {
+			using (var md5 = MD5.Create()) {
+				using (var stream = File.OpenRead(path)) {
+					return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+				}
+			}
+		}
+
+		public void HttpContentToFile(HttpContent inputstream, string filepath) {
+			Directory.CreateDirectory(Path.GetDirectoryName(filepath));
+			using (FileStream stream = new FileStream(filepath, FileMode.Create, FileAccess.Write, FileShare.None)) {
+				inputstream.CopyToAsync(stream);
+			}
+		}
+
+		public long FileSize(string path) {
+			return new FileInfo(path).Length;
 		}
 	}
 }

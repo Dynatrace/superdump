@@ -1,4 +1,5 @@
-﻿using SuperDump.Models;
+﻿using CoreDumpAnalysis.boundary;
+using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,14 @@ using System.Security.Cryptography;
 
 namespace CoreDumpAnalysis {
 	public class DebugSymbolResolver {
+
+		private readonly IFilesystem filesystem;
+		private readonly IHttpRequestHandler requestHandler;
+
+		public DebugSymbolResolver(IFilesystem filesystem, IHttpRequestHandler requestHandler) {
+			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem Helper must not be null!");
+			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
+		}
 
 		public void Resolve(IList<SDModule> libs) {
 			DownloadDebugSymbols(WithoutDuplicates(libs));
@@ -34,7 +43,7 @@ namespace CoreDumpAnalysis {
 
 		private void DownloadDebugSymbolForModule(SDCDModule module) {
 			if (module.LocalPath != null && DebugSymbolsRelevant(module)) {
-				string hash = CalculateHash(module.LocalPath);
+				string hash = filesystem.Md5FromFile(module.LocalPath);
 				if (IsDebugFileAvailable(module, hash)) {
 					module.DebugSymbolPath = Path.GetFullPath(DebugFilePath(module.LocalPath, hash));
 				} else {
@@ -53,44 +62,23 @@ namespace CoreDumpAnalysis {
 			}
 			return false;
 		}
-
-		private static string CalculateHash(String path) {
-			using (var md5 = MD5.Create()) {
-				using (var stream = File.OpenRead(path)) {
-					return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
-				}
-			}
-		}
-
+		
 		private bool IsDebugFileAvailable(SDCDModule module, string hash) {
-			return File.Exists(DebugFilePath(module.LocalPath, hash));
+			return filesystem.FileExists(DebugFilePath(module.LocalPath, hash));
 		}
 
 		private void DownloadDebugSymbols(SDCDModule lib, string hash) {
 			Console.WriteLine("Trying to retrieve debug symbols for " + lib.FilePath);
 			string url = Constants.DEBUG_SYMBOL_URL_PATTERN.Replace("{hash}", hash).Replace("{file}", DebugFileName(lib.LocalPath));
 
-			HttpClient httpClient = new HttpClient();
-			httpClient.GetAsync(url).ContinueWith(
-				request => {
-					HttpResponseMessage response = request.Result;
-					if (request.Result.IsSuccessStatusCode) {
-						string filePath = DebugFilePath(lib.LocalPath, hash);
-						Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-						using (FileStream stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None)) {
-							response.Content.CopyToAsync(stream);
-						}
-						lib.DebugSymbolPath = Path.GetFullPath(filePath);
-						Console.WriteLine("Successfully downloaded debug symbols for " + lib.FilePath);
-					}
-				}).Wait();
+			string localDebugFile = DebugFilePath(lib.LocalPath, hash);
+			if(requestHandler.DownloadFromUrl(url, localDebugFile)) {
+				Console.WriteLine("Successfully downloaded debug symbols for " + lib.FilePath);
+				lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
+			}
 		}
 
-		private static string DebugFilePath(String path) {
-			return DebugFilePath(path, CalculateHash(path));
-		}
-
-		private static string DebugFilePath(String path, string hash) {
+		private string DebugFilePath(String path, string hash) {
 			return Constants.DEBUG_SYMBOL_PATH + hash + "/" + DebugFileName(path);
 		}
 

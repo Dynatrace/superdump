@@ -3,6 +3,7 @@ using System.IO;
 
 using SuperDump.Models;
 using SuperDump.Analyzers;
+using CoreDumpAnalysis.boundary;
 
 namespace CoreDumpAnalysis {
 	public class Program {
@@ -19,10 +20,11 @@ namespace CoreDumpAnalysis {
 		}
 
 		private static void RunAnalysis(string input, string output) {
-			IFilesystemHelper filesystemHelper = new FilesystemHelper();
-			IArchiveHelper archiveHelper = new ArchiveHelper(filesystemHelper);
-			IProcessHelper processHelper = new ProcessHelper();
-			new CoreDumpAnalysis(archiveHelper, filesystemHelper, processHelper).AnalyzeDirectory(input, output);
+			IFilesystem filesystem = new Filesystem();
+			IArchiveHandler archiveHandler = new ArchiveHandler(filesystem);
+			IProcessHandler processHandler = new ProcessHandler();
+			IHttpRequestHandler requestHandler = new HttpRequestHandler(filesystem);
+			new CoreDumpAnalysis(archiveHandler, filesystem, processHandler, requestHandler).AnalyzeDirectory(input, output);
 		}
 	}
 }

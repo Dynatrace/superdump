@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CoreDumpAnalysisTest {
-	internal class ProcessHelperDouble : IProcessHelper {
+	internal class ProcessHandlerDouble : IProcessHandler {
 		private readonly Dictionary<string, string> fileNameToOutputMap = new Dictionary<string, string>();
 
 		public void SetOutputForCommand(string command, string outputString) {

@@ -7,6 +7,13 @@ using System.Text;
 
 namespace CoreDumpAnalysis {
 	public class SharedLibAdapter {
+
+		private readonly IFilesystem filesystem;
+
+		public SharedLibAdapter(IFilesystem filesystem) {
+			this.filesystem = filesystem;
+		}
+
 		public SDCDModule Adapt(SharedLib lib) {
 			SDCDModule module = new SDCDModule();
 			module.FilePath = Utf8ArrayToString(lib.Path, 512);
@@ -31,7 +38,7 @@ namespace CoreDumpAnalysis {
 
 		public static string Utf8ArrayToString(byte[] buffer, int len) {
 			int end = 0;
-			while (buffer[end] != 0 && end < len) {
+			while (end < buffer.Length && buffer[end] != 0 && end < len) {
 				end++;
 			}
 			return Encoding.UTF8.GetString(buffer).Substring(0, end);
@@ -47,9 +54,9 @@ namespace CoreDumpAnalysis {
 		}
 
 		private string GetLocalPathFromPath(string filepath) {
-			if (File.Exists("." + filepath)) {
+			if (filesystem.FileExists("." + filepath)) {
 				return "." + filepath;
-			} else if (File.Exists(filepath)) {
+			} else if (filesystem.FileExists(filepath)) {
 				return filepath;
 			} else {
 				return null;
@@ -66,8 +73,8 @@ namespace CoreDumpAnalysis {
 		}
 
 		private long GetFileSizeFromPath(string filepath) {
-			if (filepath != null && File.Exists(filepath)) {
-				return new FileInfo(filepath).Length;
+			if (filepath != null && filesystem.FileExists(filepath)) {
+				return filesystem.FileSize(filepath);
 			}
 			return 0;
 		}

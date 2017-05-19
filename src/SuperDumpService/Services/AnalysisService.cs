@@ -43,7 +43,7 @@ namespace SuperDumpService.Services {
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
-					AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+					StartLinuxAnalyzation(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
@@ -108,7 +108,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private void AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+		private void StartLinuxAnalyzation(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string command = settings.Value.LinuxAnalysisCommand;
 
 			if (string.IsNullOrEmpty(command)) {
@@ -122,19 +122,16 @@ namespace SuperDumpService.Services {
 			command = command.Replace("{outputname}", Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)));
 
 			Utility.ExtractExe(command, out string executable, out string arguments);
-			string[] argArray = arguments.Split('^');
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
-			foreach (string arg in argArray) {
-				Console.WriteLine($"Arg: '{arg}'");
-			}
-			/*using (var process = await ProcessRunner.Run(executable, workingDir, argArray))
-            {
-                File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
-                dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
-            }*/
-			ProcessStartInfo psi = new ProcessStartInfo(executable, arguments);
-			psi.WorkingDirectory = workingDir.FullName;
+			/* Using Process implementation because bash cannot be started with RedirectStandardOutput=true (which is hardcoded in ProcessRunner)
+			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
+				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
+				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
+			}*/
+			ProcessStartInfo psi = new ProcessStartInfo(executable, arguments) {
+				WorkingDirectory = workingDir.FullName
+			};
 			Process.Start(psi);
 		}
 	}

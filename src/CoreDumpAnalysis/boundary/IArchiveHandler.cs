@@ -1,5 +1,5 @@
 ﻿namespace CoreDumpAnalysis {
-	public interface IArchiveHelper {
+	public interface IArchiveHandler {
 		bool TryExtract(string file);
 	}
 }

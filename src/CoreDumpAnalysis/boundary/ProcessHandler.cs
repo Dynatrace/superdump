@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 
 namespace CoreDumpAnalysis {
-	public class ProcessHelper : IProcessHelper {
+	public class ProcessHandler : IProcessHandler {
 		public StreamReader StartProcessAndRead(string fileName, string arguments) {
 			var process = new Process {
 				StartInfo = new ProcessStartInfo {
