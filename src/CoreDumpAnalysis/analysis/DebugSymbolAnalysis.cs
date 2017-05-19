@@ -2,7 +2,6 @@
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace CoreDumpAnalysis

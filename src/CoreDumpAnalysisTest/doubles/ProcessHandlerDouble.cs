@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using CoreDumpAnalysis;
 using System.Collections.Generic;
 using System.Text;

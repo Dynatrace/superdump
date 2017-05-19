@@ -1,7 +1,4 @@
 ﻿using CoreDumpAnalysis.boundary;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CoreDumpAnalysisTest.doubles {
 	class RequestHandlerDouble : IHttpRequestHandler {

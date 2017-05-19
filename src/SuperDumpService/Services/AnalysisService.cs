@@ -1,14 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SuperDump.Common;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System.Diagnostics;
-using SuperDump.Models;
-using Hangfire;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {

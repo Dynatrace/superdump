@@ -4,10 +4,8 @@ using SharpCompress.Archives.Tar;
 using SharpCompress.Archives.Zip;
 using SharpCompress.Readers;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace CoreDumpAnalysis {
 	public class ArchiveHandler : IArchiveHandler {

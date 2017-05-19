@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
 
-using SuperDump.Models;
-using SuperDump.Analyzers;
 using CoreDumpAnalysis.boundary;
 
 namespace CoreDumpAnalysis {
