@@ -56,5 +56,9 @@ namespace SuperDump.Models {
 			get { return Trace[i]; }
 			set { Trace[i] = value; }
 		}
+
+		public override string ToString() {
+			return string.Join("\n", Trace);
+		}
 	}
 }

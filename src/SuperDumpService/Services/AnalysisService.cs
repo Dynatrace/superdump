@@ -16,12 +16,14 @@ namespace SuperDumpService.Services {
 		private readonly DumpRepository dumpRepo;
 		private readonly PathHelper pathHelper;
 		private readonly IOptions<SuperDumpSettings> settings;
+		private readonly NotificationService notifications;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
 			this.pathHelper = pathHelper;
 			this.settings = settings;
+			this.notifications = notifications;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -55,6 +57,7 @@ namespace SuperDumpService.Services {
 				if (settings.Value.DeleteDumpAfterAnalysis) {
 					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
 				}
+				await notifications.NotifyDumpAnalysisFinished(dumpInfo);
 			}
 		}
 
@@ -115,6 +118,8 @@ namespace SuperDumpService.Services {
 				throw new ArgumentNullException("'LinuxCommandTemplate' setting is not configured.");
 			}
 
+			command = command.Replace("{bundleid}", dumpInfo.BundleId);
+			command = command.Replace("{dumpid}", dumpInfo.DumpId);
 			command = command.Replace("{dumpdir}", workingDir.FullName);
 			command = command.Replace("{dumppath}", dumpFilePath);
 			command = command.Replace("{dumpname}", Path.GetFileName(dumpFilePath));

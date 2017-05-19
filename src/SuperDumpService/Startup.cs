@@ -21,6 +21,7 @@ using SuperDumpService.Services;
 using System.Linq;
 using SuperDump.Webterm;
 using WebSocketManager;
+using Sakura.AspNetCore.Mvc;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -100,6 +101,11 @@ namespace SuperDumpService {
 				}
 			});
 
+			// for pagination list
+			services.AddBootstrapPagerGenerator(options => {
+				options.ConfigureDefault();
+			});
+
 			// App Insights
 			services.AddApplicationInsightsTelemetry(Configuration);
 
@@ -114,13 +120,22 @@ namespace SuperDumpService {
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
 			services.AddSingleton<UnpackService>();
+			services.AddSingleton<NotificationService>();
+			services.AddSingleton<SlackNotificationService>();
 			services.AddWebSocketManager();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider) {
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns) {
 			app.ApplicationServices.GetService<BundleRepository>().Populate();
 			app.ApplicationServices.GetService<DumpRepository>().Populate();
+
+			//foreach(var b in app.ApplicationServices.GetService<BundleRepository>().GetAll()) {
+			//	foreach(var d in app.ApplicationServices.GetService<DumpRepository>().Get(b.BundleId)) {
+			//		var msg = sns.GetMessage2(d);
+			//		Console.WriteLine(msg);
+			//	}
+			//}
 
 			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 			loggerFactory.AddDebug();

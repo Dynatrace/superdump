@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace SuperDump.Models {
-	public class SDTag {
+	public class SDTag : IEquatable<SDTag> {
 		public string Name { get; set; }
 
 		/// <summary>
@@ -19,9 +19,12 @@ namespace SuperDump.Models {
 		}
 
 		public override bool Equals(object obj) {
-			var item = obj as SDTag;
-			if (item == null) return false;
-			return item.Name == this.Name;
+			return Equals(obj as SDTag);
+		}
+
+		public bool Equals(SDTag other) {
+			if (other == null) return false;
+			return other.Name == this.Name;
 		}
 
 		public override int GetHashCode() {

@@ -18,8 +18,9 @@ namespace SuperDumpService {
 		public IEnumerable<string> BinPath { get; set; }
 		public string WindowsInteractiveCommandx86 { get; set; }
 		public string WindowsInteractiveCommandx64 { get; set; }
-        public string LinuxAnalysisCommand { get; set; }
-        public string LinuxPreparationCommand { get; set; }
-        public string LinuxInteractiveCommand { get; set; }
+		public string LinuxAnalysisCommand { get; set; }
+		public string LinuxInteractiveCommand { get; set; }
+		public string[] SlackNotificationUrls { get; set; }
+		public string SuperDumpUrl { get; set; }
 	}
 }

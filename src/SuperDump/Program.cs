@@ -135,14 +135,12 @@ namespace SuperDump {
 			} catch (InvalidOperationException ex) {
 				context.WriteError("wrong architecture");
 				context.WriteLine(ex.Message);
-				context.Dispose();
 				throw;
 			} catch (Exception ex) {
-				context.WriteError("Wrong architecture (not started with SuperDumpSelector) or CLR could not be loaded");
+				context.WriteError("An exception occured while loading crash dump.");
 				context.WriteError(ex.Message);
 				context.WriteLine(ex.StackTrace);
-				//context.Dispose();
-				//throw ex;
+				throw;
 			}
 		}
 

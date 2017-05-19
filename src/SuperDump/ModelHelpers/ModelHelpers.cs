@@ -29,7 +29,7 @@ namespace SuperDump.ModelHelpers {
 					}
 				}
 			}
-			return new SDCombinedStackFrame(type, frame.InstructionPointer, frame.StackPointer, methodName, moduleName, frame.Method.NativeCode);
+			return new SDCombinedStackFrame(type, frame.InstructionPointer, frame.StackPointer, methodName, moduleName, (frame.Method != null ? frame.Method.NativeCode : 0));
 		}
 
 		public static SDBlockingObject ToSDModel(this BlockingObject obj) {
@@ -84,12 +84,10 @@ namespace SuperDump.ModelHelpers {
 				}
 
 				model.Message = clrException.GetExceptionMessageSafe();
-
-				var frames = new List<SDCombinedStackFrame>();
+				
 				foreach (ClrStackFrame clrFrame in clrException.StackTrace) {
 					model.StackTrace.Add(clrFrame.ToSDModel());
 				}
-				model.StackTrace = new SDCombinedStackTrace(frames);
 			}
 			return model;
 		}
