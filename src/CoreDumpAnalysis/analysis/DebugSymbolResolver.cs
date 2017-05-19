@@ -70,9 +70,13 @@ namespace CoreDumpAnalysis {
 			string url = Constants.DEBUG_SYMBOL_URL_PATTERN.Replace("{hash}", hash).Replace("{file}", DebugFileName(lib.LocalPath));
 
 			string localDebugFile = DebugFilePath(lib.LocalPath, hash);
-			if(requestHandler.DownloadFromUrl(url, localDebugFile)) {
-				Console.WriteLine("Successfully downloaded debug symbols for " + lib.FilePath);
-				lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
+			try {
+				if (requestHandler.DownloadFromUrl(url, localDebugFile)) {
+					Console.WriteLine("Successfully downloaded debug symbols for " + lib.FilePath + ". Stored at " + localDebugFile);
+					lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
+				}
+			} catch(Exception e) {
+				Console.WriteLine("Failed to download debug symbol: " + e.Message);
 			}
 		}
 
