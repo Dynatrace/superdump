@@ -51,6 +51,7 @@
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.2.301" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CoreDumpAnalysis\CoreDumpAnalysis.csproj" />
     <ProjectReference Include="..\SuperDump.Common\SuperDump.Common.csproj" />
     <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj" />
   </ItemGroup>
