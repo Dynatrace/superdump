@@ -78,16 +78,7 @@ namespace SuperDump.Analyzers {
 		}
 
 		private bool IsNativeExceptionMethodFrame(SDCombinedStackFrame frame) {
-			return ContainsAny(frame.Type.ToString() + frame.MethodName,
-				"KiUserExceptionDispatcher",
-				"KiUserExceptionDispatch",
-				"RtlRaiseException",
-				"RtlReportException",
-				"RaiseException",
-				"RaiseFailFastException",
-				"UnhandledExceptionFilter",
-				"DbgBreakPoint"
-				);
+			return frame.ModuleName.StartsWith("libc") && ContainsAny(frame.MethodName, "gsignal", "abort", "raise");
 		}
 
 		private bool ContainsAny(string stringToSearch, params string[] keys) {

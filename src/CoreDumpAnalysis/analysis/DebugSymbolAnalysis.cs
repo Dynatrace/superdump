@@ -48,7 +48,7 @@ namespace CoreDumpAnalysis
 			string methodName = methodSource.Item2;
 			if (methodName != "??") {
 				stackFrame.MethodName = methodName;
-				if (sourceInfo.File != "??") {
+				if (sourceInfo.File != null && sourceInfo.File != "??") {
 					stackFrame.SourceInfo = sourceInfo;
 				}
 			}
@@ -93,15 +93,16 @@ namespace CoreDumpAnalysis
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {
 			int lastColon = output.LastIndexOf(':');
 			if (lastColon > 0) {
-				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber();
-				sourceInfo.File = output.Substring(0, lastColon);
+				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber() {
+					File = output.Substring(0, lastColon)
+				};
 				string sLine = output.Substring(lastColon + 1);
 				if (!Int32.TryParse(sLine, out sourceInfo.Line)) {
 					sourceInfo.Line = 0;
 				}
 				return sourceInfo;
 			}
-			return null;
+			return new SDFileAndLineNumber();
 		}
 	}
 }

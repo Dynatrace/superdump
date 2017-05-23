@@ -1,4 +1,5 @@
 ﻿using SuperDump.Models;
+using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -82,12 +83,13 @@ namespace CoreDumpAnalysis {
 			Dictionary<uint, SDThread> threads = new Dictionary<uint, SDThread>();
 
 			int nThreads = getNumberOfThreads();
-			for (uint i = 1; i <= nThreads; i++) {
+			for (uint i = 0; i < nThreads; i++) {
 				selectThread(i);
-				SDThread thread = new SDThread();
-				thread.EngineId = i;
-				thread.OsId = i;
-				thread.Index = i;
+				SDThread thread = new SDThread() {
+					EngineId = i,
+					OsId = i,
+					Index = i
+				};
 				UnwindCurrentThread(context, thread);
 				threads.Add(i, thread);
 			}

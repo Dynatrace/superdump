@@ -74,6 +74,8 @@ namespace CoreDumpAnalysis {
 				if (requestHandler.DownloadFromUrl(url, localDebugFile)) {
 					Console.WriteLine("Successfully downloaded debug symbols for " + lib.FilePath + ". Stored at " + localDebugFile);
 					lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
+				} else {
+					Console.WriteLine("Failed to download debug symbols for " + lib.FilePath + ". URL: " + url);
 				}
 			} catch(Exception e) {
 				Console.WriteLine("Failed to download debug symbol: " + e.Message);
