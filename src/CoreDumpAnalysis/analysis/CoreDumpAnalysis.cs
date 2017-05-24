@@ -37,6 +37,8 @@ namespace CoreDumpAnalysis {
 			new DebugSymbolAnalysis(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Setting tags ...");
 			new TagAnalyzer(analysisResult).Analyze();
+			Console.WriteLine("Reading stack information ...");
+			new GdbAnalysis(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Setting default fields ...");
 			new DefaultFieldsSetter(analysisResult).SetResultFields();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());

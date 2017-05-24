@@ -74,7 +74,8 @@ namespace SuperDumpService.Services {
 				if (!File.Exists(filename)) return null;
 			}
 			try {
-				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename), new SDSystemContextConverter(), new SDModuleConverter());
+				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename), 
+					new SDSystemContextConverter(), new SDModuleConverter(), new SDCombinedStackFrameConverter());
 			} catch (Exception e) {
 				error = $"could not deserialize {filename}: {e.Message}";
 				Console.WriteLine(error);

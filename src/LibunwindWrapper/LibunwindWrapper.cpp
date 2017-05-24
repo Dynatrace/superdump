@@ -33,8 +33,7 @@ string LibunwindWrapper::getFilepath() {
 	return filepath;
 }
 
-int LibunwindWrapper::getNumberOfThreads()
-{
+int LibunwindWrapper::getNumberOfThreads() {
 	return _UCD_get_num_threads(this->ucdInfo);
 }
 

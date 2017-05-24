@@ -10,5 +10,7 @@ namespace CoreDumpAnalysis {
 		long FileSize(string path);
 		string Md5FromFile(string path);
 		void HttpContentToFile(HttpContent stream, string targetFile);
+		void WriteToFile(string filepath, string content);
+		IEnumerable<string> ReadLines(string file);
 	}
 }

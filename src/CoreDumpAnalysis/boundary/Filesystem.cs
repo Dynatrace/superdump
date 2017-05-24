@@ -69,5 +69,13 @@ namespace CoreDumpAnalysis {
 		public long FileSize(string path) {
 			return new FileInfo(path).Length;
 		}
+
+		public void WriteToFile(string filepath, string content) {
+			File.WriteAllText(filepath, content);
+		}
+
+		public IEnumerable<string> ReadLines(string file) {
+			return File.ReadLines(file);
+		}
 	}
 }

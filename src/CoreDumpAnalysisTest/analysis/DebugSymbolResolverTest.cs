@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System.Collections.Generic;
 
-namespace CoreDumpAnalysisTest.analysis {
+namespace CoreDumpAnalysisTest {
 	[TestClass]
 	public class DebugSymbolResolverTest {
 		private DebugSymbolResolver resolver;
@@ -52,7 +52,7 @@ namespace CoreDumpAnalysisTest.analysis {
 		[TestMethod]
 		public void TestDebugFilePresent() {
 			filesystem.Md5 = "some-md5-hash";
-			filesystem.SetFileExists(Constants.DEBUG_SYMBOL_PATH + "some-md5-hash/somelib.dbg");
+			filesystem.ExistingFiles.Add(Constants.DEBUG_SYMBOL_PATH + "some-md5-hash/somelib.dbg");
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith("some-md5-hash\\somelib.dbg"), "Invalid DebugSymbol path: " + module.DebugSymbolPath);
 			AssertNoRequestsMade();

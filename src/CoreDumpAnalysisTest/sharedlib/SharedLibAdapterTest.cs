@@ -33,8 +33,8 @@ namespace CoreDumpAnalysisTest {
 		[TestMethod]
 		public void TestAllFields() {
 			SharedLib lib = CreateLib("/lib/somelib-42.so");
-			filesystem.SetFileExists("/lib/somelib-42.so");
-			filesystem.SetFileSize("/lib/somelib-42.so", 1234);
+			filesystem.ExistingFiles.Add("/lib/somelib-42.so");
+			filesystem.FileSizes["/lib/somelib-42.so"] = 1234;
 			SDCDModule module = adapter.Adapt(lib);
 			Assert.AreEqual("/lib/somelib-42.so", module.FilePath);
 

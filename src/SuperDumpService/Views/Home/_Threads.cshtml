@@ -96,32 +96,40 @@
 							<table class="table table-stacktrace" id="thread-@thread.OsId-stacktrace">
 								<thead>
 									<tr>
-										<th class="nobreak stacktype" style="width: 55px">Type</th>
+                                        @if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+                                            // Frames in core dumps are always native, no need to display
+										    <th class="nobreak stacktype" style="width: 55px">Type</th>
+                                        }
 										<th class="nobreak stackptr" style="width: 79px">StackPtr</th>
 										<th class="nobreak stackptroffset">StackPtr.Offset</th>
 										<th class="nobreak stackinstructionptr" style="width: 79px">Instruct.Ptr</th>
 										<th class="nobreak stackreturnaddr" style="width: 79px">Ret.Addr.</th>
 										<th class="nobreak stackmethodname">Module/Method name</th>
+                                        <th class="nobreak">Stack Variables</th>
 									</tr>
 								</thead>
 								<tbody>
+                                    @{ int frameNr = 0; }
 									@foreach (var frame in thread.StackTrace) {
-										string frameType = string.Empty;
-										string rowClass = string.Empty;
-										if (frame.Type == SuperDump.Models.StackFrameType.Native) {
-											rowClass = "custom-native";
-										} else if (frame.Type == SuperDump.Models.StackFrameType.Managed) {
-											rowClass = "custom-managed";
-										} else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
-											rowClass = "custom-special";
-										}
-										string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
+                                        frameNr++;
+                                        string frameType = string.Empty;
+                                        string rowClass = string.Empty;
+                                        if (frame.Type == SuperDump.Models.StackFrameType.Native) {
+                                            rowClass = "custom-native";
+                                        } else if (frame.Type == SuperDump.Models.StackFrameType.Managed) {
+                                            rowClass = "custom-managed";
+                                        } else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
+                                            rowClass = "custom-special";
+                                        }
+                                        string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
 
-										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ? 
-											(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
-											"disas 0x" + (frame.InstructionPointer).ToString("x");
+                                        string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ?
+                                            (frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
+                                            "disas 0x" + (frame.InstructionPointer).ToString("x");
 										<tr class="@rowClass">
-											<td class="nobreak stacktype">@frame.Type.ToString()</td>
+                                            @if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+											    <td class="nobreak stacktype">@frame.Type.ToString()</td>
+                                            }
 											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
 											
@@ -141,12 +149,33 @@
 												<td class="nobreak stackmethodname">
 													<span class="@tagclasses">@modulename</span>
 													@if (frame.SourceInfo != null) {
-														<span class="sourceinfo">@frame.SourceInfo.File:@frame.SourceInfo.Line</span>
+														<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
 													}
 												</td>
 											}
+                                            <td class="nobreak">
+                                                @if((frame as SuperDumpModels.SDCDCombinedStackFrame)?.HasStackInfo() ?? false) { 
+                                                    <div runat="server" id="pnlPanelHeader">
+                                                        <a href="#" onclick="$('#pnlPanel' + @frameNr).toggle();return false;">Expand/Collapse</a>
+                                                    </div>
+                                                }
+                                            </td>
 										</tr>
-									}
+                                        <tr class="@rowClass">
+                                            <td></td>
+                                            <td colspan="5">
+                                                <asp:Panel ID=@("pnlPanel" + frameNr) runat ="server" ClientIDMode="Static" hidden="hidden">
+                                                    @foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
+                                                        @(entry.Key + "=" + entry.Value);
+                                                        <br/>
+                                                    }
+                                                    @foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
+                                                        @(entry.Key + "=" + entry.Value);
+                                                        <br/>
+                                                    }
+                                                </asp:Panel>
+                                            </td>
+                                        </tr>}
 								</tbody>
 							</table>
 							<div class="hidden-stacktrace-hack">{noformat}</div>

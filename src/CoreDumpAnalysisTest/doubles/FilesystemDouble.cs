@@ -6,8 +6,9 @@ using System.Net.Http;
 namespace CoreDumpAnalysisTest {
 	internal class FilesystemDouble : IFilesystem {
 
-		private IList<string> existingFiles = new List<string>();
-		private IDictionary<string, long> fileSizes = new Dictionary<string, long>();
+		public IList<string> ExistingFiles = new List<string>();
+		public IDictionary<string, long> FileSizes = new Dictionary<string, long>();
+		public IDictionary<string, string> FileContents = new Dictionary<string, string>();
 
 		public bool LinkCreated { get; private set; } = false;
 
@@ -18,7 +19,7 @@ namespace CoreDumpAnalysisTest {
 		}
 
 		public bool FileExists(string path) {
-			return existingFiles.Contains(path);
+			return ExistingFiles.Contains(path);
 		}
 
 		public List<string> FilesInDirectory(string directory) {
@@ -26,11 +27,15 @@ namespace CoreDumpAnalysisTest {
 		}
 
 		public long FileSize(string path) {
-			return fileSizes[path];
+			return FileSizes[path];
 		}
 
 		public string GetParentDirectory(string dir) {
-			throw new NotImplementedException();
+			int lastSlash = dir.LastIndexOf('/');
+			if (lastSlash > 0) {
+				return dir.Substring(0, dir.LastIndexOf('/'));
+			}
+			return dir;
 		}
 
 		public void HttpContentToFile(HttpContent stream, string targetFile) {
@@ -41,12 +46,12 @@ namespace CoreDumpAnalysisTest {
 			return Md5;
 		}
 
-		public void SetFileSize(string path, long filesize) {
-			fileSizes.Add(path, filesize);
+		public IEnumerable<string> ReadLines(string file) {
+			return FileContents[file].Split('\n');
 		}
 
-		public void SetFileExists(string path) {
-			existingFiles.Add(path);
+		public void WriteToFile(string filepath, string content) {
+			FileContents[filepath] = content;
 		}
 	}
 }

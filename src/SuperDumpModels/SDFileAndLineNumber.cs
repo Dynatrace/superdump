@@ -7,6 +7,14 @@ namespace SuperDumpModels {
 		public string File;
 		public int Line;
 
+		public string FileName() {
+			int lastSlash = File.LastIndexOfAny(new char[] { '/', '\\' });
+			if(lastSlash > 0) {
+				return File.Substring(lastSlash + 1);
+			}
+			return File;
+		}
+
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
