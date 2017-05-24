@@ -3,10 +3,14 @@ using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace CoreDumpAnalysis
 {
     public class DebugSymbolAnalysis {
+
+		private static Regex addr2lineRegex = new Regex("([^:]+):(\\d+)", RegexOptions.Compiled);
+
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
 
@@ -68,7 +72,7 @@ namespace CoreDumpAnalysis
 		}
 
 		private Tuple<SDFileAndLineNumber, string> Address2MethodSource(ulong instrPtr, SDCDModule module) {
-			ulong relativeIp = instrPtr - module.StartAddress;
+			ulong relativeIp = instrPtr;
 
 			if (module.DebugSymbolPath != null && module.DebugSymbolPath != "") {
 				// If there is a debug file, link it (required for addr2line to find the dbg file)
@@ -91,15 +95,11 @@ namespace CoreDumpAnalysis
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {
-			int lastColon = output.LastIndexOf(':');
-			if (lastColon > 0) {
-				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber() {
-					File = output.Substring(0, lastColon)
-				};
-				string sLine = output.Substring(lastColon + 1);
-				if (!Int32.TryParse(sLine, out sourceInfo.Line)) {
-					sourceInfo.Line = 0;
-				}
+			Match match = addr2lineRegex.Match(output);
+			if(match.Success) {
+				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber();
+				sourceInfo.File = match.Groups[1].Value;
+				sourceInfo.Line = Int32.Parse(match.Groups[2].Value);
 				return sourceInfo;
 			}
 			return new SDFileAndLineNumber();

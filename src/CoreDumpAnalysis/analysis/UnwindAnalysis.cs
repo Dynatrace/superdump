@@ -109,7 +109,7 @@ namespace CoreDumpAnalysis {
 				offset = getProcedureOffset();
 
 				if (oldProcName != null) {
-					frames.Add(new SDCombinedStackFrame(StackFrameType.Native, "", oldProcName, oldOffset, oldIp, oldSp, ip, 0, null));
+					frames.Add(new SDCDCombinedStackFrame("", oldProcName, oldOffset, oldIp, oldSp, ip, 0, null));
 				}
 				oldIp = ip;
 				oldSp = sp;
