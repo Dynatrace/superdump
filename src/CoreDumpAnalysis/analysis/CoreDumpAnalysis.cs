@@ -1,4 +1,5 @@
-﻿using CoreDumpAnalysis.boundary;
+﻿using CoreDumpAnalysis.analysis;
+using CoreDumpAnalysis.boundary;
 using SuperDump.Analyzers;
 using SuperDump.Models;
 using System;
@@ -31,6 +32,8 @@ namespace CoreDumpAnalysis {
 
 			SDResult analysisResult = new SDResult();
 			new UnwindAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			Console.WriteLine("Retrieving agent version if available ...");
+			new CoreLogAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Fetching debug symbols ...");
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
