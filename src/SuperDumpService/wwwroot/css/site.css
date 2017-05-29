@@ -454,3 +454,7 @@ a.copyButtonForJira:hover {
        -o-transition: height 0s linear;
           transition: height 0s linear;
 }
+
+div.hidden {
+    display: none;
+}

@@ -56,12 +56,12 @@
 			</dl>
 			<dl class="dl-horizontal">
 				<dt># of modules:</dt>
-				<dd>@Model.Result.SystemContext.Modules.Count</dd>
+				<dd>@Model.Result.SystemContext.DistinctModules().Count()</dd>
 				@{
-					var moduleTags = Model.Result.SystemContext.Modules.SelectMany(x => x.Tags).Distinct();
+					var moduleTags = Model.Result.SystemContext.DistinctModules().SelectMany(x => x.Tags).Distinct();
 					@foreach (var moduleTag in moduleTags.OrderByDescending(x => x.Importance)) {
 						<dt><span class="tag tag-@moduleTag">@moduleTag</span>-modules:</dt>
-						var matchingModules = Model.Result.SystemContext.Modules.Where(x => x.Tags.Contains(moduleTag));
+						var matchingModules = Model.Result.SystemContext.DistinctModules().Where(x => x.Tags.Contains(moduleTag));
 						<dd>@matchingModules.Select(x => $"{x.FileName} ({x.Version})").Aggregate((i, j) => i + ", " + j)</dd>
 					}
 				}
