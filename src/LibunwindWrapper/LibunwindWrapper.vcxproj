@@ -85,11 +85,11 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/opt/libunwind/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/usr/local/include</AdditionalIncludeDirectories>
       <PositionIndependentCode>true</PositionIndependentCode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/opt/libunwind/bin/libunwind-coredump.a</AdditionalDependencies>
+      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/usr/local/lib/libunwind-coredump.a</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);/usr/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu</AdditionalLibraryDirectories>
       <LibraryDependencies>unwind-x86_64</LibraryDependencies>
       <OutputFile>/usr/lib/unwindwrapper.so</OutputFile>
@@ -103,14 +103,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/opt/libunwind/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);%(AdditionalIncludeDirectories);/usr/local/include</AdditionalIncludeDirectories>
       <PositionIndependentCode>true</PositionIndependentCode>
     </ClCompile>
     <Link>
       <OutputFile>/usr/lib/unwindwrapper.so</OutputFile>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);/usr/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu</AdditionalLibraryDirectories>
       <LibraryDependencies>unwind-x86_64</LibraryDependencies>
-      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/opt/libunwind/bin/libunwind-coredump.a</AdditionalDependencies>
+      <AdditionalDependencies>$(StlAdditionalDependencies);%(AdditionalDependencies);/usr/local/lib/libunwind-coredump.a</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
