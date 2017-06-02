@@ -18,7 +18,6 @@ namespace CoreDumpAnalysis {
 			}
 			module.FileName = GetFilenameFromPath(module.FilePath);
 			module.LocalPath = GetLocalPathFromPath(module.FilePath);
-			module.Version = GetVersionFromFilename(module.FileName);
 			module.FileSize = (uint)GetFileSizeFromPath(module.LocalPath);
 			module.ImageBase = 0;
 			module.Offset = lib.BindingOffset;
@@ -57,15 +56,6 @@ namespace CoreDumpAnalysis {
 			} else {
 				return null;
 			}
-		}
-
-		private string GetVersionFromFilename(string filename) {
-			int lastDot = filename.LastIndexOf('.');
-			int lastDash = filename.LastIndexOf('-');
-			if (lastDot == -1 || lastDash == -1 || lastDot <= lastDash) {
-				return "";
-			}
-			return filename.Substring(lastDash + 1, lastDot - lastDash - 1);
 		}
 
 		private long GetFileSizeFromPath(string filepath) {
