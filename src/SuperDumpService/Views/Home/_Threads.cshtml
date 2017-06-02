@@ -1,6 +1,33 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 @using SuperDumpService.Helpers;
 
+<script>
+    var modalWin = new CreateModalPopUpObject();
+    //Uncomment below line to make look buttons as link
+    //modalWin.SetButtonStyle("background:none;border:none;textDecoration:underline;cursor:pointer");
+
+    function ShowMessage(msg, lines) {
+        modalWin.ShowMessage(msg, 220 + lines * 23, 550, 'User Information');
+    }
+
+
+    function EnrollNow(msg) {
+        modalWin.HideModalPopUp();
+        modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+    }
+
+    function EnrollLater() {
+        modalWin.HideModalPopUp();
+        modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+    }
+
+    function HideModalWindow() {
+        modalWin.HideModalPopUp();
+    }
+</script>
+
+
+
 <div class="panel panel-primary">
 	<div class="panel-heading">
 		<h4 class="panel-title">
@@ -154,28 +181,32 @@
 												</td>
 											}
                                             <td class="nobreak">
-                                                @if((frame as SuperDumpModels.SDCDCombinedStackFrame)?.HasStackInfo() ?? false) { 
-                                                    <div runat="server" id="pnlPanelHeader">
-                                                        <a href="#" onclick="$('#pnlPanel' + @frameNr).toggle();return false;">Expand/Collapse</a>
-                                                    </div>
+                                                @if((frame as SuperDumpModels.SDCDCombinedStackFrame)?.HasStackInfo() ?? false) {
+                                                    int lines = 0;
+                                                    string stackHtml = "";
+                                                    if (((SuperDumpModels.SDCDCombinedStackFrame)frame).Args.Count > 0) {
+                                                        stackHtml += "<h4>Arguments</h4><br/><table border=\"1px\" width=\"450px\"><thead><td><b>&nbsp;Name&nbsp;</b></td><td><b>&nbsp;Value&nbsp</b></td></thead>";
+                                                        lines += 2 + ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args.Count;
+                                                        foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
+                                                            stackHtml += "<tr><td>&nbsp;" + entry.Key.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td><td>&nbsp;" + entry.Value.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td></tr>";
+                                                        }
+                                                        stackHtml += "</table>";
+                                                    }
+                                                    if (((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals.Count > 0) {
+                                                        stackHtml += "<br/><br/><h4>Local Variables:</h4><br/><table border=\"1px\" width=\"450px\"><thead><td><b>&nbsp;Name&nbsp;</b></td><td><b>&nbsp;Value&nbsp</b></td></thead>";
+                                                        lines += 4 + ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals.Count;
+                                                        foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
+                                                            stackHtml += "<tr><td>&nbsp;" + entry.Key.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td><td>&nbsp;" + entry.Value.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td></tr>";
+                                                            lines += entry.Value.Length / 130;
+                                                        }
+                                                        stackHtml += "</table>";
+                                                    }
+                                                    <input id="Submit1" type="submit" value="Show Variables" onclick="ShowMessage('@stackHtml', @lines)" />
                                                 }
                                             </td>
-										</tr>
-                                        <tr class="@rowClass">
-                                            <td></td>
-                                            <td colspan="5">
-                                                <asp:Panel ID=@("pnlPanel" + frameNr) runat ="server" ClientIDMode="Static" hidden="hidden">
-                                                    @foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
-                                                        @(entry.Key + "=" + entry.Value);
-                                                        <br/>
-                                                    }
-                                                    @foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
-                                                        @(entry.Key + "=" + entry.Value);
-                                                        <br/>
-                                                    }
-                                                </asp:Panel>
-                                            </td>
-                                        </tr>}
+
+                                        </tr>
+                                    }
 								</tbody>
 							</table>
 							<div class="hidden-stacktrace-hack">{noformat}</div>
