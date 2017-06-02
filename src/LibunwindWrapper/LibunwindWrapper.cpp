@@ -148,16 +148,24 @@ unsigned long LibunwindWrapper::getSignalAddress(int thread_no) {
 }
 
 const char* LibunwindWrapper::getFileName() {
-	char* fn = _UCD_get_fname(ucdInfo);
-	char* tmp = (char*) malloc(16);
+	elf_prpsinfo prpsinfo;
+	if (_UCD_get_prpsinfo(ucdInfo, &prpsinfo) < 0) {
+		return 0;
+	}
+	char* fn = prpsinfo.pr_fname;
+	char* tmp = (char*)malloc(16);
 	strncpy(tmp, fn, 16);
 	return tmp;
 }
 
 const char* LibunwindWrapper::getArgs() {
-	char* fn = _UCD_get_args(ucdInfo);
+	elf_prpsinfo prpsinfo;
+	if (_UCD_get_prpsinfo(ucdInfo, &prpsinfo) < 0) {
+		return 0;
+	}
+	char* args = prpsinfo.pr_psargs;
 	char* tmp = (char*)malloc(80);
-	strncpy(tmp, fn, 80);
+	strncpy(tmp, args, 80);
 	return tmp;
 }
 
