@@ -37,6 +37,11 @@ public:
 
 	unsigned long getAuxvValue(int type_id);
 	const char* getAuxvString(int type_id);
+	int getSignalNo(int thread_no);
+	int getSignalErrorNo(int thread_no);
+	unsigned long getSignalAddress(int thread_no);
+	const char* getFileName();
+	const char* getArgs();
 
 };
 

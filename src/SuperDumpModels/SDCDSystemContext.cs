@@ -15,5 +15,9 @@ namespace SuperDump.Models {
 		public ulong EntryPoint { get; set; } = 0;
 
 		public string BasePlatform { get; set; } = "";
+
+		public string FileName { get; set; } = "";
+		public string Args { get; set; } = "";
+
 	}
 }

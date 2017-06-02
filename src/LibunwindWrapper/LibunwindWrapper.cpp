@@ -7,7 +7,6 @@
 #include <cxxabi.h>
 
 char* demangle(char* procName);
-int getAuxvInt(int idx);
 
 LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) 
 	: filepath(filepath) {
@@ -27,6 +26,7 @@ LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir)
 
 
 LibunwindWrapper::~LibunwindWrapper() {
+	_UCD_destroy(ucdInfo);
 }
 
 string LibunwindWrapper::getFilepath() {
@@ -121,6 +121,44 @@ const char* LibunwindWrapper::getAuxvString(int type) {
 			result = result + (char)((str & bitmask) >> shift);
 		}
 	}
+}
+
+int LibunwindWrapper::getSignalNo(int thread_no) {
+	siginfo_t siginfo;
+	if (_UCD_get_siginfo(ucdInfo, thread_no, &siginfo) != 0) {
+		return -1;
+	}
+	return siginfo.si_signo;
+}
+
+int LibunwindWrapper::getSignalErrorNo(int thread_no) {
+	siginfo_t siginfo;
+	if (_UCD_get_siginfo(ucdInfo, thread_no, &siginfo) != 0) {
+		return -1;
+	}
+	return siginfo.si_errno;
+}
+
+unsigned long LibunwindWrapper::getSignalAddress(int thread_no) {
+	siginfo_t siginfo;
+	if (_UCD_get_siginfo(ucdInfo, thread_no, &siginfo) != 0) {
+		return -1;
+	}
+	return (unsigned long) siginfo.si_addr;
+}
+
+const char* LibunwindWrapper::getFileName() {
+	char* fn = _UCD_get_fname(ucdInfo);
+	char* tmp = (char*) malloc(16);
+	strncpy(tmp, fn, 16);
+	return tmp;
+}
+
+const char* LibunwindWrapper::getArgs() {
+	char* fn = _UCD_get_args(ucdInfo);
+	char* tmp = (char*)malloc(80);
+	strncpy(tmp, fn, 80);
+	return tmp;
 }
 
 char* demangle(char* procName) {

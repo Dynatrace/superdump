@@ -34,6 +34,18 @@ MYAPI const char* getAuxvString(int type);
 
 MYAPI bool getSharedLibs(int* size, SharedLibFile** libs);
 
+MYAPI int getSignalNumber(int thread_no);
+
+MYAPI int getSignalErrorNo(int thread_no);
+
+MYAPI unsigned long getSignalAddress(int thread_no);
+
+MYAPI const char* getFileName();
+
+MYAPI const char* getArgs();
+
+MYAPI void destroy();
+
 #ifdef __cplusplus
 }
 #endif

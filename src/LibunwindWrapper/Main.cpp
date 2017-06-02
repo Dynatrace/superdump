@@ -38,8 +38,7 @@ MYAPI void init(const char* filepath, const char* workingDir) {
 	wrapper = new LibunwindWrapper(filepath, workingDir);
 }
 
-MYAPI int getNumberOfThreads()
-{
+MYAPI int getNumberOfThreads() {
 	return wrapper->getNumberOfThreads();
 }
 
@@ -85,4 +84,28 @@ MYAPI bool getSharedLibs(int* size, SharedLibFile** libs) {
 	*libs = &sharedLibs->front();
 	*size = sharedLibs->size();
 	return true;
+}
+
+MYAPI int getSignalNumber(int thread_no) {
+	return wrapper->getSignalNo(thread_no);
+}
+
+MYAPI int getSignalErrorNo(int thread_no) {
+	return wrapper->getSignalErrorNo(thread_no);
+}
+
+MYAPI unsigned long getSignalAddress(int thread_no) {
+	return wrapper->getSignalAddress(thread_no);
+}
+
+MYAPI const char* getFileName() {
+	return wrapper->getFileName();
+}
+
+MYAPI const char* getArgs() {
+	return wrapper->getArgs();
+}
+
+MYAPI void destroy() {
+	delete wrapper;
 }

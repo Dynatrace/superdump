@@ -38,10 +38,10 @@ namespace CoreDumpAnalysis {
 
 		private void WorkWithGdb(StreamWriter input) {
 			string mainExecutable = FindMainExecutable();
-			input.WriteLine("core-file " + coredump);
 			if (mainExecutable != null) {
 				input.WriteLine("file " + mainExecutable);
 			}
+			input.WriteLine("core-file " + coredump);
 
 			foreach (var thread in this.analysisResult.ThreadInformation) {
 				input.WriteLine("echo >>thread " + thread.Key + "\\n");
@@ -81,18 +81,21 @@ namespace CoreDumpAnalysis {
 		}
 
 		private string FindMainExecutable() {
-			string summaryFile = filesystem.GetParentDirectory(coredump) + "summary.txt";
-			Console.WriteLine("Summary.txt: " + summaryFile);
-			if (!filesystem.FileExists(summaryFile)) {
-				Console.WriteLine("No summary.txt available. Cannot retrieve executable file. Debug information may not be complete!");
-				return null;
+			string exec = ExecutableFromCoredump();
+			Console.WriteLine("Executable: " + exec);
+			if(exec != null && filesystem.FileExists("." + exec)) {
+				return "." + exec;
 			}
-			foreach (String line in filesystem.ReadLines(summaryFile)) {
-				if (line.StartsWith("executablePath:")) {
-					return "." + line.Substring("executablePath: ".Length);
-				}
+			return exec;
+		}
+
+		private string ExecutableFromCoredump() {
+			string execWithArgs = (analysisResult.SystemContext as SDCDSystemContext).Args;
+			int firstSpace = execWithArgs?.IndexOf(' ') ?? -1;
+			if (firstSpace >= 0) {
+				return execWithArgs.Substring(0, firstSpace);
 			}
-			return null;
+			return execWithArgs;
 		}
 	}
 }

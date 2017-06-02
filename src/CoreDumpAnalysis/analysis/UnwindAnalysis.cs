@@ -41,9 +41,29 @@ namespace CoreDumpAnalysis {
 		[DllImport(Constants.WRAPPER)]
 		private static extern string getAuxvString(int type);
 
+		[DllImport(Constants.WRAPPER)]
+		private static extern int getSignalNumber(int threadNo);
+
+		[DllImport(Constants.WRAPPER)]
+		private static extern int getSignalErrorNo(int threadNo);
+
+		[DllImport(Constants.WRAPPER)]
+		private static extern ulong getSignalAddress(int threadNo);
+
+		[DllImport(Constants.WRAPPER)]
+		private static extern string getFileName();
+
+		[DllImport(Constants.WRAPPER)]
+		private static extern string getArgs();
+
+		[DllImport(Constants.WRAPPER)]
+		private static extern void destroy();
+
 		private readonly IFilesystem filesystem;
 		private readonly SDResult analysisResult;
 		private readonly String coredump;
+
+		private bool isDestroyed = false;
 
 		public UnwindAnalysis(IFilesystem filesystemHelper, String coredump, SDResult result) {
 			this.filesystem = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
@@ -52,6 +72,9 @@ namespace CoreDumpAnalysis {
 		}
 
 		public void DebugAndSetResultFields() {
+			if(isDestroyed) {
+				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
+			}
 			String parent = filesystem.GetParentDirectory(coredump);
 			parent = parent.Substring(0, parent.Length - 1);
 			init(this.coredump, parent);
@@ -60,6 +83,8 @@ namespace CoreDumpAnalysis {
 			SetContextFields(context);
 			this.analysisResult.SystemContext = context;
 			this.analysisResult.ThreadInformation = UnwindThreads(context);
+			destroy();
+			isDestroyed = true;
 		}
 
 		private SDCDSystemContext SetContextFields(SDCDSystemContext context) {
@@ -68,6 +93,9 @@ namespace CoreDumpAnalysis {
 			context.Modules = new List<SDModule>();
 			context.AppDomains = new List<SDAppDomain>();
 			context.ClrVersions = new List<SDClrVersion>();
+			Console.WriteLine("Retrieving filename and args ...");
+			context.FileName = getFileName();
+			context.Args = getArgs();
 			SetAuxvFields(context);
 			SharedLibAdapter sharedLibAdapter = new SharedLibAdapter(filesystem);
 			new SharedLibExtractor().ExtractSharedLibs().ForEach(lib => {
@@ -93,7 +121,74 @@ namespace CoreDumpAnalysis {
 				UnwindCurrentThread(context, thread);
 				threads.Add(i, thread);
 			}
+
+			bool foundLastExecuted = false;
+			for(int i = 0; i < nThreads; i++) {
+				int signal = getSignalNumber(i);
+				if(signal == -1) {
+					continue;
+				}
+				if(signal < 32 && signal != 19) {
+					if(foundLastExecuted) {
+						Console.WriteLine("Already found the last executed thread which was: " + analysisResult.LastExecutedThread + ". New one is " + i);
+					}
+					foundLastExecuted = true;
+					analysisResult.LastExecutedThread = (uint)i;
+					analysisResult.LastEvent = new SDLastEvent() {
+						ThreadId = (uint)i,
+						Type = signal.ToString(),
+						Description = SignalNoToCode(signal)
+					};
+					if (signal == 4 || signal == 8) {
+						analysisResult.LastEvent.Description += ": Faulty instruction at address " + getSignalAddress(i);
+					} else if(signal == 11) {
+						analysisResult.LastEvent.Description += ": Invalid memory reference to address 0x" + getSignalAddress(i).ToString("X");
+					} else {
+						int error = getSignalErrorNo(i);
+						if(error != 0) {
+							analysisResult.LastEvent.Description += " (error number " + error + ")";
+						}
+					}
+				}
+			}
 			return threads;
+		}
+
+		private string SignalNoToCode(int signal) {
+			switch(signal) {
+				case 1: return "SIGHUP";
+				case 2: return "SIGINT";
+				case 3: return "SIGQUIT";
+				case 4: return "SIGILL";
+				case 6: return "SIGABRT";
+				case 7: return "SIGBUS";
+				case 8: return "SIGFPE";
+				case 9: return "SIGKILL";
+				case 11: return "SIGSEGV";
+				case 13: return "SIGPIPE";
+				case 14: return "SIGALRM";
+				case 15: return "SIGTERM";
+				case 10: return "SIGUSR1";
+				case 12: return "SIGUSR2";
+				case 17: return "SIGCHLD";
+				case 18: return "SIGCONT";
+				case 19: return "SIGSTOP";
+				case 20: return "SIGTSTP";
+				case 21: return "SIGTTIN";
+				case 22: return "SIGTTOU";
+				case 27: return "SIGPROF";
+				case 31: return "SIGSYS";
+				case 5: return "SIGTRAP";
+				case 23: return "SIGURG";
+				case 26: return "SIGVTALRM";
+				case 24: return "SIGXCPU";
+				case 25: return "SIGXFSZ";
+				case 16: return "SIGSTKFLT";
+				case 29: return "SIGIO";
+				case 30: return "SIGPWR";
+				case 28: return "SIGWINCH";
+				default: return "Unknown signal";
+			}
 		}
 
 		private void UnwindCurrentThread(SDCDSystemContext context, SDThread thread) {
