@@ -48,7 +48,7 @@ namespace CoreDumpAnalysis {
 				input.WriteLine("thread " + (thread.Key+1));
 				for (int i = 0; i < thread.Value.StackTrace.Count; i++) {
 					input.WriteLine("echo >>select " + i + "\\n");
-					input.WriteLine("select " + (i + 1));
+					input.WriteLine("select " + i);
 					input.WriteLine("echo >>info args\\n");
 					input.WriteLine("info args");
 					input.WriteLine("echo >>info locals\\n");
