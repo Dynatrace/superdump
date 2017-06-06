@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace CoreDumpAnalysis {
-	public class UnwindAnalysis {
+	public class UnwindAnalyzer {
 		public const int MAX_FRAMES = 128;
 
 		[DllImport(Constants.WRAPPER)]
@@ -65,7 +65,7 @@ namespace CoreDumpAnalysis {
 
 		private bool isDestroyed = false;
 
-		public UnwindAnalysis(IFilesystem filesystemHelper, String coredump, SDResult result) {
+		public UnwindAnalyzer(IFilesystem filesystemHelper, String coredump, SDResult result) {
 			this.filesystem = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");

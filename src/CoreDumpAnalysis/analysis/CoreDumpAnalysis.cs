@@ -15,7 +15,7 @@ namespace CoreDumpAnalysis {
 		private readonly IHttpRequestHandler requestHandler;
 
 		public CoreDumpAnalysis(IArchiveHandler archiveHandler, IFilesystem filesystem, IProcessHandler processHandler, IHttpRequestHandler requestHandler) {
-			this.archiveHandler = archiveHandler ?? throw new ArgumentNullException("ArchiveHandler must not be null!"); ;
+			this.archiveHandler = archiveHandler ?? throw new ArgumentNullException("ArchiveHandler must not be null!");
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
@@ -31,19 +31,19 @@ namespace CoreDumpAnalysis {
 			Console.WriteLine("Processing core dump file: " + coredump);
 
 			SDResult analysisResult = new SDResult();
-			new UnwindAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			new UnwindAnalyzer(filesystem, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
-			new CoreLogAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			new CoreLogAnalyzer(filesystem, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Fetching debug symbols ...");
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
-			new DebugSymbolAnalysis(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
+			new DebugSymbolAnalyzer(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Setting tags ...");
 			new TagAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Reading stack information ...");
-			new GdbAnalysis(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
+			new GdbAnalyzer(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Setting default fields ...");
 			new DefaultFieldsSetter(analysisResult).SetResultFields();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());

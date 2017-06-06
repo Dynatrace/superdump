@@ -10,7 +10,7 @@ namespace CoreDumpAnalysisTest {
 		private readonly string DEFAULT_MODULE_NAME = "module name";
 		private readonly string DEFAULT_METHOD_NAME = "method name";
 
-		private DebugSymbolAnalysis analysis;
+		private DebugSymbolAnalyzer analysis;
 
 		private SDResult result;
 		private FilesystemDouble filesystem;
@@ -21,7 +21,7 @@ namespace CoreDumpAnalysisTest {
 			result = new SDResult();
 			filesystem = new FilesystemDouble();
 			processHandler = new ProcessHandlerDouble();
-			analysis = new DebugSymbolAnalysis(filesystem, processHandler, "dump.core", result);
+			analysis = new DebugSymbolAnalyzer(filesystem, processHandler, "dump.core", result);
 		}
 
 		[TestMethod]

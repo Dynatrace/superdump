@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 
 namespace CoreDumpAnalysis {
-	public class GdbAnalysis {
+	public class GdbAnalyzer {
 		public static string GDB_ERR_FILE = "gdb.err.log";
 		public static string GDB_OUT_FILE = "gdb.out.log";
 
@@ -14,7 +14,7 @@ namespace CoreDumpAnalysis {
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
 
-		public GdbAnalysis(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
+		public GdbAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("SD Result must not be null!");

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace CoreDumpAnalysis
 {
-    public class DebugSymbolAnalysis {
+    public class DebugSymbolAnalyzer {
 
 		private static Regex addr2lineRegex = new Regex("([^:]+):(\\d+)", RegexOptions.Compiled);
 
@@ -17,7 +17,7 @@ namespace CoreDumpAnalysis
 		private readonly String coredump;
 		private readonly SDResult analysisResult;
 
-		public DebugSymbolAnalysis(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
+		public DebugSymbolAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");

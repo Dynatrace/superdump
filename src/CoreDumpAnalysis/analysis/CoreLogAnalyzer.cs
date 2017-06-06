@@ -5,14 +5,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CoreDumpAnalysis.analysis {
-	public class CoreLogAnalysis {
+	public class CoreLogAnalyzer {
 		private static Regex VERSION_REGEX = new Regex("\\(([\\w-\\.]+)\\)$");
 
 		private readonly SDResult analysisResult;
 		private readonly IFilesystem filesystem;
 		private readonly string coredump;
 
-		public CoreLogAnalysis(IFilesystem filesystem, string coredump, SDResult analysisResult) {
+		public CoreLogAnalyzer(IFilesystem filesystem, string coredump, SDResult analysisResult) {
 			this.analysisResult = analysisResult ?? throw new ArgumentNullException("Analysis Result must not be null!");
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump path must not be null!");

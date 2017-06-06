@@ -12,7 +12,7 @@ namespace CoreDumpAnalysisTest {
 
 		private static string PATH = "path/";
 
-		private GdbAnalysis analysis;
+		private GdbAnalyzer analysis;
 
 		private FilesystemDouble filesystem;
 		private ProcessHandlerDouble processHandler;
@@ -23,7 +23,7 @@ namespace CoreDumpAnalysisTest {
 			filesystem = new FilesystemDouble();
 			processHandler = new ProcessHandlerDouble();
 			analysisResult = new SDResult();
-			analysis = new GdbAnalysis(filesystem, processHandler, PATH + "dump.core", analysisResult);
+			analysis = new GdbAnalyzer(filesystem, processHandler, PATH + "dump.core", analysisResult);
 
 			this.analysisResult.ThreadInformation = new Dictionary<uint, SDThread>();
 			SDThread thread = new SDThread();
@@ -98,11 +98,11 @@ namespace CoreDumpAnalysisTest {
 		}
 
 		private void VerifyWrittenFiles(string cmd, string err) {
-			Assert.AreEqual(cmd, filesystem.FileContents[GdbAnalysis.GDB_OUT_FILE]);
+			Assert.AreEqual(cmd, filesystem.FileContents[GdbAnalyzer.GDB_OUT_FILE]);
 			if(err != null) {
-				Assert.AreEqual(err, filesystem.FileContents[GdbAnalysis.GDB_ERR_FILE]);
+				Assert.AreEqual(err, filesystem.FileContents[GdbAnalyzer.GDB_ERR_FILE]);
 			} else {
-				Assert.IsFalse(filesystem.FileContents.ContainsKey(GdbAnalysis.GDB_ERR_FILE));
+				Assert.IsFalse(filesystem.FileContents.ContainsKey(GdbAnalyzer.GDB_ERR_FILE));
 			}
 		}
 
