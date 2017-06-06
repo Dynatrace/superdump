@@ -6,8 +6,8 @@ using System.IO;
 
 namespace CoreDumpAnalysis {
 	public class GdbAnalysis {
-		public static string GDB_ERR_FILE = "gdb.err";
-		public static string GDB_OUT_FILE = "gdb.out";
+		public static string GDB_ERR_FILE = "gdb.err.log";
+		public static string GDB_OUT_FILE = "gdb.out.log";
 
 		private readonly String coredump;
 		private readonly SDResult analysisResult;
