@@ -92,7 +92,12 @@ namespace CoreDumpAnalysis {
 		private void SetArgument(string line) {
 			KeyValuePair<string, string> keyValue = ParseVarInfo(line);
 			if (analysisResult.ThreadInformation[activeThread].StackTrace[activeFrame] is SDCDCombinedStackFrame frame) {
-				frame.Args.Add(keyValue);
+				try {
+					frame.Args.Add(keyValue);
+				} catch(ArgumentException e) {
+					// Sometimes, the same argument is printed twice. GDB bug?
+					Console.WriteLine("Failed to add key! " + e.Message);
+				}
 			} else {
 				throw new InvalidCastException("Invalid stackframe type! Use SDCD prefix for declaring stackframes!");
 			}

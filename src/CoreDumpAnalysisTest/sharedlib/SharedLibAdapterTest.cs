@@ -40,7 +40,7 @@ namespace CoreDumpAnalysisTest {
 
 			Assert.AreEqual("somelib-42.so", module.FileName);
 			Assert.AreEqual("/lib/somelib-42.so", module.LocalPath);
-			Assert.AreEqual("42", module.Version);
+			Assert.IsNull(module.Version);
 			Assert.AreEqual(1234L, module.FileSize);
 			Assert.AreEqual(lib.BindingOffset, module.Offset);
 			Assert.AreEqual(lib.StartAddress, module.StartAddress);
@@ -48,11 +48,12 @@ namespace CoreDumpAnalysisTest {
 		}
 
 		private SharedLib CreateLib(string path) {
-			SharedLib lib = new SharedLib();
-			lib.Path = Encoding.UTF8.GetBytes(path);
-			lib.StartAddress = 1234;
-			lib.EndAddress = 4321;
-			lib.BindingOffset = 1111;
+			SharedLib lib = new SharedLib() {
+				Path = Encoding.UTF8.GetBytes(path),
+				StartAddress = 1234,
+				EndAddress = 4321,
+				BindingOffset = 1111
+			};
 			return lib;
 		}
 	}

@@ -37,7 +37,7 @@ namespace CoreDumpAnalysis {
 		}
 
 		private void WorkWithGdb(StreamWriter input) {
-			string mainExecutable = FindMainExecutable();
+			string mainExecutable = ((SDCDSystemContext)analysisResult.SystemContext).FileName;
 			if (mainExecutable != null) {
 				input.WriteLine("file " + mainExecutable);
 			}
@@ -45,10 +45,10 @@ namespace CoreDumpAnalysis {
 
 			foreach (var thread in this.analysisResult.ThreadInformation) {
 				input.WriteLine("echo >>thread " + thread.Key + "\\n");
-				input.WriteLine("thread " + thread.Key);
+				input.WriteLine("thread " + (thread.Key+1));
 				for (int i = 0; i < thread.Value.StackTrace.Count; i++) {
 					input.WriteLine("echo >>select " + i + "\\n");
-					input.WriteLine("select " + (i+1));
+					input.WriteLine("select " + (i + 1));
 					input.WriteLine("echo >>info args\\n");
 					input.WriteLine("info args");
 					input.WriteLine("echo >>info locals\\n");
@@ -78,24 +78,6 @@ namespace CoreDumpAnalysis {
 			}
 			Console.WriteLine("finished reading output log");
 			new GdbOutputParser(analysisResult).Parse(gdbOut);
-		}
-
-		private string FindMainExecutable() {
-			string exec = ExecutableFromCoredump();
-			Console.WriteLine("Executable: " + exec);
-			if(exec != null && filesystem.FileExists("." + exec)) {
-				return "." + exec;
-			}
-			return exec;
-		}
-
-		private string ExecutableFromCoredump() {
-			string execWithArgs = (analysisResult.SystemContext as SDCDSystemContext).Args;
-			int firstSpace = execWithArgs?.IndexOf(' ') ?? -1;
-			if (firstSpace >= 0) {
-				return execWithArgs.Substring(0, firstSpace);
-			}
-			return execWithArgs;
 		}
 	}
 }

@@ -32,6 +32,10 @@ namespace CoreDumpAnalysisTest {
 			};
 			thread.StackTrace = new SDCombinedStackTrace(frames);
 			this.analysisResult.ThreadInformation.Add(0, thread);
+			SDCDSystemContext context = new SDCDSystemContext() {
+				FileName = PATH + "my-executable"
+			};
+			analysisResult.SystemContext = context;
 		}
 
 		private void RunAnalysisAndVerify(string cmd, string err) {

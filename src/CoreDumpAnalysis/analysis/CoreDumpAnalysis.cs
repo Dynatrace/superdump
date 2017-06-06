@@ -32,6 +32,8 @@ namespace CoreDumpAnalysis {
 
 			SDResult analysisResult = new SDResult();
 			new UnwindAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			Console.WriteLine("Finding executable file ...");
+			new ExecutablePathAnalyzer(filesystem, analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
 			new CoreLogAnalysis(filesystem, coredump, analysisResult).DebugAndSetResultFields();
 			Console.WriteLine("Fetching debug symbols ...");
