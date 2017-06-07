@@ -37,6 +37,8 @@ namespace CoreDumpAnalysis {
 		}
 
 		private void WorkWithGdb(StreamWriter input) {
+			input.WriteLine("set solib-absolute-prefix .");	// load all libraries from the current directory
+															// this is especially important because gdb unwinding must match libunwind
 			string mainExecutable = ((SDCDSystemContext)analysisResult.SystemContext).FileName;
 			if (mainExecutable != null) {
 				input.WriteLine("file " + mainExecutable);
