@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class UnwindAnalyzer {
 		public const int MAX_FRAMES = 128;
 
@@ -218,7 +218,7 @@ namespace CoreDumpAnalysis {
 		private void SetAuxvFields(SDCDSystemContext context) {
 			context.PageSize = (int)getAuxvValue(AuxType.PAGE_SIZE.Type);
 			context.EntryPoint = getAuxvValue(AuxType.ENTRY_POINT.Type);
-			context.BasePlatform = getAuxvstring(AuxType.BASE_PLATFORM.Type);
+			context.BasePlatform = getAuxvString(AuxType.BASE_PLATFORM.Type);
 			context.Uid = (int)getAuxvValue(AuxType.UID.Type);
 			context.Euid = (int)getAuxvValue(AuxType.EUID.Type);
 			context.Gid = (int)getAuxvValue(AuxType.GID.Type);

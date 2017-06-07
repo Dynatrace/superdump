@@ -1,4 +1,4 @@
-﻿using CoreDumpAnalysis;
+﻿using SuperDump.Analyzer.Linux;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using SuperDumpModels;
@@ -6,7 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class GdbAnalysisTest {
 

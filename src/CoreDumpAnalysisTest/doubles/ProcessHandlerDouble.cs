@@ -1,11 +1,11 @@
 ﻿using System.IO;
-using CoreDumpAnalysis;
+using SuperDump.Analyzer.Linux;
 using System.Collections.Generic;
 using System.Text;
-using CoreDumpAnalysis.boundary;
+using SuperDump.Analyzer.Linux.boundary;
 using System;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	internal class ProcessHandlerDouble : IProcessHandler {
 		private readonly Dictionary<string, string> fileNameToOutputMap = new Dictionary<string, string>();
 		private readonly Dictionary<string, string> fileNameToInputMap = new Dictionary<string, string>();

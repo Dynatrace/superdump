@@ -1,10 +1,10 @@
-﻿using CoreDumpAnalysis;
-using CoreDumpAnalysisTest.doubles;
+﻿using SuperDump.Analyzer.Linux;
+using SuperDump.doubles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System.Collections.Generic;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class DebugSymbolResolverTest {
 		private DebugSymbolResolver resolver;

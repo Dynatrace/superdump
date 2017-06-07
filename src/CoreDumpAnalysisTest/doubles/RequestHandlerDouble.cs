@@ -1,6 +1,6 @@
-﻿using CoreDumpAnalysis.boundary;
+﻿using SuperDump.Analyzer.Linux.boundary;
 
-namespace CoreDumpAnalysisTest.doubles {
+namespace SuperDump.doubles {
 	class RequestHandlerDouble : IHttpRequestHandler {
 
 		public string FromUrl { get; private set; }

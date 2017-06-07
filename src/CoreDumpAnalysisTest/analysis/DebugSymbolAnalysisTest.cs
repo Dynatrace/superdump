@@ -1,10 +1,10 @@
-﻿using CoreDumpAnalysis;
+﻿using SuperDump.Analyzer.Linux;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class DebugSymbolAnalysisTest {
 		private readonly string DEFAULT_MODULE_NAME = "module name";

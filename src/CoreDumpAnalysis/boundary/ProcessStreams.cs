@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace CoreDumpAnalysis.boundary {
+namespace SuperDump.Analyzer.Linux.boundary {
 	public class ProcessStreams : IDisposable {
 		private StreamReader _output;
 		public StreamReader Output {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CoreDumpAnalysis.analysis {
+namespace SuperDump.Analyzer.Linux.analysis {
 	public class CoreLogAnalyzer {
 		private static Regex VERSION_REGEX = new Regex("\\(([\\w-\\.]+)\\)$");
 

@@ -1,11 +1,11 @@
-﻿using CoreDumpAnalysis;
+﻿using SuperDump.Analyzer.Linux;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class SharedLibAdapterTest {
 		private SharedLibAdapter adapter;

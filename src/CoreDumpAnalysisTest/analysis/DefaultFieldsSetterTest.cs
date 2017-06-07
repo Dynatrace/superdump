@@ -1,8 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using CoreDumpAnalysis;
+using SuperDump.Analyzer.Linux;
 using SuperDump.Models;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class DefaultFieldsSetterTest {
 

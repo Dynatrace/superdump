@@ -1,7 +1,7 @@
-﻿using CoreDumpAnalysis.boundary;
+﻿using SuperDump.Analyzer.Linux.boundary;
 using System.IO;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public interface IProcessHandler {
 		StreamReader StartProcessAndRead(string fileName, string arguments);
 		ProcessStreams StartProcessAndReadWrite(string fileName, string arguments);

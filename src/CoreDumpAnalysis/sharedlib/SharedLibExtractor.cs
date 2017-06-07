@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class SharedLibExtractor {
 		[DllImport(Constants.WRAPPER, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.I1)]

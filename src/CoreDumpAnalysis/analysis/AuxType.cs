@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class AuxType {
 		public static readonly AuxType PAGE_SIZE = new AuxType(6);
 		public static readonly AuxType FLAGS = new AuxType(8);

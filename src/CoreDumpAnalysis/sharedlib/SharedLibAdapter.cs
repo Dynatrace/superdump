@@ -1,7 +1,7 @@
 ﻿using SuperDump.Models;
 using System.Text;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class SharedLibAdapter {
 
 		private readonly IFilesystem filesystem;

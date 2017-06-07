@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace CoreDumpAnalysis
+namespace SuperDump.Analyzer.Linux
 {
     public class DebugSymbolAnalyzer {
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CoreDumpAnalysis.analysis {
+namespace SuperDump.Analyzer.Linux.analysis {
 	public class ExecutablePathAnalyzer {
 
 		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)");

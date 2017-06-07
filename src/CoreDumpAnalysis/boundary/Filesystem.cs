@@ -5,7 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class Filesystem : IFilesystem {
 		public String GetParentDirectory(String dir) {
 			int idx = dir.LastIndexOfAny(new char[] { '/', '\\' });

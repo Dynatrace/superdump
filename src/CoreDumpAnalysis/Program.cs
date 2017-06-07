@@ -1,8 +1,8 @@
 ﻿using System;
 
-using CoreDumpAnalysis.boundary;
+using SuperDump.Analyzer.Linux.boundary;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class Program {
 		public static void Main(string[] args) {
 			Console.WriteLine("SuperDump - Dump analysis tool");

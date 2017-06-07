@@ -1,10 +1,10 @@
-﻿using CoreDumpAnalysis.boundary;
+﻿using SuperDump.Analyzer.Linux.boundary;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public class DebugSymbolResolver {
 
 		private readonly IFilesystem filesystem;

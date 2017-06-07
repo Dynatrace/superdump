@@ -1,4 +1,4 @@
-﻿namespace CoreDumpAnalysis {
+﻿namespace SuperDump.Analyzer.Linux {
 	public static class Constants {
 		public const string WRAPPER = "unwindwrapper.so";
 

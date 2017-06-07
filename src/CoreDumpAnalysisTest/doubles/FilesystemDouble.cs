@@ -1,9 +1,9 @@
-﻿using CoreDumpAnalysis;
+﻿using SuperDump.Analyzer.Linux;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
-namespace CoreDumpAnalysisTest {
+namespace SuperDump.Analyzer.Linux.Test {
 	internal class FilesystemDouble : IFilesystem {
 
 		public IList<string> ExistingFiles = new List<string>();

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 
-namespace CoreDumpAnalysis {
+namespace SuperDump.Analyzer.Linux {
 	public interface IFilesystem {
 		void CreateSymbolicLink(string targetDebugFile, string debugSymbolPath);
 		List<string> FilesInDirectory(string directory);
