@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace SuperDump.Analyzer.Linux.analysis {
 	public class ExecutablePathAnalyzer {
 
-		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)");
+		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
 
 		private readonly SDCDSystemContext context;
 		private readonly IFilesystem filesystem;

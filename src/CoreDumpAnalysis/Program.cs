@@ -21,7 +21,7 @@ namespace SuperDump.Analyzer.Linux {
 			IArchiveHandler archiveHandler = new ArchiveHandler(filesystem);
 			IProcessHandler processHandler = new ProcessHandler();
 			IHttpRequestHandler requestHandler = new HttpRequestHandler(filesystem);
-			new CoreDumpAnalysis(archiveHandler, filesystem, processHandler, requestHandler).AnalyzeDirectory(input, output);
+			new CoreDumpAnalysis(archiveHandler, filesystem, processHandler, requestHandler).Analyze(input, output);
 		}
 	}
 }

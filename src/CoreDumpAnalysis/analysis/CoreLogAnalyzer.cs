@@ -1,12 +1,13 @@
 ﻿using SuperDump.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SuperDump.Analyzer.Linux.analysis {
 	public class CoreLogAnalyzer {
-		private static Regex VERSION_REGEX = new Regex("\\(([\\w-\\.]+)\\)$");
+		private static Regex VERSION_REGEX = new Regex("\\(([\\w-\\.]+)\\)$", RegexOptions.Compiled);
 
 		private readonly SDResult analysisResult;
 		private readonly IFilesystem filesystem;
@@ -18,8 +19,8 @@ namespace SuperDump.Analyzer.Linux.analysis {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump path must not be null!");
 		}
 
-		public void DebugAndSetResultFields() {
-			string logPath = coredump.Substring(0, coredump.Length - 4) + "log";
+		public void Analyze() {
+			string logPath = $"{Path.Combine(Path.GetDirectoryName(coredump), Path.GetFileNameWithoutExtension(coredump))}.log";
 			if (!filesystem.FileExists(logPath)) {
 				Console.WriteLine("No coredump log available (" + logPath + "). Skipping.");
 				return;

@@ -21,7 +21,7 @@ namespace SuperDump.Analyzer.Linux {
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
 		}
 
-		public void AnalyzeDirectory(string inputFile, string outputFile) {
+		public void Analyze(string inputFile, string outputFile) {
 			string coredump = GetCoreDumpFilePath(inputFile);
 			if (coredump == null) {
 				Console.WriteLine("No core dump found.");
@@ -35,7 +35,7 @@ namespace SuperDump.Analyzer.Linux {
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
-			new CoreLogAnalyzer(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			new CoreLogAnalyzer(filesystem, coredump, analysisResult).Analyze();
 			Console.WriteLine("Fetching debug symbols ...");
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
