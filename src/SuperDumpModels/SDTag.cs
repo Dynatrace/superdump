@@ -28,7 +28,7 @@ namespace SuperDump.Models {
 		}
 
 		public override int GetHashCode() {
-            return this.Name?.GetHashCode() ?? 0;
+			return this.Name?.GetHashCode() ?? 0;
 		}
 
 		// all tags must be css-class compatible (don't use spaces!)

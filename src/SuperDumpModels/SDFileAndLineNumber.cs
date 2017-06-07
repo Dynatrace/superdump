@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SuperDump.Models;
 using System;
+using System.IO;
 
 namespace SuperDumpModels {
 	public class SDFileAndLineNumber : IEquatable<SDFileAndLineNumber>, ISerializableJson {
@@ -8,11 +9,7 @@ namespace SuperDumpModels {
 		public int Line;
 
 		public string FileName() {
-			int lastSlash = File.LastIndexOfAny(new char[] { '/', '\\' });
-			if(lastSlash > 0) {
-				return File.Substring(lastSlash + 1);
-			}
-			return File;
+			return Path.GetFileNameWithoutExtension(File);
 		}
 
 		public string SerializeToJSON() {
