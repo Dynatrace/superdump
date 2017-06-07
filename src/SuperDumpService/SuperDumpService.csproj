@@ -62,7 +62,7 @@
     <EmbeddedResource Include="ViewModels\SlackMessage.cshtml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CoreDumpAnalysis\CoreDumpAnalysis.csproj" />
+    <ProjectReference Include="..\CoreDumpAnalysis\SuperDump.Analyzer.Linux.csproj" />
     <ProjectReference Include="..\SuperDump.Common\SuperDump.Common.csproj" />
     <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj" />
   </ItemGroup>
