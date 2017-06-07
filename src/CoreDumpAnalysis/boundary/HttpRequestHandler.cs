@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace SuperDump.Analyzer.Linux.Boundary {
 	public class HttpRequestHandler : IHttpRequestHandler {
@@ -10,9 +11,9 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 		}
 
-		public bool DownloadFromUrl(string url, string targetFile) {
+		public async Task<bool> DownloadFromUrlAsync(string url, string targetFile) {
 			HttpClient httpClient = new HttpClient();
-			var download = httpClient.GetAsync(url).ContinueWith(
+			return await httpClient.GetAsync(url).ContinueWith(
 				request => {
 					HttpResponseMessage response = request.Result;
 					if (request.Result.IsSuccessStatusCode) {
@@ -21,8 +22,6 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 					}
 					return false;
 				});
-			download.Wait();
-			return download.Result;
 		}
 	}
 }
