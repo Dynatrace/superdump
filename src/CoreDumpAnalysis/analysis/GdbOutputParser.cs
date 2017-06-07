@@ -31,7 +31,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					case State.SKIPPING:
 						if (lines[i].Contains(">>thread")) {
 							int lastSpace = lines[i].LastIndexOf(' ');
-							activeThread = UInt32.Parse(lines[i].Substring(lastSpace));
+							activeThread = uint.Parse(lines[i].Substring(lastSpace));
 							state = State.THREAD;
 						}
 						break;
@@ -40,7 +40,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 							state = State.SKIPPING;
 						} else if(lines[i].Contains(">>select")) {
 							int lastSpace = lines[i].LastIndexOf(' ');
-							activeFrame = Int32.Parse(lines[i].Substring(lastSpace));
+							activeFrame = int.Parse(lines[i].Substring(lastSpace));
 							state = State.STACKFRAME;
 						}
 						break;
@@ -96,7 +96,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					frame.Args.Add(keyValue);
 				} catch(ArgumentException e) {
 					// Sometimes, the same argument is printed twice. GDB bug?
-					Console.WriteLine("Failed to add key! " + e.Message);
+					Console.WriteLine($"Failed to add key! {e.Message}");
 				}
 			} else {
 				throw new InvalidCastException("Invalid stackframe type! Use SDCD prefix for declaring stackframes!");
@@ -121,7 +121,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				}
 				return new KeyValuePair<string, string>(key.Trim(), line.Substring(indexEquals + 1).Trim());
 			}
-			throw new ArgumentException("Illegal assignment in gdb output: " + line);
+			throw new ArgumentException($"Illegal assignment in gdb output: {line}");
 		}
 	}
 }

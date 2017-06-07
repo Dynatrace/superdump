@@ -2,8 +2,8 @@
 using SuperDump.Analyzer.Linux;
 using System.Collections.Generic;
 using System.Text;
-using SuperDump.Analyzer.Linux.boundary;
 using System;
+using SuperDump.Analyzer.Linux.Boundary;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	internal class ProcessHandlerDouble : IProcessHandler {

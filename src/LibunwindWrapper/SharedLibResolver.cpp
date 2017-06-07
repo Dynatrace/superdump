@@ -10,13 +10,11 @@
 #include <algorithm>
 #include <iterator>
 
-SharedLibResolver::SharedLibResolver()
-{
+SharedLibResolver::SharedLibResolver() {
 }
 
 
-SharedLibResolver::~SharedLibResolver()
-{
+SharedLibResolver::~SharedLibResolver() {
 }
 
 template<typename Out>
@@ -40,7 +38,7 @@ vector<SharedLibFile>* SharedLibResolver::findSharedLibs(string corePath) {
 	vector<SharedLibFile>* sharedLibs = new vector<SharedLibFile>();
 	string unstripCmd = "readelf -n  " + corePath;
 	printf("Executing readelf command: %s\r\n", unstripCmd.c_str());
-	
+
 	FILE *handle = popen(unstripCmd.c_str(), "r");
 	if (handle == NULL) {
 		printf("Failed to execute unstrip command!\r\n");
@@ -57,19 +55,18 @@ vector<SharedLibFile>* SharedLibResolver::findSharedLibs(string corePath) {
 
 	vector<string> lines = split(unstripOut, '\n');
 	uint i;
-	for (i = 0; i + 1 < lines.size(); i++) 
-	{
+	for (i = 0; i + 1 < lines.size(); i++) {
 		if (lines.at(i).find("Page size:") != string::npos) {
 			break;
 		}
 	}
-	
-	for (i+=2; i + 1 < lines.size(); i += 2) {
+
+	for (i += 2; i + 1 < lines.size(); i += 2) {
 		string line = lines.at(i);
 		line.append(" ").append(lines.at(i + 1));
 
 		unsigned long startAddr, endAddr, offset;
-		char* path = (char*) malloc(1024);
+		char* path = (char*)malloc(1024);
 		if (4 == sscanf(line.c_str(), " 0x%lX 0x%lX 0x%lX %s", &startAddr, &endAddr, &offset, path)) {
 			SharedLibFile* slf = new SharedLibFile();
 			strncpy(slf->path, path, 512);

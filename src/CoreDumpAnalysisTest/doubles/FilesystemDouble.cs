@@ -1,4 +1,5 @@
 ﻿using SuperDump.Analyzer.Linux;
+using SuperDump.Analyzer.Linux.Boundary;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;

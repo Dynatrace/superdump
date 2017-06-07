@@ -21,7 +21,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.analysisResult = result ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
 
-		public void DebugAndSetResultFields() {
+		public void Analyze() {
 			try {
 				using (ProcessStreams stream = processHandler.StartProcessAndReadWrite("gdb", "")) {
 					Console.WriteLine("Starting gdb");

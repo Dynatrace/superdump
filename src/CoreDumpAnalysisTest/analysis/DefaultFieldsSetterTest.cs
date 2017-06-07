@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Analyzer.Linux;
+using SuperDump.Analyzer.Linux.Analysis;
 using SuperDump.Models;
 
 namespace SuperDump.Analyzer.Linux.Test {

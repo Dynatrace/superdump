@@ -4,6 +4,7 @@ using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SuperDump.Analyzer.Linux.SharedLibs;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]

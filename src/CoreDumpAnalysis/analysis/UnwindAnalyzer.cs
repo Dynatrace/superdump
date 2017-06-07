@@ -73,7 +73,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
 
-		public void DebugAndSetResultFields() {
+		public void Analyze() {
 			if(isDestroyed) {
 				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
 			}
@@ -110,7 +110,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private Dictionary<uint, SDThread> UnwindThreads(SDCDSystemContext context) {
-			Dictionary<uint, SDThread> threads = new Dictionary<uint, SDThread>();
+			var threads = new Dictionary<uint, SDThread>();
 
 			int nThreads = getNumberOfThreads();
 			for (uint i = 0; i < nThreads; i++) {
@@ -194,7 +194,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void UnwindCurrentThread(SDCDSystemContext context, SDThread thread) {
-			List<SDCombinedStackFrame> frames = new List<SDCombinedStackFrame>();
+			var frames = new List<SDCombinedStackFrame>();
 
 			ulong ip, oldIp = 0, sp, oldSp = 0, offset, oldOffset = 0;
 			string procName, oldProcName = null;

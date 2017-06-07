@@ -24,7 +24,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
 
-		public void DebugAndSetResultFields() {
+		public void Analyze() {
 			if(this.analysisResult?.ThreadInformation == null) {
 				throw new ArgumentNullException("Debug symbol analysis can only be executed when thread information is set!");
 			}
@@ -78,7 +78,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				// If there is a debug file, link it (required for addr2line to find the dbg file)
 				LinkDebugFile(module.LocalPath, module.DebugSymbolPath);
 			}
-			StreamReader reader = processHandler.StartProcessAndRead("addr2line", "-f -C -e " + module.LocalPath + " 0x" + relativeIp.ToString("X"));
+			StreamReader reader = processHandler.StartProcessAndRead("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
 			string methodName = reader.ReadLine();
 			string fileLine = reader.ReadLine();
 			SDFileAndLineNumber sourceInfo = RetrieveSourceInfo(fileLine);
@@ -86,20 +86,21 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void LinkDebugFile(string localPath, string debugPath) {
-			string targetDebugFile = Path.GetDirectoryName(localPath) + "/" + DebugSymbolResolver.DebugFileName(localPath);
-			if(filesystem.FileExists(targetDebugFile)) {
+			string targetDebugFile = Path.Combine(localPath, DebugSymbolResolver.DebugFileName(localPath));
+			if (filesystem.FileExists(targetDebugFile)) {
 				return;
 			}
-			Console.WriteLine("Creating symbolic link: " + debugPath + ", " + targetDebugFile);
+			Console.WriteLine($"Creating symbolic link: {debugPath}, {targetDebugFile}");
 			filesystem.CreateSymbolicLink(debugPath, targetDebugFile);
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {
 			Match match = addr2lineRegex.Match(output);
 			if(match.Success) {
-				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber();
-				sourceInfo.File = match.Groups[1].Value;
-				sourceInfo.Line = Int32.Parse(match.Groups[2].Value);
+				SDFileAndLineNumber sourceInfo = new SDFileAndLineNumber() {
+					File = match.Groups[1].Value,
+					Line = int.Parse(match.Groups[2].Value)
+				};
 				return sourceInfo;
 			}
 			return new SDFileAndLineNumber();

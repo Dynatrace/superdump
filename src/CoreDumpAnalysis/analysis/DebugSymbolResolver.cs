@@ -88,7 +88,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public static string DebugFileName(string path) {
-			return $"{Path.GetDirectoryName(path)}/{Path.GetFileName(path)}.dbg";
+			return $"{Path.GetFileNameWithoutExtension(path)}.dbg";
 		}
 	}
 }

@@ -5,6 +5,7 @@ using SuperDumpModels;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using SuperDump.Analyzer.Linux.Analysis;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
@@ -41,7 +42,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 		private void RunAnalysisAndVerify(string cmd, string err) {
 			processHandler.SetOutputForCommand("gdb", cmd);
 			processHandler.SetErrorForCommand("gdb", err);
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 
 			VerifyWrittenFiles(cmd, err == "" ? null : err);
 		}

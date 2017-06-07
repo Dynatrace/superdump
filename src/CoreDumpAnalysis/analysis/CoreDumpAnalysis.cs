@@ -30,7 +30,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine("Processing core dump file: " + coredump);
 
 			SDResult analysisResult = new SDResult();
-			new UnwindAnalyzer(filesystem, coredump, analysisResult).DebugAndSetResultFields();
+			new UnwindAnalyzer(filesystem, coredump, analysisResult).Analyze();
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
@@ -38,11 +38,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine("Fetching debug symbols ...");
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
-			new DebugSymbolAnalyzer(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
+			new DebugSymbolAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
 			Console.WriteLine("Setting tags ...");
 			new TagAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Reading stack information ...");
-			new GdbAnalyzer(filesystem, processHandler, coredump, analysisResult).DebugAndSetResultFields();
+			new GdbAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
 			Console.WriteLine("Setting default fields ...");
 			new DefaultFieldsSetter(analysisResult).SetResultFields();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());

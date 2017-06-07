@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
+using SuperDump.Analyzer.Linux.Analysis;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
@@ -28,21 +29,21 @@ namespace SuperDump.Analyzer.Linux.Test {
 		[ExpectedException(typeof(ArgumentNullException))]
 		public void TestNullThreads() {
 			PrepareSampleModule(1234, "acutal module name");
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 		}
 
 		[TestMethod]
 		[ExpectedException(typeof(ArgumentNullException))]
 		public void TestNullModules() {
 			PrepareSampleThread(1234);
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 		}
 
 		[TestMethod]
 		public void TestNoBinary() {
 			PrepareSampleModule(1234, "actual module name");
 			PrepareSampleThread(1234);
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 			Assert.AreEqual(DEFAULT_MODULE_NAME, GetFirstStackFrame().ModuleName);
 		}
 
@@ -51,7 +52,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 			PrepareModuleWithBinary(1234, "actual module name");
 			PrepareSampleThread(1234);
 			processHandler.SetOutputForCommand("addr2line", "??\n??:0");
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 			Assert.AreEqual("actual module name", GetFirstStackFrame().ModuleName);
 			Assert.IsNull(GetFirstStackFrame().SourceInfo);
 		}
@@ -61,7 +62,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 			PrepareModuleWithBinary(1234, "actual module name");
 			PrepareSampleThread(1234);
 			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
@@ -73,7 +74,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 			PrepareModuleWithDebugInfo(1234, "actual module name");
 			PrepareSampleThread(1234);
 			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
-			analysis.DebugAndSetResultFields();
+			analysis.Analyze();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);

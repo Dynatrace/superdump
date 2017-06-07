@@ -1,16 +1,18 @@
-﻿using SuperDump.Analyzer.Linux.boundary;
+﻿using System;
+using System.Threading.Tasks;
+using SuperDump.Analyzer.Linux.Boundary;
 
-namespace SuperDump.doubles {
+namespace SuperDump.Doubles {
 	class RequestHandlerDouble : IHttpRequestHandler {
 
 		public string FromUrl { get; private set; }
 		public string ToFile { get; private set; }
-		public bool Return { get; set; }
+		public bool Return { get; set; } = false;
 
-		public bool DownloadFromUrl(string url, string targetFile) {
-			this.FromUrl= url;
+		public Task<bool> DownloadFromUrlAsync(string url, string targetFile) {
+			this.FromUrl = url;
 			this.ToFile = targetFile;
-			return Return;
+			return Task.FromResult<bool>(Return);
 		}
 	}
 }
