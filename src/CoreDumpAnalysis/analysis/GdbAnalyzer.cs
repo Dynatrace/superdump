@@ -9,12 +9,12 @@ namespace CoreDumpAnalysis {
 		public static string GDB_ERR_FILE = "gdb.err.log";
 		public static string GDB_OUT_FILE = "gdb.out.log";
 
-		private readonly String coredump;
+		private readonly string coredump;
 		private readonly SDResult analysisResult;
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
 
-		public GdbAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
+		public GdbAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, string coredump, SDResult result) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("SD Result must not be null!");

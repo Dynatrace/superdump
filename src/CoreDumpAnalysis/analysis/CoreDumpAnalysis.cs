@@ -50,7 +50,7 @@ namespace CoreDumpAnalysis {
 			Console.WriteLine("Finished coredump analysis.");
 		}
 
-		private String GetCoreDumpFilePath(string inputFile) {
+		private string GetCoreDumpFilePath(string inputFile) {
 			string directory = filesystem.GetParentDirectory(inputFile);
 			if (!filesystem.FileExists(inputFile)) {
 				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
@@ -67,18 +67,18 @@ namespace CoreDumpAnalysis {
 			}
 		}
 
-		private void ExtractArchivesInDir(String directory) {
+		private void ExtractArchivesInDir(string directory) {
 			bool workDone = true;
 			while (workDone) {
 				workDone = false;
-				foreach (String file in filesystem.FilesInDirectory(directory)) {
+				foreach (string file in filesystem.FilesInDirectory(directory)) {
 					workDone |= archiveHandler.TryExtract(file);
 				}
 			}
 		}
 
-		private String FindCoredumpOrNull(String directory) {
-			foreach (String file in filesystem.FilesInDirectory(directory)) {
+		private string FindCoredumpOrNull(string directory) {
+			foreach (string file in filesystem.FilesInDirectory(directory)) {
 				if (file.EndsWith(".core")) {
 					return file;
 				}

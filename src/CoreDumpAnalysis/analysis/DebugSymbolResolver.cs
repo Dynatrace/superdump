@@ -82,11 +82,11 @@ namespace CoreDumpAnalysis {
 			}
 		}
 
-		private string DebugFilePath(String path, string hash) {
+		private string DebugFilePath(string path, string hash) {
 			return Constants.DEBUG_SYMBOL_PATH + hash + "/" + DebugFileName(path);
 		}
 
-		public static string DebugFileName(String path) {
+		public static string DebugFileName(string path) {
 			int lastDot = path.LastIndexOf('.');
 			int lastSlash = path.LastIndexOf('/');
 			if(lastDot == -1 || lastDot <= lastSlash) {

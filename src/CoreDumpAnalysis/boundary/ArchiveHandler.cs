@@ -16,7 +16,7 @@ namespace CoreDumpAnalysis {
 			this.filesystem = filesystem;
 		}
 
-		public bool TryExtract(String file) {
+		public bool TryExtract(string file) {
 			if (file.EndsWith(".zip")) {
 				using (var archive = ZipArchive.Open(file)) {
 					Console.WriteLine("Extracting ZIP archive " + file);
@@ -46,7 +46,8 @@ namespace CoreDumpAnalysis {
 			foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory)) {
 				entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
 					ExtractFullPath = true,
-					Overwrite = true
+					Overwrite = true,
+					PreserveAttributes = true
 				});
 			}
 		}

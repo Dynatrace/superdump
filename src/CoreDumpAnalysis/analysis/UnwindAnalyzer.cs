@@ -61,11 +61,11 @@ namespace CoreDumpAnalysis {
 
 		private readonly IFilesystem filesystem;
 		private readonly SDResult analysisResult;
-		private readonly String coredump;
+		private readonly string coredump;
 
 		private bool isDestroyed = false;
 
-		public UnwindAnalyzer(IFilesystem filesystemHelper, String coredump, SDResult result) {
+		public UnwindAnalyzer(IFilesystem filesystemHelper, string coredump, SDResult result) {
 			this.filesystem = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
@@ -75,7 +75,7 @@ namespace CoreDumpAnalysis {
 			if(isDestroyed) {
 				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
 			}
-			String parent = filesystem.GetParentDirectory(coredump);
+			string parent = filesystem.GetParentDirectory(coredump);
 			parent = parent.Substring(0, parent.Length - 1);
 			init(this.coredump, parent);
 
@@ -195,7 +195,7 @@ namespace CoreDumpAnalysis {
 			List<SDCombinedStackFrame> frames = new List<SDCombinedStackFrame>();
 
 			ulong ip, oldIp = 0, sp, oldSp = 0, offset, oldOffset = 0;
-			String procName, oldProcName = null;
+			string procName, oldProcName = null;
 			int nFrames = 0;
 			do {
 				ip = getInstructionPointer();
@@ -218,7 +218,7 @@ namespace CoreDumpAnalysis {
 		private void SetAuxvFields(SDCDSystemContext context) {
 			context.PageSize = (int)getAuxvValue(AuxType.PAGE_SIZE.Type);
 			context.EntryPoint = getAuxvValue(AuxType.ENTRY_POINT.Type);
-			context.BasePlatform = getAuxvString(AuxType.BASE_PLATFORM.Type);
+			context.BasePlatform = getAuxvstring(AuxType.BASE_PLATFORM.Type);
 			context.Uid = (int)getAuxvValue(AuxType.UID.Type);
 			context.Euid = (int)getAuxvValue(AuxType.EUID.Type);
 			context.Gid = (int)getAuxvValue(AuxType.GID.Type);
