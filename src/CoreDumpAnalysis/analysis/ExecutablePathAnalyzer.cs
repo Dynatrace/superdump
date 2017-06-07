@@ -28,15 +28,16 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string ExecIfValid(string exec) {
-			Console.WriteLine("Checking " + exec);
 			if (exec != null && filesystem.FileExists(exec)) {
-				Console.WriteLine("Valid!");
 				return exec;
 			}
 			return null;
 		}
 
 		private string GetExecutableFromSummary() {
+			if(!filesystem.FileExists(Constants.SUMMARY_TXT)) {
+				return null;
+			}
 			IEnumerable<string> lines = filesystem.ReadLines(Constants.SUMMARY_TXT);
 			foreach (string line in lines) {
 				Match match = EXECUTABLE_REGEX.Match(line);

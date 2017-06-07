@@ -46,8 +46,7 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory)) {
 				entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
 					ExtractFullPath = true,
-					Overwrite = true,
-					PreserveAttributes = true
+					Overwrite = true
 				});
 			}
 		}

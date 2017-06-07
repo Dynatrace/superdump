@@ -31,10 +31,10 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			if(this.analysisResult?.SystemContext?.Modules == null) {
 				throw new ArgumentNullException("Debug symbol analysis can only be executed when modules are set!");
 			}
-			Analyze();
+			AnalyzeChecked();
 		}
 
-		private void Analyze() {
+		private void AnalyzeChecked() {
 			foreach (var threadInfo in this.analysisResult.ThreadInformation) {
 				foreach (var stackFrame in threadInfo.Value.StackTrace) {
 					SDCDModule module = FindModuleAtAddress(this.analysisResult.SystemContext.Modules, stackFrame.InstructionPointer);
@@ -86,7 +86,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void LinkDebugFile(string localPath, string debugPath) {
-			string targetDebugFile = Path.Combine(localPath, DebugSymbolResolver.DebugFileName(localPath));
+			string targetDebugFile = Path.Combine(Path.GetDirectoryName(localPath), DebugSymbolResolver.DebugFileName(localPath));
 			if (filesystem.FileExists(targetDebugFile)) {
 				return;
 			}
