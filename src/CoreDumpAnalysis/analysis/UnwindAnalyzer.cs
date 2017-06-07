@@ -1,10 +1,12 @@
-﻿using SuperDump.Models;
+﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Analyzer.Linux.SharedLibs;
+using SuperDump.Models;
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Analysis {
 	public class UnwindAnalyzer {
 		public const int MAX_FRAMES = 128;
 

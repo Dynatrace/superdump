@@ -7,7 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Boundary {
 	public class ArchiveHandler : IArchiveHandler {
 
 		private readonly IFilesystem filesystem;

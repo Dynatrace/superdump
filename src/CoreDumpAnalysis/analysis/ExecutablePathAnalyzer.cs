@@ -1,10 +1,11 @@
-﻿using SuperDump.Models;
+﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SuperDump.Analyzer.Linux.analysis {
+namespace SuperDump.Analyzer.Linux.Analysis {
 	public class ExecutablePathAnalyzer {
 
 		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);

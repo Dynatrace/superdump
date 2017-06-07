@@ -1,12 +1,12 @@
-﻿using SuperDump.Models;
+﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Models;
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace SuperDump.Analyzer.Linux
-{
+namespace SuperDump.Analyzer.Linux.Analysis {
     public class DebugSymbolAnalyzer {
 
 		private static Regex addr2lineRegex = new Regex("([^:]+):(\\d+)", RegexOptions.Compiled);

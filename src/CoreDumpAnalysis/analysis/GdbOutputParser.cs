@@ -3,7 +3,7 @@ using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Analysis {
 
 	public class GdbOutputParser {
 		private enum State { SKIPPING, THREAD, STACKFRAME, ARGS, LOCALS };

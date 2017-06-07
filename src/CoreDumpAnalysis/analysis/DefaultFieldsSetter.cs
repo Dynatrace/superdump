@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SuperDump.Analyzer.Linux
-{
+namespace SuperDump.Analyzer.Linux.Analysis {
 	public class DefaultFieldsSetter {
 		private readonly SDResult analysisResult;
 

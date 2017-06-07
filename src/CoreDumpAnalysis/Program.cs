@@ -1,6 +1,7 @@
 ﻿using System;
 
-using SuperDump.Analyzer.Linux.boundary;
+using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Analyzer.Linux.Analysis;
 
 namespace SuperDump.Analyzer.Linux {
 	public class Program {

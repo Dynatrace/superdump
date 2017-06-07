@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SuperDump.Analyzers {
+namespace SuperDump.Analyzer.Linux.Analysis {
 	/// <summary>
 	/// This analyzer only cares about putting special "Tags" onto "ITaggableItems".
 	/// E.g. mark agent frames, exceptions, ...

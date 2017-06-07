@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 
-namespace SuperDump.Analyzer.Linux.boundary {
+namespace SuperDump.Analyzer.Linux.Boundary {
 	public class HttpRequestHandler : IHttpRequestHandler {
 
 		private readonly IFilesystem filesystem;

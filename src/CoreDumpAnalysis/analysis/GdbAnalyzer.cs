@@ -1,10 +1,10 @@
-﻿using SuperDump.Analyzer.Linux.boundary;
+﻿using SuperDump.Analyzer.Linux.Boundary;
 using SuperDump.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Analysis {
 	public class GdbAnalyzer {
 		public static string GDB_ERR_FILE = "gdb.err.log";
 		public static string GDB_OUT_FILE = "gdb.out.log";

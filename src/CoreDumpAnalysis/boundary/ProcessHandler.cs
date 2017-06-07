@@ -1,9 +1,8 @@
-﻿using SuperDump.Analyzer.Linux.boundary;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Boundary {
 	public class ProcessHandler : IProcessHandler {
 		public StreamReader StartProcessAndRead(string fileName, string arguments) {
 			var process = new Process {

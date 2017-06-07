@@ -1,7 +1,8 @@
-﻿using SuperDump.Models;
+﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Models;
 using System.Text;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.SharedLibs {
 	public class SharedLibAdapter {
 
 		private readonly IFilesystem filesystem;

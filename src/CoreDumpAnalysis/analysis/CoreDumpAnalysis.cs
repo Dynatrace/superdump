@@ -1,13 +1,12 @@
-﻿using SuperDump.Analyzer.Linux.analysis;
-using SuperDump.Analyzer.Linux.boundary;
-using SuperDump.Analyzers;
+﻿using SuperDump.Analyzer.Linux.Analysis;
+using SuperDump.Analyzer.Linux.Boundary;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace SuperDump.Analyzer.Linux {
+namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalysis {
 		private readonly IArchiveHandler archiveHandler;
 		private readonly IFilesystem filesystem;
