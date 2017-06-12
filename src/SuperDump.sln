@@ -30,9 +30,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDump.Common", "SuperDu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LibunwindWrapper", "LibunwindWrapper\LibunwindWrapper.vcxproj", "{814407DD-4950-40EC-8AB6-DB92EAAEBC0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux", "CoreDumpAnalysis\SuperDump.Analyzer.Linux.csproj", "{2630FB6A-4A60-4330-895F-7665045FED6F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux", "SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj", "{2630FB6A-4A60-4330-895F-7665045FED6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux.Test", "CoreDumpAnalysisTest\SuperDump.Analyzer.Linux.Test.csproj", "{6B6675F0-D49E-43C2-8CA4-48B1D3BE4EBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux.Test", "SuperDump.Analyzer.Linux.Test\SuperDump.Analyzer.Linux.Test.csproj", "{6B6675F0-D49E-43C2-8CA4-48B1D3BE4EBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
