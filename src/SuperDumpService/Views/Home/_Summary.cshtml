@@ -5,28 +5,24 @@
 	<div class="panel-body">
 		<!--anomalies-->
 		@{bool noAnomalies = true;}
-		@if (!Model.Result.IsManagedProcess && Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
-			<h4>Info: No CLR was loaded in that process!</h4>
+		@if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
+			<h5>Process was started with: <b>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Args)</b></h5>
 		}
-
-        @if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
-            <h5>Process was started with: <b>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Args)</b></h5>
-        }
 		@if (Model.Result.LastEvent != null) {
 			noAnomalies = false;
 			<h4>LastEvent:</h4>
 			<table class="table table-bordered">
 				<thead>
 					<tr>
-                        @if (Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump) {
-						    <th>Engine thread ID</th>
-						    <th>Type</th>
-						    <th>Description</th>
-                        } else {
-                            <th>Thread ID</th>
-                            <th>Signal</th>
-                            <th>Description</th>
-                        }
+						@if (Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump) {
+							<th>Engine thread ID</th>
+							<th>Type</th>
+							<th>Description</th>
+						} else {
+							<th>Thread ID</th>
+							<th>Signal</th>
+							<th>Description</th>
+						}
 					</tr>
 				</thead>
 				<tbody>

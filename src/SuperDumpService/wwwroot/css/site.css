@@ -391,6 +391,10 @@ a.copyButtonForJira:hover {
 .stackreturnaddr {
 	text-align: right;
 }
+.stackvariables {
+	text-align: left;
+	display: none;
+}
 .sourceinfo {
 	color: rgb(173, 173, 173);
 }

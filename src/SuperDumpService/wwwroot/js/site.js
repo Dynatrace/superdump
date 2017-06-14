@@ -70,6 +70,10 @@ $(document).ready(function () {
 		var tablename = "#thread-" + $(this).attr("name") + "-stacktrace";
 		$(tablename + " .stackptroffset").toggle();
 	});
+	$("input:checkbox.showstackvars").click(function () {
+		var tablename = "#thread-" + $(this).attr("name") + "-stacktrace";
+		$(tablename + " .stackvariables").toggle();
+	});
 
 	$("input:checkbox.showsourceinfo").click(function () {
 		var tablename = "#thread-" + $(this).attr("name") + "-stacktrace";

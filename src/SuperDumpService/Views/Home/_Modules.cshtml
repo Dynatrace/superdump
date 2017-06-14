@@ -16,8 +16,7 @@
 						<th>Name</th>
 						<th>Size</th>
 						<th>Version</th>
-						@if(Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump)
-						{ 
+						@if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
 							<th>Start Address</th>
 							<th>End Address</th>
 							<th>Binding Offset</th>
@@ -27,18 +26,15 @@
 				<tbody>
 					@foreach (var module in Model.Result.SystemContext.Modules.OrderBy(x => x.FilePath)) {
 						<tr>
-							@if (module is SuperDump.Models.SDCDModule)
-							{
+							@if (module is SuperDump.Models.SDCDModule) {
 								<td style="width:50%;">@module.FilePath @Html.Partial("Tags", @module.Tags)</td>
 								<td class="text-nowrap">@Model.SizeSuffix(module.FileSize)</td>
 								<td class="text-nowrap">@module.Version</td>
-							
-								<td class="text-nowrap">@String.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).StartAddress)</td>
-								<td class="text-nowrap">@String.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).EndAddress)</td>
-								<td class="text-nowrap">@String.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).Offset)</td>
-							}
-							else
-							{
+
+								<td class="text-nowrap">@string.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).StartAddress)</td>
+								<td class="text-nowrap">@string.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).EndAddress)</td>
+								<td class="text-nowrap">@string.Format("0x{0:X}", ((SuperDump.Models.SDCDModule)module).Offset)</td>
+							} else {
 								<td style="width:70%;">@module.FilePath @Html.Partial("Tags", @module.Tags)</td>
 								<td class="text-nowrap">@Model.SizeSuffix(module.FileSize)</td>
 								<td class="text-nowrap">@module.Version</td>

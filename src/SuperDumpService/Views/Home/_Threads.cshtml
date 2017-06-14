@@ -2,28 +2,28 @@
 @using SuperDumpService.Helpers;
 
 <script>
-    var modalWin = new CreateModalPopUpObject();
-    //Uncomment below line to make look buttons as link
-    //modalWin.SetButtonStyle("background:none;border:none;textDecoration:underline;cursor:pointer");
+	var modalWin = new CreateModalPopUpObject();
+	//Uncomment below line to make look buttons as link
+	//modalWin.SetButtonStyle("background:none;border:none;textDecoration:underline;cursor:pointer");
 
-    function ShowMessage(msg, lines) {
-        modalWin.ShowMessage(msg, 220 + lines * 23, 550, 'User Information');
-    }
+	function ShowMessage(msg, lines) {
+		modalWin.ShowMessage(msg, 220 + lines * 23, 550, 'User Information');
+	}
 
 
-    function EnrollNow(msg) {
-        modalWin.HideModalPopUp();
-        modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
-    }
+	function EnrollNow(msg) {
+		modalWin.HideModalPopUp();
+		modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+	}
 
-    function EnrollLater() {
-        modalWin.HideModalPopUp();
-        modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
-    }
+	function EnrollLater() {
+		modalWin.HideModalPopUp();
+		modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+	}
 
-    function HideModalWindow() {
-        modalWin.HideModalPopUp();
-    }
+	function HideModalWindow() {
+		modalWin.HideModalPopUp();
+	}
 </script>
 
 
@@ -111,6 +111,7 @@
 										<li class="text-nowrap"><label><input type="checkbox" class="showaddresses" name="@thread.OsId" checked />show addresses</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showsourceinfo" name="@thread.OsId" checked />show sourceinfo</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showstackptroffset" name="@thread.OsId" />show stackptr offsets</label></li>
+										<li class="text-nowrap"><label><input type="checkbox" class="showstackvars" name="@thread.OsId" />show stack variables</label></li>
 									</ul>
 								</td>
 							</tr>
@@ -123,43 +124,42 @@
 							<table class="table table-stacktrace" id="thread-@thread.OsId-stacktrace">
 								<thead>
 									<tr>
-                                        @if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
-                                            // Frames in core dumps are always native, no need to display
-										    <th class="nobreak stacktype" style="width: 55px">Type</th>
-                                        }
+										@if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+											// Frames in core dumps are always native, no need to display
+											<th class="nobreak stacktype" style="width: 55px">Type</th>
+										}
 										<th class="nobreak stackptr" style="width: 79px">StackPtr</th>
 										<th class="nobreak stackptroffset">StackPtr.Offset</th>
 										<th class="nobreak stackinstructionptr" style="width: 79px">Instruct.Ptr</th>
 										<th class="nobreak stackreturnaddr" style="width: 79px">Ret.Addr.</th>
 										<th class="nobreak stackmethodname">Module/Method name</th>
-                                        <th class="nobreak">Stack Variables</th>
+										<th class="nobreak stackvariables">Stack Variables</th>
 									</tr>
 								</thead>
 								<tbody>
-                                    @{ int frameNr = 0; }
+									@{ int frameNr = 0; }
 									@foreach (var frame in thread.StackTrace) {
-                                        frameNr++;
-                                        string frameType = string.Empty;
-                                        string rowClass = string.Empty;
-                                        if (frame.Type == SuperDump.Models.StackFrameType.Native) {
-                                            rowClass = "custom-native";
-                                        } else if (frame.Type == SuperDump.Models.StackFrameType.Managed) {
-                                            rowClass = "custom-managed";
-                                        } else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
-                                            rowClass = "custom-special";
-                                        }
-                                        string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
+										frameNr++;
+										string frameType = string.Empty;
+										string rowClass = string.Empty;
+										if (frame.Type == SuperDump.Models.StackFrameType.Native) {
+											rowClass = "custom-native";
+										} else if (frame.Type == SuperDump.Models.StackFrameType.Managed) {
+											rowClass = "custom-managed";
+										} else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
+											rowClass = "custom-special";
+										}
 
-                                        string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ?
-                                            (frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
-                                            "disas 0x" + (frame.InstructionPointer).ToString("x");
+										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ?
+											(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
+											"disas 0x" + (frame.InstructionPointer).ToString("x");
 										<tr class="@rowClass">
-                                            @if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
-											    <td class="nobreak stacktype">@frame.Type.ToString()</td>
-                                            }
+											@if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+												<td class="nobreak stacktype">@frame.Type.ToString()</td>
+											}
 											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
-											
+
 											<td class="nobreak stackinstructionptr">
 												<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="@disassemblyCmd" class="alert-link">
 													@frame.InstructionPointer.ToString("x" + Model.PointerSize)
@@ -167,52 +167,38 @@
 											</td>
 											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
 											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
-												<td class="nobreak stackmethodname">[@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
+												<td class="nobreak stackmethodname">[@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
 											} else {
 												string tagclasses = "";
 												if (frame.Tags.Count > 0) {
 													tagclasses = "inline-tag " + string.Join(" ", frame.Tags.Select(x => "tag-" + x.Name));
 												}
 												<td class="nobreak stackmethodname">
-													<span class="@tagclasses">@modulename</span>
+													<span class="@tagclasses">@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@(frame.OffsetInMethod.ToString("x"))</span>
 													@if (frame.SourceInfo != null) {
 														<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
 													}
 												</td>
 											}
-                                            <td class="nobreak">
-                                                @if((frame as SuperDumpModels.SDCDCombinedStackFrame)?.HasStackInfo() ?? false) {
-                                                    int lines = 0;
-                                                    string stackHtml = "";
-                                                    if (((SuperDumpModels.SDCDCombinedStackFrame)frame).Args.Count > 0) {
-                                                        stackHtml += "<h4>Arguments</h4><br/><table border=\"1px\" width=\"450px\"><thead><td><b>&nbsp;Name&nbsp;</b></td><td><b>&nbsp;Value&nbsp</b></td></thead>";
-                                                        lines += 2 + ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args.Count;
-                                                        foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
-                                                            stackHtml += "<tr><td>&nbsp;" + entry.Key.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td><td>&nbsp;" + entry.Value.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td></tr>";
-                                                        }
-                                                        stackHtml += "</table>";
-                                                    }
-                                                    if (((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals.Count > 0) {
-                                                        stackHtml += "<br/><br/><h4>Local Variables:</h4><br/><table border=\"1px\" width=\"450px\"><thead><td><b>&nbsp;Name&nbsp;</b></td><td><b>&nbsp;Value&nbsp</b></td></thead>";
-                                                        lines += 4 + ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals.Count;
-                                                        foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
-                                                            stackHtml += "<tr><td>&nbsp;" + entry.Key.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td><td>&nbsp;" + entry.Value.Replace("<", "&lt;").Replace(">", "&gt;") + "&nbsp;</td></tr>";
-                                                            lines += entry.Value.Length / 130;
-                                                        }
-                                                        stackHtml += "</table>";
-                                                    }
-                                                    <input id="Submit1" type="submit" value="Show Variables" onclick="ShowMessage('@stackHtml', @lines)" />
-                                                }
-                                            </td>
+											<td class="nobreak stackvariables">
+												<table>
+													@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
+														<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
+													}
+													@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
+														<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
+													}
+												</table>
+											</td>
 
-                                        </tr>
-                                    }
+										</tr>
+									}
 								</tbody>
 							</table>
 							<div class="hidden-stacktrace-hack">{noformat}</div>
 						</div>
 					</div>
-				}
+										}
 			</div>
 		</div>
 	</div>

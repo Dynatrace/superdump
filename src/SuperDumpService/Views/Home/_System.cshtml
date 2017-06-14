@@ -11,8 +11,7 @@
 	<div id="system-info" class="panel-collapse in">
 		<div class="panel-body">
 			<dl class="dl-horizontal">
-				@if (Model.Result.SystemContext.GetType() == typeof(SuperDump.Models.SDCDSystemContext))
-				{
+				@if (Model.Result.SystemContext is SuperDump.Models.SDCDSystemContext) {
 					// Linux Core Dump
 					<dt>Platform</dt>
 					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).SystemArchitecture)</dd>
@@ -28,9 +27,7 @@
 
 					<dt>Page Size</dt>
 					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).PageSize) bytes</dd>
-				}
-				else
-				{
+				} else {
 					// Windows Crash Dump
 					<dt>OS version:</dt>
 					<dd>@Model.Result.SystemContext.OSVersion</dd>
@@ -48,8 +45,7 @@
 					<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
 				}
 
-				@foreach (var clr in Model.Result.SystemContext.ClrVersions)
-				{
+				@foreach (var clr in Model.Result.SystemContext.ClrVersions) {
 					<dt>.NET CLR:</dt>
 					<dd>@clr.Version (@clr.ClrFlavor)</dd>
 				}
@@ -84,7 +80,7 @@
 							</span>
 						}
 					</dd>
-				}
+							}
 			</dl>
 		</div>
 	</div>
