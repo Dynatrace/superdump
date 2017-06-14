@@ -6,7 +6,7 @@
 #include <fstream>
 #include <cxxabi.h>
 
-char* demangle(char* procName);
+void demangle(char* procName, char* dest, int length);
 
 LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir) 
 	: filepath(filepath) {
@@ -73,29 +73,26 @@ unsigned long LibunwindWrapper::getStackPointer() {
 char* LibunwindWrapper::getProcedureName() {
 	char* procName = (char*)malloc(2048);
 	if (!procName) {
-		return NULL;
+		return 0;
 	}
 
-	unsigned long methodOffset;
-	if (unw_get_proc_name(&cursor, procName, 2048, &methodOffset) == 0) {
-		return demangle(procName);
+	char* demangled = (char*)malloc(2048);
+	if (unw_get_proc_name(&cursor, procName, 2048, 0) == 0) {
+		demangle(procName, demangled, 2048);
 	}
 	free(procName);
-	return NULL;
+	return demangled;
 }
 
 unsigned long LibunwindWrapper::getProcedureOffset() {
-	char* procName = (char*) malloc(2048);
+	char* procName = (char*)malloc(2048);
 	if (!procName) {
-		return NULL;
+		return 0;
 	}
-
-	unsigned long methodOffset;
-	if (unw_get_proc_name(&cursor, procName, 2048, &methodOffset) == 0) {
-		return methodOffset;
-	}
+	unsigned long methodOffset = 0;
+	unw_get_proc_name(&cursor, procName, 2048, &methodOffset);
 	free(procName);
-	return 0;
+	return methodOffset;
 }
 
 bool LibunwindWrapper::step() {
@@ -103,10 +100,8 @@ bool LibunwindWrapper::step() {
 }
 
 unsigned long LibunwindWrapper::getAuxvValue(int type) {
-	unw_word_t val;
-	if (!_UCD_get_auxv_value(ucdInfo, type, &val)) {
-		return 0;
-	}
+	unw_word_t val = 0;
+	_UCD_get_auxv_value(ucdInfo, type, &val);
 	return val;
 }
 
@@ -125,6 +120,9 @@ const char* LibunwindWrapper::getAuxvString(int type) {
 		for (unw_word_t bitmask = 0xFF; bitmask != 0; bitmask <<= 8, shift += 8) {
 			if ((str & bitmask) == 0) {
 				char* dyn = (char*) malloc(result.size());
+				if (!dyn) {
+					return 0;
+				}
 				strncpy(dyn, result.c_str(), result.size());
 				return dyn;
 			}
@@ -164,6 +162,9 @@ const char* LibunwindWrapper::getFileName() {
 	}
 	char* fn = prpsinfo.pr_fname;
 	char* tmp = (char*)malloc(16);
+	if (!tmp) {
+		return 0;
+	}
 	strncpy(tmp, fn, 16);
 	return tmp;
 }
@@ -175,15 +176,20 @@ const char* LibunwindWrapper::getArgs() {
 	}
 	char* args = prpsinfo.pr_psargs;
 	char* tmp = (char*)malloc(80);
+	if (!tmp) {
+		return 0;
+	}
 	strncpy(tmp, args, 80);
 	return tmp;
 }
 
-char* demangle(char* procName) {
+void demangle(char* procName, char* dest, int length) {
 	int status;
 	char* demangled = abi::__cxa_demangle(procName, NULL, 0, &status);
 	if (status == 0 && demangled != NULL) {
-		return demangled;
+		strncpy(dest, demangled, length);
 	}
-	return procName;
+	else {
+		strncpy(dest, procName, length);
+	}
 }
