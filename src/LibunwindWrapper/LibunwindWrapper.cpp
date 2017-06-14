@@ -72,19 +72,29 @@ unsigned long LibunwindWrapper::getStackPointer() {
 
 char* LibunwindWrapper::getProcedureName() {
 	char* procName = (char*)malloc(2048);
+	if (!procName) {
+		return NULL;
+	}
+
 	unsigned long methodOffset;
 	if (unw_get_proc_name(&cursor, procName, 2048, &methodOffset) == 0) {
 		return demangle(procName);
 	}
+	free(procName);
 	return NULL;
 }
 
 unsigned long LibunwindWrapper::getProcedureOffset() {
 	char* procName = (char*) malloc(2048);
+	if (!procName) {
+		return NULL;
+	}
+
 	unsigned long methodOffset;
 	if (unw_get_proc_name(&cursor, procName, 2048, &methodOffset) == 0) {
 		return methodOffset;
 	}
+	free(procName);
 	return 0;
 }
 
