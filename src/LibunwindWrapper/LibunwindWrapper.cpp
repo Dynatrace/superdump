@@ -77,6 +77,9 @@ char* LibunwindWrapper::getProcedureName() {
 	}
 
 	char* demangled = (char*)malloc(2048);
+	if (!demangled) {
+		return 0;
+	}
 	if (unw_get_proc_name(&cursor, procName, 2048, 0) == 0) {
 		demangle(procName, demangled, 2048);
 	}
@@ -188,6 +191,7 @@ void demangle(char* procName, char* dest, int length) {
 	char* demangled = abi::__cxa_demangle(procName, NULL, 0, &status);
 	if (status == 0 && demangled != NULL) {
 		strncpy(dest, demangled, length);
+		free(demangled);
 	}
 	else {
 		strncpy(dest, procName, length);
