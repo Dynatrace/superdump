@@ -6,6 +6,7 @@ using SharpCompress.Readers;
 using System;
 using System.IO;
 using System.Linq;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Boundary {
 	public class ArchiveHandler : IArchiveHandler {
@@ -16,27 +17,27 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			this.filesystem = filesystem;
 		}
 
-		public bool TryExtract(string file) {
-			if (file.EndsWith(".zip")) {
-				using (var archive = ZipArchive.Open(file)) {
+		public bool TryExtractAndDelete(IFileInfo file) {
+			if (file.Extension == ".zip") {
+				using (var archive = ZipArchive.Open(file.FullName)) {
 					Console.WriteLine("Extracting ZIP archive " + file);
-					ExtractArchiveTo(archive, filesystem.GetParentDirectory(file));
+					ExtractArchiveTo(archive, file.DirectoryName);
 				}
-				File.Delete(file);
+				file.Delete();
 				return true;
-			} else if (file.EndsWith(".gz")) {
-				using (var archive = GZipArchive.Open(file)) {
+			} else if (file.Extension == ".gz") {
+				using (var archive = GZipArchive.Open(file.FullName)) {
 					Console.WriteLine("Extracting GZ archive " + file);
-					ExtractSingleEntryToFile(archive, file.Substring(0, file.Length - 3));
+					ExtractSingleEntryToFile(archive, Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(file.FullName)));
 				}
-				File.Delete(file);
+				file.Delete();
 				return true;
-			} else if (file.EndsWith(".tar")) {
-				using (var archive = TarArchive.Open(file)) {
+			} else if (file.Extension == ".tar") {
+				using (var archive = TarArchive.Open(file.FullName)) {
 					Console.WriteLine("Extracting TAR archive " + file);
-					ExtractArchiveTo(archive, filesystem.GetParentDirectory(file));
+					ExtractArchiveTo(archive, file.DirectoryName);
 				}
-				File.Delete(file);
+				file.Delete();
 				return true;
 			}
 			return false;

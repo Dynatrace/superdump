@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SharedLibFile.h"
-
 #ifndef MYAPI
 #define MYAPI 
 #endif
@@ -31,8 +29,6 @@ MYAPI bool step();
 MYAPI unsigned long getAuxvValue(int type);
 
 MYAPI const char* getAuxvString(int type);
-
-MYAPI bool getSharedLibs(int* size, SharedLibFile** libs);
 
 MYAPI int getSignalNumber(int thread_no);
 

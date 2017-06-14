@@ -3,22 +3,23 @@ using SuperDump.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class GdbAnalyzer {
 		public static string GDB_ERR_FILE = "gdb.err.log";
 		public static string GDB_OUT_FILE = "gdb.out.log";
 
-		private readonly string coredump;
+		private readonly IFileInfo coredump;
 		private readonly SDResult analysisResult;
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
 
-		public GdbAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, string coredump, SDResult result) {
+		public GdbAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, IFileInfo coredump, SDResult result) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
-			this.coredump = coredump ?? throw new ArgumentNullException("SD Result must not be null!");
-			this.analysisResult = result ?? throw new ArgumentNullException("Coredump Path must not be null!");
+			this.coredump = coredump ?? throw new ArgumentNullException("Coredump must not be null!");
+			this.analysisResult = result ?? throw new ArgumentNullException("SD Result Path must not be null!");
 		}
 
 		public void Analyze() {
@@ -43,7 +44,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			if (mainExecutable != null) {
 				input.WriteLine("file " + mainExecutable);
 			}
-			input.WriteLine("core-file " + coredump);
+			input.WriteLine("core-file " + coredump.FullName);
 
 			foreach (var thread in this.analysisResult.ThreadInformation) {
 				input.WriteLine("echo >>thread " + thread.Key + "\\n");

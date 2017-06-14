@@ -1,10 +1,10 @@
 ﻿using SuperDump.Analyzer.Linux.Boundary;
-using SuperDump.Analyzer.Linux.SharedLibs;
 using SuperDump.Models;
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class UnwindAnalyzer {
@@ -61,14 +61,12 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		[DllImport(Constants.WRAPPER)]
 		private static extern void destroy();
 
-		private readonly IFilesystem filesystem;
 		private readonly SDResult analysisResult;
-		private readonly string coredump;
+		private readonly IFileInfo coredump;
 
 		private bool isDestroyed = false;
 
-		public UnwindAnalyzer(IFilesystem filesystemHelper, string coredump, SDResult result) {
-			this.filesystem = filesystemHelper ?? throw new ArgumentNullException("FilesystemHelper must not be null!");
+		public UnwindAnalyzer(IFileInfo coredump, SDResult result) {
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
@@ -77,14 +75,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			if(isDestroyed) {
 				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
 			}
-			string parent = filesystem.GetParentDirectory(coredump);
-			parent = parent.Substring(0, parent.Length - 1);
-			init(this.coredump, parent);
+			init(coredump.FullName, coredump.Directory.FullName);
 
 			SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
 			SetContextFields(context);
 			this.analysisResult.SystemContext = context;
 			this.analysisResult.ThreadInformation = UnwindThreads(context);
+			Console.WriteLine("Destroying unwindwrapper context ...");
 			destroy();
 			isDestroyed = true;
 		}
@@ -99,13 +96,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			context.FileName = getFileName();
 			context.Args = getArgs();
 			SetAuxvFields(context);
-			SharedLibAdapter sharedLibAdapter = new SharedLibAdapter(filesystem);
-			new SharedLibExtractor().ExtractSharedLibs().ForEach(lib => {
-				SDCDModule sharedLib = sharedLibAdapter.Adapt(lib);
-				if (sharedLib != null) {
-					context.Modules.Add(sharedLib);
-				}
-			});
 			return context;
 		}
 

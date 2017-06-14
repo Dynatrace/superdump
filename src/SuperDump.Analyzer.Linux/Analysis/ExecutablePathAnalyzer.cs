@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Thinktecture.IO;
+using Thinktecture.IO.Adapters;
+using System.Linq;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class ExecutablePathAnalyzer {
@@ -11,10 +14,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
 
 		private readonly SDCDSystemContext context;
-		private readonly IFilesystem filesystem;
 
-		public ExecutablePathAnalyzer(IFilesystem filesystem, SDResult analysisResult) {
-			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
+		public ExecutablePathAnalyzer(SDResult analysisResult) {
 			this.context = analysisResult?.SystemContext as SDCDSystemContext ?? throw new ArgumentNullException("Analysis Result must not be null!");
 		}
 
@@ -28,24 +29,25 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string ExecIfValid(string exec) {
-			if (exec != null && filesystem.FileExists(exec)) {
+			if (exec != null && new FileInfoAdapter(exec).Exists) {
 				return exec;
 			}
 			return null;
 		}
 
 		private string GetExecutableFromSummary() {
-			if(!filesystem.FileExists(Constants.SUMMARY_TXT)) {
+			IFileInfo summaryTxt = new FileInfoAdapter(Constants.SUMMARY_TXT);
+			if (!summaryTxt.Exists) {
 				return null;
 			}
-			IEnumerable<string> lines = filesystem.ReadLines(Constants.SUMMARY_TXT);
-			foreach (string line in lines) {
+
+			return new FileAdapter().ReadLines(Constants.SUMMARY_TXT).Select(line => {
 				Match match = EXECUTABLE_REGEX.Match(line);
 				if (match.Success) {
 					return match.Groups[1].Value;
 				}
-			}
-			return null;
+				return "";
+			}).FirstOrDefault(match => match != "");
 		}
 
 		private string ExecFromArgs() {

@@ -1,6 +1,5 @@
 #include "LibunwindWrapper.h"
 #include "Main.h"
-#include "SharedLibResolver.h"
 
 #include <stdio.h>
 #include <vector>
@@ -24,12 +23,6 @@ int main(int argc, char** argv) {
 	printf("Auxv 15 (PLAT): %s\r\n", getAuxvString(15));
 	fflush(stdout);
 	printf("Auxv 31 (EXEC): %s\r\n", getAuxvString(31));
-	fflush(stdout);
-
-	SharedLibFile* libs;
-	int size;
-	getSharedLibs(&size, &libs);
-	printf("Shared Libs: %d\n", size);
 	fflush(stdout);
 	return 0;
 }
@@ -76,14 +69,6 @@ MYAPI unsigned long getAuxvValue(int type) {
 
 MYAPI const char* getAuxvString(int type) {
 	return wrapper->getAuxvString(type);
-}
-
-MYAPI bool getSharedLibs(int* size, SharedLibFile** libs) {
-	SharedLibResolver resolver;
-	vector<SharedLibFile>* sharedLibs = resolver.findSharedLibs(wrapper->getFilepath());
-	*libs = &sharedLibs->front();
-	*size = sharedLibs->size();
-	return true;
 }
 
 MYAPI int getSignalNumber(int thread_no) {

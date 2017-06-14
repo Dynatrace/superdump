@@ -5,12 +5,16 @@ using SuperDump.Models;
 using System.Collections.Generic;
 using SuperDump.Analyzer.Linux.Analysis;
 using System.IO;
+using Moq;
+using SuperDump.Analyzer.Linux.Boundary;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class DebugSymbolResolverTest {
+
 		private DebugSymbolResolver resolver;
-		private FilesystemDouble filesystem;
+		private Mock<IFilesystem> filesystem;
 		private RequestHandlerDouble requestHandler;
 
 		private List<SDModule> modules;
@@ -18,15 +22,15 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		[TestInitialize]
 		public void Init() {
-			this.filesystem = new FilesystemDouble();
+			this.filesystem = new Mock<IFilesystem>();
 			this.requestHandler = new RequestHandlerDouble();
-			this.resolver = new DebugSymbolResolver(filesystem, requestHandler);
+			this.resolver = new DebugSymbolResolver(filesystem.Object, requestHandler);
 
 			this.modules = new List<SDModule>();
 			this.module = new SDCDModule() {
-				LocalPath = $"some{Path.DirectorySeparatorChar}path{Path.DirectorySeparatorChar}somelib.so",
+				LocalPath = $"./lib/ruxit/somelib.so",
 				FileName = "somelib.so",
-				FilePath = $"{Path.DirectorySeparatorChar}lib{Path.DirectorySeparatorChar}ruxit{Path.DirectorySeparatorChar}somelib.so"
+				FilePath = $"/lib/ruxit/somelib.so"
 			};
 			this.modules.Add(module);
 		}
@@ -54,8 +58,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		[TestMethod]
 		public void TestDebugFilePresent() {
-			filesystem.Md5 = "some-md5-hash";
-			filesystem.ExistingFiles.Add($"{Constants.DEBUG_SYMBOL_PATH}some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg");
+			SetDebugFileExists(true);
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
 			AssertNoRequestsMade();
@@ -63,7 +66,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		[TestMethod]
 		public void TestDownloadDebugSymbolFail() {
-			filesystem.Md5 = "some-md5-hash";
+			SetDebugFileExists(false);
 			requestHandler.Return = false;
 			resolver.Resolve(this.modules);
 			Assert.IsNull(module.DebugSymbolPath);
@@ -72,11 +75,18 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		[TestMethod]
 		public void TestDownloadDebugSymbol() {
-			filesystem.Md5 = "some-md5-hash";
+			SetDebugFileExists(false);
 			requestHandler.Return = true;
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
 			AssertValidRequestDone();
+		}
+
+		private void SetDebugFileExists(bool exists) {
+			filesystem.Setup(fs => fs.Md5FromFile(this.module.LocalPath)).Returns("some-md5-hash");
+			var debugFileInfo = new Mock<IFileInfo>();
+			debugFileInfo.Setup(fi => fi.Exists).Returns(exists);
+			filesystem.Setup(fs => fs.GetFile(Path.Combine(Constants.DEBUG_SYMBOL_PATH, "some-md5-hash", "somelib.dbg"))).Returns(debugFileInfo.Object);
 		}
 
 		private void AssertNoRequestsMade() {

@@ -75,13 +75,10 @@
   <ItemGroup>
     <ClInclude Include="LibunwindWrapper.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="SharedLibFile.h" />
-    <ClInclude Include="SharedLibResolver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LibunwindWrapper.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="SharedLibResolver.cpp" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

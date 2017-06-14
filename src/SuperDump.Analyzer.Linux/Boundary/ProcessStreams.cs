@@ -36,13 +36,16 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			private set { _error = value; }
 		}
 
+		private readonly Action disposer;
+
 		private bool disposed;
 
-		public ProcessStreams(StreamReader output, StreamWriter input, StreamReader error) {
-			Output = output;
-			Input = input;
-			Error = error;
-			disposed = false;
+		public ProcessStreams(StreamReader output, StreamWriter input, StreamReader error, Action disposer) {
+			this.Output = output;
+			this.Input = input;
+			this.Error = error;
+			this.disposer = disposer;
+			this.disposed = false;
 		}
 
 		public void Dispose() {
@@ -52,6 +55,7 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 				Input.Dispose();
 			}
 			Error.Dispose();
+			disposer?.Invoke();
 			disposed = true;
 		}
 	}

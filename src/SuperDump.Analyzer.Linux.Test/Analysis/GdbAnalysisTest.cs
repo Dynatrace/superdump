@@ -6,6 +6,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using SuperDump.Analyzer.Linux.Analysis;
+using Moq;
+using Thinktecture.IO;
+using SuperDump.Analyzer.Linux.Boundary;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
@@ -15,16 +18,18 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		private GdbAnalyzer analysis;
 
-		private FilesystemDouble filesystem;
+		private Mock<IFilesystem> filesystem;
 		private ProcessHandlerDouble processHandler;
 		private SDResult analysisResult;
 
 		[TestInitialize]
 		public void Init() {
-			filesystem = new FilesystemDouble();
+			filesystem = new Mock<IFilesystem>();
 			processHandler = new ProcessHandlerDouble();
 			analysisResult = new SDResult();
-			analysis = new GdbAnalyzer(filesystem, processHandler, PATH + "dump.core", analysisResult);
+			var coredump = new Mock<IFileInfo>();
+			coredump.Setup(c => c.FullName).Returns(PATH + "dump.core");
+			analysis = new GdbAnalyzer(filesystem.Object, processHandler, coredump.Object, analysisResult);
 
 			this.analysisResult.ThreadInformation = new Dictionary<uint, SDThread>();
 			SDThread thread = new SDThread();
@@ -99,11 +104,11 @@ namespace SuperDump.Analyzer.Linux.Test {
 		}
 
 		private void VerifyWrittenFiles(string cmd, string err) {
-			Assert.AreEqual(cmd, filesystem.FileContents[GdbAnalyzer.GDB_OUT_FILE]);
-			if(err != null) {
-				Assert.AreEqual(err, filesystem.FileContents[GdbAnalyzer.GDB_ERR_FILE]);
+			filesystem.Verify(fs => fs.WriteToFile(GdbAnalyzer.GDB_OUT_FILE, cmd));
+			if (err != null) {
+				filesystem.Verify(fs => fs.WriteToFile(GdbAnalyzer.GDB_ERR_FILE, err));
 			} else {
-				Assert.IsFalse(filesystem.FileContents.ContainsKey(GdbAnalyzer.GDB_ERR_FILE));
+				filesystem.Verify(fs => fs.WriteToFile(GdbAnalyzer.GDB_ERR_FILE, It.IsAny<string>()), Times.Never());
 			}
 		}
 

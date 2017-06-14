@@ -5,23 +5,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Thinktecture.IO;
+using Thinktecture.IO.Adapters;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
-    public class DebugSymbolAnalyzer {
+    public class DebugSymbolAnalysis {
 
 		private static Regex addr2lineRegex = new Regex("([^:]+):(\\d+)", RegexOptions.Compiled);
 
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
 
-		private readonly String coredump;
 		private readonly SDResult analysisResult;
 
-		public DebugSymbolAnalyzer(IFilesystem filesystem, IProcessHandler processHandler, String coredump, SDResult result) {
+		public DebugSymbolAnalysis(IFilesystem filesystem, IProcessHandler processHandler, SDResult result) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
-			this.coredump = coredump ?? throw new ArgumentNullException("Coredump Path must not be null!");
 		}
 
 		public void Analyze() {
@@ -35,19 +36,26 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void AnalyzeChecked() {
+			IEnumerable<Task> tasks = StartSourceRetrievalTasks();
+			foreach(Task t in tasks) {
+				t.Wait();
+			}
+		}
+
+		private IEnumerable<Task> StartSourceRetrievalTasks() {
 			foreach (var threadInfo in this.analysisResult.ThreadInformation) {
 				foreach (var stackFrame in threadInfo.Value.StackTrace) {
 					SDCDModule module = FindModuleAtAddress(this.analysisResult.SystemContext.Modules, stackFrame.InstructionPointer);
 					if (module?.LocalPath != null) {
 						stackFrame.ModuleName = module.FileName;
-						AddSourceInfo(stackFrame, module);
+						yield return AddSourceInfoAsync(stackFrame, module);
 					}
 				}
 			}
 		}
 
-		private void AddSourceInfo(SDCombinedStackFrame stackFrame, SDCDModule module) {
-			Tuple<SDFileAndLineNumber, string> methodSource = Address2MethodSource(stackFrame.InstructionPointer, module);
+		private async Task AddSourceInfoAsync(SDCombinedStackFrame stackFrame, SDCDModule module) {
+			Tuple<SDFileAndLineNumber, string> methodSource = await Address2MethodSourceAsync(stackFrame.InstructionPointer, module);
 			SDFileAndLineNumber sourceInfo = methodSource.Item1;
 			string methodName = methodSource.Item2;
 			if (methodName != "??") {
@@ -71,27 +79,32 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			return null;
 		}
 
-		private Tuple<SDFileAndLineNumber, string> Address2MethodSource(ulong instrPtr, SDCDModule module) {
+		private async Task<Tuple<SDFileAndLineNumber, string>> Address2MethodSourceAsync(ulong instrPtr, SDCDModule module) {
 			ulong relativeIp = instrPtr;
 
 			if (module.DebugSymbolPath != null && module.DebugSymbolPath != "") {
 				// If there is a debug file, link it (required for addr2line to find the dbg file)
 				LinkDebugFile(module.LocalPath, module.DebugSymbolPath);
 			}
-			StreamReader reader = processHandler.StartProcessAndRead("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
-			string methodName = reader.ReadLine();
-			string fileLine = reader.ReadLine();
+			string output = await processHandler.ExecuteProcessAndGetOutputAsync("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
+			string[] lines = output.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+			if(lines.Length < 2) {
+				Console.WriteLine($"Output of addr2line is invalid ({lines.Length} lines)! First line: {lines?[0]}");
+				return Tuple.Create<SDFileAndLineNumber, string>(new SDFileAndLineNumber(), null);
+			}
+			string methodName = lines[0];
+			string fileLine = lines[1];
 			SDFileAndLineNumber sourceInfo = RetrieveSourceInfo(fileLine);
 			return Tuple.Create(sourceInfo, methodName);
 		}
 
 		private void LinkDebugFile(string localPath, string debugPath) {
-			string targetDebugFile = Path.Combine(Path.GetDirectoryName(localPath), DebugSymbolResolver.DebugFileName(localPath));
-			if (filesystem.FileExists(targetDebugFile)) {
+			IFileInfo targetDebugFile = filesystem.GetFile(Path.Combine(Path.GetDirectoryName(localPath), DebugSymbolResolver.DebugFileName(localPath)));
+			if (targetDebugFile.Exists) {
 				return;
 			}
 			Console.WriteLine($"Creating symbolic link: {debugPath}, {targetDebugFile}");
-			filesystem.CreateSymbolicLink(debugPath, targetDebugFile);
+			filesystem.CreateSymbolicLink(debugPath, targetDebugFile.FullName);
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {

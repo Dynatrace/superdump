@@ -1,10 +1,14 @@
 ﻿using SuperDump.Analyzer.Linux.Analysis;
-using SuperDump.Analyzer.Linux.Boundary;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Thinktecture.IO;
+using Thinktecture.IO.Adapters;
+using System.Linq;
+using SuperDump.Analyzer.Linux.Boundary;
+using System.Threading.Tasks;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalysis {
@@ -20,8 +24,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
 		}
 
-		public void Analyze(string inputFile, string outputFile) {
-			string coredump = GetCoreDumpFilePath(inputFile);
+		public async Task AnalyzeAsync(string inputFile, string outputFile) {
+			IFileInfo coredump = GetCoreDumpFilePath(inputFile);
 			if (coredump == null) {
 				Console.WriteLine("No core dump found.");
 				// TODO write empty json?
@@ -30,15 +34,17 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine("Processing core dump file: " + coredump);
 
 			SDResult analysisResult = new SDResult();
-			new UnwindAnalyzer(filesystem, coredump, analysisResult).Analyze();
+			new UnwindAnalyzer(coredump, analysisResult).Analyze();
+			Console.WriteLine("Retrieving shared libraries ...");
+			await new SharedLibAnalysis(filesystem, coredump, analysisResult).AnalyzeAsync();
 			Console.WriteLine("Finding executable file ...");
-			new ExecutablePathAnalyzer(filesystem, analysisResult).Analyze();
+			new ExecutablePathAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
 			new CoreLogAnalyzer(filesystem, coredump, analysisResult).Analyze();
 			Console.WriteLine("Fetching debug symbols ...");
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
-			new DebugSymbolAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
+			new DebugSymbolAnalysis(filesystem, processHandler, analysisResult).Analyze();
 			Console.WriteLine("Setting tags ...");
 			new TagAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Reading stack information ...");
@@ -49,40 +55,35 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine("Finished coredump analysis.");
 		}
 
-		private string GetCoreDumpFilePath(string inputFile) {
-			string directory = filesystem.GetParentDirectory(inputFile);
-			if (!filesystem.FileExists(inputFile)) {
+		private IFileInfo GetCoreDumpFilePath(string inputFile) {
+			IFileInfo file = filesystem.GetFile(inputFile);
+			IDirectoryInfo directory = file.Directory;
+			if (!file.Exists) {
 				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
 				return FindCoredumpOrNull(directory);
-			} else if (inputFile.EndsWith(".tar") || inputFile.EndsWith(".gz") || inputFile.EndsWith(".tgz") || inputFile.EndsWith(".tar") || inputFile.EndsWith(".zip")) {
+			} else if(file.Extension == ".tar" || file.Extension == ".gz" || file.Extension == ".tgz" || file.Extension == ".tar" || file.Extension == ".zip") {
 				Console.WriteLine("Extracting archives in directory " + directory);
 				ExtractArchivesInDir(directory);
 				return FindCoredumpOrNull(directory);
 			} else if (inputFile.EndsWith(".core")) {
-				return inputFile;
+				return file;
 			} else {
 				Console.WriteLine("Failed to interpret input file. Assuming it is a core dump.");
-				return inputFile;
+				return file;
 			}
 		}
 
-		private void ExtractArchivesInDir(string directory) {
+		private void ExtractArchivesInDir(IDirectoryInfo directory) {
 			bool workDone = true;
 			while (workDone) {
-				workDone = false;
-				foreach (string file in filesystem.FilesInDirectory(directory)) {
-					workDone |= archiveHandler.TryExtract(file);
-				}
+				workDone = directory.EnumerateFiles("*", SearchOption.AllDirectories)
+					.Select(fi => archiveHandler.TryExtractAndDelete(fi))
+					.Any(extracted => extracted == true);
 			}
 		}
 
-		private string FindCoredumpOrNull(string directory) {
-			foreach (string file in filesystem.FilesInDirectory(directory)) {
-				if (file.EndsWith(".core")) {
-					return file;
-				}
-			}
-			return null;
+		private IFileInfo FindCoredumpOrNull(IDirectoryInfo directory) {
+			return directory.EnumerateFiles("*.core", SearchOption.AllDirectories).FirstOrDefault();
 		}
 	}
 }

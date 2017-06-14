@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 using SuperDump.Analyzer.Linux.Boundary;
+using System.Threading.Tasks;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	internal class ProcessHandlerDouble : IProcessHandler {
@@ -19,14 +20,16 @@ namespace SuperDump.Analyzer.Linux.Test {
 			fileNameToErrorMap.Add(command, errorString);
 		}
 
-		public StreamReader StartProcessAndRead(string fileName, string arguments) {
-			return new StreamReader(MemoryStreamFromString(fileNameToOutputMap[fileName] ?? ""));
+		public Task<string> ExecuteProcessAndGetOutputAsync(string fileName, string arguments) {
+			Task<string> t = new Task<string>(() => fileNameToOutputMap[fileName] ?? "");
+			t.Start();
+			return t;
 		}
 
 		public ProcessStreams StartProcessAndReadWrite(string fileName, string arguments) {
 			return new ProcessStreams(new StreamReader(MemoryStreamFromDict(fileNameToOutputMap, fileName)),
 				new StreamWriter(MemoryStreamFromDict(fileNameToInputMap, fileName), Encoding.ASCII, 512, true),
-				new StreamReader(MemoryStreamFromDict(fileNameToErrorMap, fileName)));
+				new StreamReader(MemoryStreamFromDict(fileNameToErrorMap, fileName)), () => { });
 		}
 
 		private MemoryStream MemoryStreamFromDict(IDictionary<string, string> dict, string key) {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 
 namespace SuperDump.Analyzer.Linux.Test {
-	internal class FilesystemDouble : IFilesystem {
+	internal class FilesystemDouble {
 
 		public IList<string> ExistingFiles = new List<string>();
 		public IDictionary<string, long> FileSizes = new Dictionary<string, long>();

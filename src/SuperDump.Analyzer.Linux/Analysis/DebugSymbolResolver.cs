@@ -60,7 +60,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private bool IsDebugFileAvailable(SDCDModule module, string hash) {
-			return filesystem.FileExists(DebugFilePath(module.LocalPath, hash));
+			return filesystem.GetFile(DebugFilePath(module.LocalPath, hash)).Exists;
 		}
 
 		private async Task DownloadDebugSymbolsAsync(SDCDModule lib, string hash) {
@@ -69,15 +69,12 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 			string localDebugFile = DebugFilePath(lib.LocalPath, hash);
 			try {
-				await requestHandler.DownloadFromUrlAsync(url, localDebugFile)
-					.ContinueWith(result => {
-						if (result.Result) {
-							Console.WriteLine($"Successfully downloaded debug symbols for {lib.FilePath}. Stored at {localDebugFile}");
-							lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
-						} else {
-							Console.WriteLine($"Failed to download debug symbols for {lib.FilePath}. URL: {url}");
-						}
-					});
+				if (await requestHandler.DownloadFromUrlAsync(url, localDebugFile)) {
+					Console.WriteLine($"Successfully downloaded debug symbols for {lib.FilePath}. Stored at {localDebugFile}");
+					lib.DebugSymbolPath = Path.GetFullPath(localDebugFile);
+				} else {
+					Console.WriteLine($"Failed to download debug symbols for {lib.FilePath}. URL: {url}");
+				}
 			} catch (Exception e) {
 				Console.WriteLine($"Failed to download debug symbol: {e.Message}");
 			}

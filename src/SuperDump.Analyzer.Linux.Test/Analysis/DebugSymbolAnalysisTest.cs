@@ -4,25 +4,36 @@ using SuperDump.Models;
 using System;
 using System.Collections.Generic;
 using SuperDump.Analyzer.Linux.Analysis;
+using Moq;
+using SuperDump.Analyzer.Linux.Boundary;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
 	public class DebugSymbolAnalysisTest {
-		private readonly string DEFAULT_MODULE_NAME = "module name";
-		private readonly string DEFAULT_METHOD_NAME = "method name";
+		private const string DEBUG_SYMBOLS_PATH = "debug/info";
+		private const string DEBUG_FILE_PATH = "some-dump/lib.dbg";
 
-		private DebugSymbolAnalyzer analysis;
+		private const string DEFAULT_MODULE_NAME = "module name";
+		private const string DEFAULT_METHOD_NAME = "method name";
+
+		private DebugSymbolAnalysis analysis;
+		private Mock<IFileInfo> targetDebugFile;
 
 		private SDResult result;
-		private FilesystemDouble filesystem;
+		private Mock<IFilesystem> filesystem;
 		private ProcessHandlerDouble processHandler;
 
 		[TestInitialize]
 		public void InitAnalysis() {
 			result = new SDResult();
-			filesystem = new FilesystemDouble();
+			filesystem = new Mock<IFilesystem>();
 			processHandler = new ProcessHandlerDouble();
-			analysis = new DebugSymbolAnalyzer(filesystem, processHandler, "dump.core", result);
+			analysis = new DebugSymbolAnalysis(filesystem.Object, processHandler, result);
+
+			targetDebugFile = new Mock<IFileInfo>();
+			targetDebugFile.Setup(f => f.FullName).Returns(DEBUG_FILE_PATH);
+			filesystem.Setup(fs => fs.GetFile(It.IsAny<string>())).Returns(targetDebugFile.Object);
 		}
 
 		[TestMethod]
@@ -61,30 +72,30 @@ namespace SuperDump.Analyzer.Linux.Test {
 		public void TestModuleSourceInfoUpdated() {
 			PrepareModuleWithBinary(1234, "actual module name");
 			PrepareSampleThread(1234);
-			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
+			processHandler.SetOutputForCommand("addr2line", $"meth-name{Environment.NewLine}src/file.cpp:777");
 			analysis.Analyze();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			Assert.IsFalse(filesystem.LinkCreated);
+			filesystem.Verify(fs => fs.CreateSymbolicLink(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
 		}
 
 		[TestMethod]
 		public void TestModuleWithDebugInfo() {
 			PrepareModuleWithDebugInfo(1234, "actual module name");
 			PrepareSampleThread(1234);
-			processHandler.SetOutputForCommand("addr2line", "meth-name\nsrc/file.cpp:777");
+			processHandler.SetOutputForCommand("addr2line", $"meth-name{Environment.NewLine}src/file.cpp:777");
 			analysis.Analyze();
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			Assert.IsTrue(filesystem.LinkCreated);
+			filesystem.Verify(fs => fs.CreateSymbolicLink(DEBUG_SYMBOLS_PATH, DEBUG_FILE_PATH));
 		}
 
 		private SDCDModule PrepareModuleWithDebugInfo(ulong instrPtr, string moduleName) {
 			var module = PrepareSampleModule(instrPtr, moduleName);
 			module.LocalPath = "some/path";
-			module.DebugSymbolPath = "debug/info";
+			module.DebugSymbolPath = DEBUG_SYMBOLS_PATH;
 			return module;
 		}
 

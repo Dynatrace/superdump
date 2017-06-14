@@ -1,5 +1,7 @@
-﻿namespace SuperDump.Analyzer.Linux.Boundary {
+﻿using Thinktecture.IO;
+
+namespace SuperDump.Analyzer.Linux.Boundary {
 	public interface IArchiveHandler {
-		bool TryExtract(string file);
+		bool TryExtractAndDelete(IFileInfo file);
 	}
 }

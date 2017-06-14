@@ -13,15 +13,12 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 
 		public async Task<bool> DownloadFromUrlAsync(string url, string targetFile) {
 			HttpClient httpClient = new HttpClient();
-			return await httpClient.GetAsync(url).ContinueWith(
-				request => {
-					HttpResponseMessage response = request.Result;
-					if (request.Result.IsSuccessStatusCode) {
-						filesystem.HttpContentToFile(response.Content, targetFile);
-						return true;
-					}
-					return false;
-				});
+			HttpResponseMessage response = await httpClient.GetAsync(url);
+			if (response.IsSuccessStatusCode) {
+				filesystem.HttpContentToFile(response.Content, targetFile);
+				return true;
+			}
+			return false;
 		}
 	}
 }

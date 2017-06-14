@@ -4,17 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
+using Thinktecture.IO;
+using Thinktecture.IO.Adapters;
 
 namespace SuperDump.Analyzer.Linux.Boundary {
 	public class Filesystem : IFilesystem {
-		public String GetParentDirectory(String dir) {
-			int idx = dir.LastIndexOfAny(new char[] { '/', '\\' });
-			if (idx >= 0) {
-				return dir.Substring(0, idx) + "/";
-			}
-			return "./";
-		}
-
 		public List<String> FilesInDirectory(String directory) {
 			List<String> files = new List<string>();
 			FilesInDirectoryRec(directory, files);
@@ -66,16 +60,16 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			}
 		}
 
-		public long FileSize(string path) {
-			return new FileInfo(path).Length;
-		}
-
 		public void WriteToFile(string filepath, string content) {
 			File.WriteAllText(filepath, content);
 		}
 
-		public IEnumerable<string> ReadLines(string file) {
-			return File.ReadLines(file);
+		public IEnumerable<string> ReadLines(IFileInfo file) {
+			return File.ReadLines(file.FullName);
+		}
+
+		public IFileInfo GetFile(string path) {
+			return new FileInfoAdapter(path);
 		}
 	}
 }

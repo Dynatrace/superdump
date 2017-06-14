@@ -1,8 +1,10 @@
 ﻿using System.IO;
+using System.Threading.Tasks;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Boundary {
 	public interface IProcessHandler {
-		StreamReader StartProcessAndRead(string fileName, string arguments);
-		ProcessStreams StartProcessAndReadWrite(string fileName, string arguments);
+		Task<string> ExecuteProcessAndGetOutputAsync(string executable, string arguments);
+		ProcessStreams StartProcessAndReadWrite(string executable, string arguments);
 	}
 }

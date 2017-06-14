@@ -42,7 +42,7 @@ namespace SuperDumpService.Services {
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
-					StartLinuxAnalyzation(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+					await LinuxAnalyzationAsync(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
@@ -108,7 +108,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private void StartLinuxAnalyzation(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+		private async Task LinuxAnalyzationAsync(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string command = settings.Value.LinuxAnalysisCommand;
 
 			if (string.IsNullOrEmpty(command)) {
@@ -126,15 +126,10 @@ namespace SuperDumpService.Services {
 			Utility.ExtractExe(command, out string executable, out string arguments);
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
-			/* Using Process implementation because bash cannot be started with RedirectStandardOutput=true (which is hardcoded in ProcessRunner)
-			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
-				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
-				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
-			}*/
-			ProcessStartInfo psi = new ProcessStartInfo(executable, arguments) {
-				WorkingDirectory = workingDir.FullName
-			};
-			Process.Start(psi);
+			// We cannot use redirection for bash! See https://github.com/Microsoft/BashOnWindows/issues/2
+			using (var process = await ProcessRunner.RunWithoutRedirection(executable, workingDir, arguments)) {
+				Console.WriteLine($"Linux analysis terminated with exit code {process.ExitCode}.");
+			}
 		}
 	}
 }
