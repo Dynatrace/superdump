@@ -9,10 +9,11 @@ using SuperDump.Analyzer.Linux.Analysis;
 using Moq;
 using Thinktecture.IO;
 using SuperDump.Analyzer.Linux.Boundary;
+using System.IO;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
-	public class GdbAnalysisTest {
+	public class GdbAnalyzerTest {
 
 		private static string PATH = "path/";
 

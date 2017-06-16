@@ -7,6 +7,7 @@ using SuperDump.Analyzer.Linux.Analysis;
 using Moq;
 using SuperDump.Analyzer.Linux.Boundary;
 using Thinktecture.IO;
+using System.IO;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]

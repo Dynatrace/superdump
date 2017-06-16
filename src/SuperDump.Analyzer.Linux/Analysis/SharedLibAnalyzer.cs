@@ -12,7 +12,7 @@ using SuperDump.Models;
 using SuperDump.Analyzer.Linux.Boundary;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
-	public class SharedLibAnalysis {
+	public class SharedLibAnalyzer {
 
 		private readonly Regex addressRegex = new Regex(@"0x([\da-f]+)\s+0x([\da-f]+)\s+0x([\da-f]+)\s+([^\s]+)", RegexOptions.Compiled);
 
@@ -21,7 +21,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private readonly IFileInfo coredump;
 		private readonly SDResult analysisResult;
 
-		public SharedLibAnalysis(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult) {
+		public SharedLibAnalyzer(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult) {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump must not be null!");
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.analysisResult = analysisResult ?? throw new ArgumentNullException("Analysis result must not be null!");

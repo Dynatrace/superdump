@@ -8,6 +8,7 @@ using System.IO;
 using Moq;
 using SuperDump.Analyzer.Linux.Boundary;
 using Thinktecture.IO;
+using System.Threading.Tasks;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
@@ -15,7 +16,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		private DebugSymbolResolver resolver;
 		private Mock<IFilesystem> filesystem;
-		private RequestHandlerDouble requestHandler;
+		private Mock<IHttpRequestHandler> requestHandler;
 
 		private List<SDModule> modules;
 		private SDCDModule module;
@@ -23,8 +24,8 @@ namespace SuperDump.Analyzer.Linux.Test {
 		[TestInitialize]
 		public void Init() {
 			this.filesystem = new Mock<IFilesystem>();
-			this.requestHandler = new RequestHandlerDouble();
-			this.resolver = new DebugSymbolResolver(filesystem.Object, requestHandler);
+			this.requestHandler = new Mock<IHttpRequestHandler>();
+			this.resolver = new DebugSymbolResolver(filesystem.Object, requestHandler.Object);
 
 			this.modules = new List<SDModule>();
 			this.module = new SDCDModule() {
@@ -67,7 +68,8 @@ namespace SuperDump.Analyzer.Linux.Test {
 		[TestMethod]
 		public void TestDownloadDebugSymbolFail() {
 			SetDebugFileExists(false);
-			requestHandler.Return = false;
+			requestHandler.Setup(r => r.DownloadFromUrlAsync(It.IsAny<string>(), It.IsAny<string>()))
+				.Returns(ImmediateTask<bool>(false));
 			resolver.Resolve(this.modules);
 			Assert.IsNull(module.DebugSymbolPath);
 			AssertValidRequestDone();
@@ -76,7 +78,8 @@ namespace SuperDump.Analyzer.Linux.Test {
 		[TestMethod]
 		public void TestDownloadDebugSymbol() {
 			SetDebugFileExists(false);
-			requestHandler.Return = true;
+			requestHandler.Setup(r => r.DownloadFromUrlAsync(It.IsAny<string>(), It.IsAny<string>()))
+				.Returns(ImmediateTask<bool>(true));
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
 			AssertValidRequestDone();
@@ -90,15 +93,24 @@ namespace SuperDump.Analyzer.Linux.Test {
 		}
 
 		private void AssertNoRequestsMade() {
-			Assert.IsNull(requestHandler.FromUrl);
-			Assert.IsNull(requestHandler.ToFile);
+			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
 		}
 
 		private void AssertValidRequestDone() {
-			Assert.IsNotNull(requestHandler.FromUrl);
-			Assert.AreNotEqual("", requestHandler.FromUrl);
-			Assert.IsTrue(requestHandler.ToFile.StartsWith(Constants.DEBUG_SYMBOL_PATH), "Invalid DebugSymbol target: " + requestHandler.ToFile);
-			Assert.IsTrue(requestHandler.ToFile.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol target: {requestHandler.ToFile}");
+			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsNotNull<string>(), 
+				It.Is<string>(file => file.StartsWith(Constants.DEBUG_SYMBOL_PATH) && 
+				file.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"))), 
+				Times.Once);
+			//Assert.IsNotNull(requestHandler.FromUrl);
+			//Assert.AreNotEqual("", requestHandler.FromUrl);
+			//Assert.IsTrue(requestHandler.ToFile.StartsWith(Constants.DEBUG_SYMBOL_PATH), "Invalid DebugSymbol target: " + requestHandler.ToFile);
+			//Assert.IsTrue(requestHandler.ToFile.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol target: {requestHandler.ToFile}");
+		}
+
+		private Task<T> ImmediateTask<T>(T result) {
+			Task<T> task = new Task<T>(() => result);
+			task.Start();
+			return task;
 		}
 	}
 }

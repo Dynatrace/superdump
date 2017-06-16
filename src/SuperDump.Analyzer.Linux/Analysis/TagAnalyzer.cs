@@ -104,10 +104,5 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private bool IsExceptionFrame(SDCombinedStackFrame frame) {
 			return ContainsAny(frame.MethodName, "exception");
 		}
-
-		public static string TagsAsString(string prefix, IEnumerable<SDTag> tags) {
-			if (!tags.Any()) return string.Empty;
-			return prefix + "{" + string.Join(", ", tags) + "}";
-		}
 	}
 }

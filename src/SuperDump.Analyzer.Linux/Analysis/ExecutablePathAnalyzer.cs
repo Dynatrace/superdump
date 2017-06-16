@@ -13,35 +13,51 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
 
+		private readonly IFilesystem filesystem;
 		private readonly SDCDSystemContext context;
 
-		public ExecutablePathAnalyzer(SDResult analysisResult) {
-			this.context = analysisResult?.SystemContext as SDCDSystemContext ?? throw new ArgumentNullException("Analysis Result must not be null!");
+		public ExecutablePathAnalyzer(IFilesystem filesystem, SDCDSystemContext context) {
+			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
+			this.context = context ?? throw new ArgumentNullException("System Context must not be null!");
 		}
 
 		public void Analyze() {
-			context.FileName = ExecIfValid("." + GetExecutableFromSummary())
-				?? ExecIfValid("." + context.FileName)
+			context.FileName = ExecIfValid(PrependOrNull(".", GetExecutableFromSummary()))
+				?? ExecIfValid(PrependOrNull(".", context.FileName))
 				?? ExecIfValid(context.FileName)
-				?? ExecIfValid("." + ExecFromArgs())
+				?? ExecIfValid(PrependOrNull(".", ExecFromArgs()))
 				?? ExecIfValid(ExecFromArgs());
 			Console.WriteLine("Executable File: " + context.FileName);
 		}
 
+		private string PrependOrNull(string prepend, string s) {
+			if(s == null || prepend == null) {
+				return null;
+			}
+			return prepend + s;
+		}
+
+		private string CharArrayToNullableString(char[] chars) {
+			if(chars == null || chars.Length == 0) {
+				return null;
+			}
+			return new string(chars);
+		}
+
 		private string ExecIfValid(string exec) {
-			if (exec != null && new FileInfoAdapter(exec).Exists) {
+			if (exec != null && filesystem.GetFile(exec).Exists) {
 				return exec;
 			}
 			return null;
 		}
 
 		private string GetExecutableFromSummary() {
-			IFileInfo summaryTxt = new FileInfoAdapter(Constants.SUMMARY_TXT);
+			IFileInfo summaryTxt = filesystem.GetFile(Constants.SUMMARY_TXT);
 			if (!summaryTxt.Exists) {
 				return null;
 			}
 
-			return new FileAdapter().ReadLines(Constants.SUMMARY_TXT).Select(line => {
+			return filesystem.ReadLines(summaryTxt).Select(line => {
 				Match match = EXECUTABLE_REGEX.Match(line);
 				if (match.Success) {
 					return match.Groups[1].Value;

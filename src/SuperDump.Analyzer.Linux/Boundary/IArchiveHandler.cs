@@ -1,4 +1,5 @@
-﻿using Thinktecture.IO;
+﻿using System.IO;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Boundary {
 	public interface IArchiveHandler {

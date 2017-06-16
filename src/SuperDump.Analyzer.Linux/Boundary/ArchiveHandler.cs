@@ -3,6 +3,7 @@ using SharpCompress.Archives.GZip;
 using SharpCompress.Archives.Tar;
 using SharpCompress.Archives.Zip;
 using SharpCompress.Readers;
+using SuperDump.Common;
 using System;
 using System.IO;
 using System.Linq;
@@ -33,22 +34,25 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 				file.Delete();
 				return true;
 			} else if (file.Extension == ".tar") {
-				using (var archive = TarArchive.Open(file.FullName)) {
-					Console.WriteLine("Extracting TAR archive " + file);
-					ExtractArchiveTo(archive, file.DirectoryName);
-				}
+				// Using tar command because SharpCompress is unable to extract symbolic links
+				ProcessRunner.Run("tar", new DirectoryInfo(Directory.GetCurrentDirectory()), "-hxf", file.FullName).Wait();
 				file.Delete();
 				return true;
 			}
 			return false;
 		}
 
-		private void ExtractArchiveTo(SharpCompress.Archives.IArchive archive, string parentDirectory) {
+		private void ExtractArchiveTo(IArchive archive, string parentDirectory) {
 			foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory)) {
-				entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
-					ExtractFullPath = true,
-					Overwrite = true
-				});
+				try {
+					entry.WriteToDirectory(parentDirectory, new ExtractionOptions() {
+						ExtractFullPath = true,
+						Overwrite = true
+					});
+				} catch(Exception e) {
+					Console.WriteLine($"Failed to extract {archive.Type.ToString()} archive: ${entry.Key}");
+					Console.WriteLine(e.StackTrace);
+				}
 			}
 		}
 

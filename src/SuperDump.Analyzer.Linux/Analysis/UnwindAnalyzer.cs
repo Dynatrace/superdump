@@ -3,6 +3,7 @@ using SuperDump.Models;
 using SuperDumpModels;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Thinktecture.IO;
 
