@@ -79,7 +79,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			if (gdbErr.Length > 0) {
 				filesystem.WriteToFile(GDB_ERR_FILE, gdbErr.Trim());
 			}
-			Console.WriteLine("finished reading output log");
 			new GdbOutputParser(analysisResult).Parse(gdbOut);
 		}
 	}

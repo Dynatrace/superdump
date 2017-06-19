@@ -112,6 +112,7 @@ const char* LibunwindWrapper::getAuxvString(int type) {
 	unw_word_t val;
 	if (!_UCD_get_auxv_value(ucdInfo, type, &val)) {
 		printf("AUXV does not contain value for type %d.\n", type);
+		fflush(stdout);
 		return 0;
 	}
 
