@@ -16,6 +16,8 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\LibunwindWrapper\LibunwindWrapper.vcxproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\LibunwindWrapper" Targets="Clean;Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
@@ -30,6 +32,8 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
+		<MSBuild Projects="$(RootFolder)\src\LibunwindWrapper\LibunwindWrapper.vcxproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\LibunwindWrapper" Targets="Clein;Build" />
+		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
