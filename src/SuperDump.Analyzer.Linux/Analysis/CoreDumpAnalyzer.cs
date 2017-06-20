@@ -1,14 +1,11 @@
-﻿using SuperDump.Analyzer.Linux.Analysis;
-using SuperDump.Models;
+﻿using SuperDump.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Thinktecture.IO;
-using Thinktecture.IO.Adapters;
 using System.Linq;
 using SuperDump.Analyzer.Linux.Boundary;
 using System.Threading.Tasks;
+using SuperDump.Analyzer.Common;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalyzer {
@@ -45,12 +42,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
 			new DebugSymbolAnalysis(filesystem, processHandler, analysisResult).Analyze();
-			Console.WriteLine("Setting tags ...");
-			new TagAnalyzer(analysisResult).Analyze();
 			Console.WriteLine("Reading stack information ...");
 			new GdbAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
 			Console.WriteLine("Setting default fields ...");
 			new DefaultFieldsSetter(analysisResult).SetResultFields();
+			Console.WriteLine("Setting tags ...");
+			new DynamicAnalysisBuilder(analysisResult,
+			   new UniversalTagAnalyzer(), new LinuxTagAnalyzer(), new DotNetTagAnalyzer(), new DynatraceTagAnalyzer())
+			   .Analyze();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());
 			Console.WriteLine("Finished coredump analysis.");
 		}

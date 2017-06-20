@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{F1C07791-3C2A-400E-8505-87F0AA3D21EC}"
 	ProjectSection(SolutionItems) = preProject
@@ -34,7 +34,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.Analyzer.Linux.Test", "SuperDump.Analyzer.Linux.Test\SuperDump.Analyzer.Linux.Test.csproj", "{6B6675F0-D49E-43C2-8CA4-48B1D3BE4EBE}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SuperDump.Analyzer.Common", "SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.shproj", "{EA333D99-767A-472B-A272-B44C659023C0}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems*{0dd4da67-4e55-4ee1-9030-5a69d8cdc6b4}*SharedItemsImports = 4
+		SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems*{ea333d99-767a-472b-a272-b44c659023c0}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64

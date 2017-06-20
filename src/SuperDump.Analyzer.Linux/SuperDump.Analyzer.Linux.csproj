@@ -26,4 +26,6 @@
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
 
+  <Import Project="..\SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems" Label="Shared" />
+
 </Project>
