@@ -1,11 +1,16 @@
 ﻿using Newtonsoft.Json;
 using SuperDump.Models;
 using System;
+using System.IO;
 
 namespace SuperDumpModels {
 	public class SDFileAndLineNumber : IEquatable<SDFileAndLineNumber>, ISerializableJson {
 		public string File;
 		public int Line;
+
+		public string FileName() {
+			return Path.GetFileNameWithoutExtension(File);
+		}
 
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {

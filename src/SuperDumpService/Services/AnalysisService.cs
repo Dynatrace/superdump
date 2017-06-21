@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SuperDump.Common;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
+using System.Diagnostics;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
@@ -42,7 +42,7 @@ namespace SuperDumpService.Services {
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
-					await AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+					await LinuxAnalyzationAsync(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
@@ -108,7 +108,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+		private async Task LinuxAnalyzationAsync(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string command = settings.Value.LinuxAnalysisCommand;
 
 			if (string.IsNullOrEmpty(command)) {
@@ -126,9 +126,9 @@ namespace SuperDumpService.Services {
 			Utility.ExtractExe(command, out string executable, out string arguments);
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
-			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
-				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
-				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
+			// We cannot use redirection for bash! See https://github.com/Microsoft/BashOnWindows/issues/2
+			using (var process = await ProcessRunner.RunWithoutRedirection(executable, workingDir, arguments)) {
+				Console.WriteLine($"Linux analysis terminated with exit code {process.ExitCode}.");
 			}
 		}
 	}

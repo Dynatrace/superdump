@@ -149,6 +149,7 @@
     <Compile Include="Analyzers\WinDbgAnalyzer.cs" />
     <Compile Include="Analyzers\ExceptionAnalyzer.cs" />
     <Compile Include="Analyzers\TagAnalyzer.cs" />
+    <Compile Include="Analyzers\WindowsTagAnalyzer.cs" />
     <Compile Include="BasePrinter.cs" />
     <Compile Include="ClrMdExtensions.cs" />
     <Compile Include="CombinedStackTrace.cs" />
@@ -204,6 +205,7 @@
       <Name>SuperDumpModels</Name>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="..\SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

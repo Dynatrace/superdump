@@ -28,6 +28,10 @@ namespace SuperDump.Models {
 			return false;
 		}
 
+		public IEnumerable<SDModule> DistinctModules() {
+			return Modules.Distinct(new ModulePathEqualityComparer());
+		}
+
 		public override int GetHashCode() {
 			return base.GetHashCode();
 		}
@@ -53,6 +57,16 @@ namespace SuperDump.Models {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
 			});
+		}
+
+		private class ModulePathEqualityComparer : EqualityComparer<SDModule> {
+			public override bool Equals(SDModule x, SDModule y) {
+				return x.FilePath == y.FilePath;
+			}
+
+			public override int GetHashCode(SDModule obj) {
+				return obj.FilePath.GetHashCode();
+			}
 		}
 	}
 }
