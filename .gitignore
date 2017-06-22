@@ -273,3 +273,6 @@ src/SuperDumpService/wwwroot/js/site.min.js
 build/runsuperdump_appmon.cmd
 testdata/
 test-dumps/
+/tmp/opt/dynatrace/oneagent/agent/lib64/liboneagentphp.dbg
+/tmp/opt/dynatrace/oneagent/agent/lib64/liboneagentphp.dbg
+/tmp/opt/dynatrace/oneagent/agent/lib64
