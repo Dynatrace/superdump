@@ -7,6 +7,10 @@
 		<Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
 	</PropertyGroup>
 	
+	<ItemGroup>
+		<UnwindWrapperSources Include="$(RootFolder)\src\LibunwindWrapper\*.cpp;$(RootFolder)\src\LibunwindWrapper\*.h"/>
+	</ItemGroup>
+	
 	<Target Name="Rebuild">
 		<CallTarget Targets="BuildAll"/>
 	</Target>
@@ -16,8 +20,13 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
-		<MSBuild Projects="$(RootFolder)\src\LibunwindWrapper\LibunwindWrapper.vcxproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\LibunwindWrapper" Targets="Clean;Build" />
+		
+		<!-- Linux Build -->
+		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
+		<Copy SourceFiles="$(RootFolder)\src\LibunwindWrapper\Dockerfile.Linux.Base" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
+		<Exec Command="docker build -f Dockerfile.Linux -t dotstone/sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
@@ -32,8 +41,13 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x86;OutputPath=$(RootFolder)\build\bin\SuperDumpx86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
-		<MSBuild Projects="$(RootFolder)\src\LibunwindWrapper\LibunwindWrapper.vcxproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\LibunwindWrapper" Targets="Clein;Build" />
+		
+		<!-- Linux Build -->
+		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
+		<Copy SourceFiles="$(RootFolder)\src\LibunwindWrapper\Dockerfile.Linux.Base" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
+		<Exec Command="docker build -f Dockerfile.Linux -t dotstone/sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
