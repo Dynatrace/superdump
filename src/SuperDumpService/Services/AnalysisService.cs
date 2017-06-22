@@ -126,9 +126,19 @@ namespace SuperDumpService.Services {
 			Utility.ExtractExe(command, out string executable, out string arguments);
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
-			// We cannot use redirection for bash! See https://github.com/Microsoft/BashOnWindows/issues/2
-			using (var process = await ProcessRunner.RunWithoutRedirection(executable, workingDir, arguments)) {
-				Console.WriteLine($"Linux analysis terminated with exit code {process.ExitCode}.");
+			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
+				Console.WriteLine($"stdout: {process.StdOut}");
+				Console.WriteLine($"stderr: {process.StdErr}");
+				if (process.ExitCode != 0) {
+					Console.WriteLine($"Analysis failed with exit code: {process.ExitCode}");
+				}
+
+				if (process.StdOut?.Length > 0) {
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.log"), process.StdOut);
+				}
+				if (process.StdErr?.Length > 0) {
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.err.log"), process.StdErr);
+				}
 			}
 		}
 	}

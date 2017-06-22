@@ -40,5 +40,9 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 		public IFileInfo GetFile(string path) {
 			return new FileInfoAdapter(path);
 		}
+
+		public IDirectoryInfo GetDirectory(string path) {
+			return new DirectoryInfoAdapter(path);
+		}
 	}
 }
