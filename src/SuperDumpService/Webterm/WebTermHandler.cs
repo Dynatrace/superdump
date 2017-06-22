@@ -89,7 +89,8 @@ namespace SuperDump.Webterm {
 				var dumpFilePathInfo = dumpFilePath != null ? new FileInfo(dumpFilePath) : null;
 				var workingDirectory = dumpFilePathInfo?.Directory;
 
-				bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
+				var sdResult = dumpRepo.GetResult(bundleId, dumpId, out string error);
+				bool is64bit = sdResult?.SystemContext.ProcessArchitecture.Contains("64") ?? true; // default to 64 bit in case it's not known
 				ConsoleAppManager mgr = null;
 				var initialCommands = new List<string>();
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {

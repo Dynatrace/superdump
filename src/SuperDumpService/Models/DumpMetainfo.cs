@@ -15,7 +15,6 @@ namespace SuperDumpService.Models {
 		public DumpStatus Status { get; set; }
 		public string ErrorMessage { get; set; }
 		public List<SDFileEntry> Files { get; set; } = new List<SDFileEntry>();
-		public bool? Is64Bit { get; set; }
 	}
 
 	public enum DumpStatus {
