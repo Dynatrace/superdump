@@ -56,19 +56,28 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private IFileInfo GetCoreDumpFilePath(string inputFile) {
 			IFileInfo file = filesystem.GetFile(inputFile);
-			IDirectoryInfo directory = file.Directory;
-			if (!file.Exists) {
-				Console.WriteLine("Input file " + inputFile + " does not exist on the filesystem. Searching for a coredump in the directory...");
-				return FindCoredumpOrNull(directory);
-			} else if(file.Extension == ".tar" || file.Extension == ".gz" || file.Extension == ".tgz" || file.Extension == ".tar" || file.Extension == ".zip") {
-				Console.WriteLine("Extracting archives in directory " + directory);
-				ExtractArchivesInDir(directory);
-				return FindCoredumpOrNull(directory);
-			} else if (inputFile.EndsWith(".core")) {
-				return file;
+			if(file.Exists) {
+				if(file.Extension == ".core") {
+					return file;
+				} else if (file.Extension == ".tar" || file.Extension == ".gz" || file.Extension == ".tgz" || file.Extension == ".tar" || file.Extension == ".zip") {
+					IDirectoryInfo directory = file.Directory;
+					Console.WriteLine($"Extracting archives in directory {directory.FullName}");
+					ExtractArchivesInDir(directory);
+					return FindCoredumpOrNull(directory);
+				} else {
+					Console.WriteLine($"Could not identify input file {inputFile}. Assuming it is a core dump.");
+					return file;
+				}
 			} else {
-				Console.WriteLine("Failed to interpret input file. Assuming it is a core dump.");
-				return file;
+				IDirectoryInfo directory = filesystem.GetDirectory(inputFile);
+				if(directory.Exists) {
+					Console.WriteLine($"Extracting archives in directory {directory.FullName}");
+					ExtractArchivesInDir(directory);
+					return FindCoredumpOrNull(directory);
+				} else {
+					Console.WriteLine("Input file does not exist!");
+					return null;
+				}
 			}
 		}
 

@@ -11,5 +11,6 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 		void HttpContentToFile(HttpContent stream, string targetFile);
 		void WriteToFile(string filepath, string content);
 		IEnumerable<string> ReadLines(IFileInfo file);
+		IDirectoryInfo GetDirectory(string inputFile);
 	}
 }
