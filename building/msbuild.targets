@@ -23,7 +23,6 @@
 		
 		<!-- Linux Build -->
 		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
-		<Copy SourceFiles="$(RootFolder)\src\LibunwindWrapper\Dockerfile.Linux.Base" DestinationFolder="$(RootFolder)\build\bin"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
 		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux ./" WorkingDirectory="$(RootFolder)\build\bin"/>
