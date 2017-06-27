@@ -8,7 +8,7 @@ RUN apt-get update && \
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 417A0893 && \
 	apt-get update && \
 	apt-get upgrade -y && \
-	apt-get install -y build-essential gdb dotnet-dev-1.0.4 && \
+	apt-get install -y build-essential gdb dotnet-dev-1.0.4 rsync && \
 	apt-get clean
 
 RUN cd /libunwind && \
