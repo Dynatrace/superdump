@@ -45,7 +45,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string ExecIfValid(string exec) {
-			if (exec != null && filesystem.GetFile(exec).Exists) {
+			if (exec != null && exec.Trim() != "" && filesystem.GetFile(exec).Exists) {
 				return exec;
 			}
 			return null;

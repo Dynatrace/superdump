@@ -58,7 +58,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 						ImageBase = 0,
 						FileName = GetFilenameFromPath(path),
 						LocalPath = GetLocalPathFromPath(path),
-						FileSize = (uint)GetFileSizeFromPath(path)
+						FileSize = (uint)GetFileSizeForLibrary(path)
 					};
 				}
 			}
@@ -82,12 +82,15 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			return null;
 		}
 
-		private long GetFileSizeFromPath(string filepath) {
-			IFileInfo file = filesystem.GetFile(filepath);
-			if (file.Exists) {
-				return file.Length;
+		private long GetFileSizeForLibrary(string filepath) {
+			IFileInfo file = filesystem.GetFile($".{filepath}");
+			if (!file.Exists) {
+				file = filesystem.GetFile(filepath);
+				if(!file.Exists) {
+					return 0;
+				}
 			}
-			return 0;
+			return file.Length;
 		}
 	}
 }
