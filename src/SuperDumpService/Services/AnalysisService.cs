@@ -129,15 +129,18 @@ namespace SuperDumpService.Services {
 			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
 				Console.WriteLine($"stdout: {process.StdOut}");
 				Console.WriteLine($"stderr: {process.StdErr}");
-				if (process.ExitCode != 0) {
-					Console.WriteLine($"Analysis failed with exit code: {process.ExitCode}");
-				}
 
 				if (process.StdOut?.Length > 0) {
 					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.log"), process.StdOut);
 				}
 				if (process.StdErr?.Length > 0) {
 					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.err.log"), process.StdErr);
+				}
+
+				if (process.ExitCode != 0) {
+					string error = $"Analysis failed with exit code {process.ExitCode}. See log files for more details.";
+					Console.WriteLine(error);
+					throw new Exception(error);
 				}
 			}
 		}
