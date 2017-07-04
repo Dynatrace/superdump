@@ -3,6 +3,7 @@ using SuperDump.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
@@ -26,9 +27,19 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			try {
 				using (ProcessStreams stream = processHandler.StartProcessAndReadWrite("gdb", "")) {
 					Console.WriteLine("Starting gdb");
-					WorkWithGdb(stream.Input);
+					Task<string> outReader = stream.Output.ReadToEndAsync();
+					Task<string> errReader = stream.Error.ReadToEndAsync();
+					SendCommandsToGdb(stream.Input);
+					if(!outReader.Wait(TimeSpan.FromMinutes(2))) {
+						// 2 minutes is very long for gdb (usually finishes in a few seconds even for dumps with >>100 threads)
+						Console.WriteLine("GDB parsing timed out! Skipping GDB analysis.");
+						return;
+					}
+					string output = outReader.Result;
+					errReader.Wait(TimeSpan.FromSeconds(5));
+					string error = errReader.Result;
 					Console.WriteLine("Parsing gdb output");
-					AnalyzeGdbOutput(stream.Output, stream.Error);
+					AnalyzeGdbOutput(output, error);
 					Console.WriteLine("Finished gdb parsing");
 				}
 			} catch (ProcessStartFailedException e) {
@@ -37,7 +48,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 		}
 
-		private void WorkWithGdb(StreamWriter input) {
+		private void SendCommandsToGdb(StreamWriter input) {
 			input.WriteLine("set solib-absolute-prefix .");	// load all libraries from the current directory
 															// this is especially important because gdb unwinding must match libunwind
 			string mainExecutable = ((SDCDSystemContext)analysisResult.SystemContext).FileName;
@@ -63,19 +74,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			input.WriteLine("q");
 		}
 
-		private void AnalyzeGdbOutput(StreamReader output, StreamReader error) {
-			string gdbOut = "";
-			while (!output.EndOfStream) {
-				gdbOut += output.ReadLine() + Environment.NewLine;
-			}
+		private void AnalyzeGdbOutput(string gdbOut, string gdbErr) {
 			if (gdbOut.Length > 0) {
 				filesystem.WriteToFile(GDB_OUT_FILE, gdbOut);
 			}
 
-			string gdbErr = "";
-			while (!error.EndOfStream) {
-				gdbErr += error.ReadLine() + Environment.NewLine;
-			}
 			if (gdbErr.Length > 0) {
 				filesystem.WriteToFile(GDB_ERR_FILE, gdbErr.Trim());
 			}
