@@ -42,6 +42,6 @@ public:
 	unsigned long getSignalAddress(int thread_no);
 	const char* getFileName();
 	const char* getArgs();
-
+	const int is64Bit();
 };
 

@@ -187,6 +187,30 @@ const char* LibunwindWrapper::getArgs() {
 	return tmp;
 }
 
+const int LibunwindWrapper::is64Bit() {
+	// read EI_CLASS from ELF identification
+	ifstream input(filepath, ios::binary);
+	char ei_class;
+	// skip ELF identification
+	input.ignore(4);
+	// read 5th byte -> EI_CLASS
+	input.read(&ei_class, 1);
+	if (ei_class == 0) {
+		printf("ei_class is set to invalid class! No platform type available!\n");
+		return -1;
+	}
+	else if (ei_class == 1) {
+		return 0;
+	}
+	else if (ei_class == 2) {
+		return 1;
+	}
+	else {
+		printf("Invalid ei_class value %d! Not an ELF file?\n", ei_class);
+		return -1;
+	}
+}
+
 void demangle(char* procName, char* dest, int length) {
 	int status;
 	char* demangled = abi::__cxa_demangle(procName, NULL, 0, &status);

@@ -91,6 +91,10 @@ MYAPI const char* getArgs() {
 	return wrapper->getArgs();
 }
 
+MYAPI int is64Bit() {
+	return wrapper->is64Bit();
+}
+
 MYAPI void destroy() {
 	delete wrapper;
 }
