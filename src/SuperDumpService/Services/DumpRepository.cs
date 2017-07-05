@@ -119,8 +119,10 @@ namespace SuperDumpService.Services {
 		internal void SetDumpStatus(string bundleId, string dumpId, DumpStatus status, string errorMessage = null) {
 			var dumpInfo = Get(bundleId, dumpId);
 			dumpInfo.Status = status;
-			if (!string.IsNullOrEmpty(errorMessage)) {
-				dumpInfo.ErrorMessage = errorMessage;
+			dumpInfo.ErrorMessage = errorMessage;
+			if(status == DumpStatus.Analyzing) {
+				dumpInfo.Started = DateTime.Now;
+				dumpInfo.Finished = DateTime.MinValue;
 			}
 			if (status == DumpStatus.Finished || status == DumpStatus.Failed) {
 				dumpInfo.Finished = DateTime.Now;
