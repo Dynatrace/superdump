@@ -44,6 +44,8 @@ Demo-Video: https://youtu.be/XdyDjkW8MDk
 
 Demo-Deployment: http://superdump-demo.azurewebsites.net (older version though)
 
+Slides about SuperDump (explaining some of the architecture): https://www.slideshare.net/ChristophNeumller/large-scale-crash-dump-analysis-with-superdump
+
 Technologies
 ============
  * [CLRMD] for analysis.
