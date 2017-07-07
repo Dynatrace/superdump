@@ -11,15 +11,18 @@ using Microsoft.Extensions.Options;
 using System.IO;
 using SuperDumpService.Helpers;
 using System.Net;
+using SuperDump.Models;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
 		private Dictionary<string, ConsoleAppManager> socketIdToProcess = new Dictionary<string, ConsoleAppManager>();
 		private Dictionary<ConsoleAppManager, string> processToSocketId = new Dictionary<ConsoleAppManager, string>();
+		private SuperDumpRepository superdumpRepo;
 		private DumpRepository dumpRepo;
 		private IOptions<SuperDumpSettings> settings;
 
-		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) : base(webSocketConnectionManager) {
+		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager, SuperDumpRepository superdumpRepo, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) : base(webSocketConnectionManager) {
+			this.superdumpRepo = superdumpRepo;
 			this.dumpRepo = dumpRepo;
 			this.settings = settings;
 		}
@@ -47,6 +50,12 @@ namespace SuperDump.Webterm {
 		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
 			string command = settings.Value.LinuxInteractiveCommand;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
+
+			SDResult result = superdumpRepo.GetResult(bundleId, dumpId, out string error);
+			if (result != null) {
+				command = command.Replace("{execname}", (result.SystemContext as SDCDSystemContext)?.FileName);
+				command = command.Replace("{coredump}", (result.SystemContext as SDCDSystemContext)?.DumpFileName);
+			}
 			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
