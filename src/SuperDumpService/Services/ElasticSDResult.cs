@@ -25,6 +25,14 @@ namespace SuperDumpService.Services {
 			};
 			bundleInfo.CustomProperties.TryGetValue("ref", out string reference);
 			eResult.Reference = reference;
+
+			if (dumpInfo.Finished != null && dumpInfo.Started != null) {
+				int durationSecs = (int)dumpInfo.Finished.Subtract(dumpInfo.Started).TotalSeconds;
+				if (durationSecs > 0) {
+					// Only if a valid duration is present
+					eResult.AnalyzationDuration = durationSecs;
+				}
+			}
 			return eResult;
 		}
 
@@ -44,6 +52,8 @@ namespace SuperDumpService.Services {
 		public string Type { get; set; }
 		[Keyword(Name="ref")]
 		public string Reference { get; set; }
+		[Number(Name = "analyzationDurationSecs")]
+		public int? AnalyzationDuration { get; set; }
 		
 		// Dump Information
 		[Keyword(Name="executable")]
