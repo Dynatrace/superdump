@@ -21,17 +21,27 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
 		}
 
-		public async Task AnalyzeAsync(string inputFile, string outputFile) {
+		public IFileInfo Prepare(string inputFile) {
 			IFileInfo coredump = GetCoreDumpFilePath(inputFile);
 			if (coredump == null) {
 				Console.WriteLine("No core dump found.");
-				// TODO write empty json?
+				return null;
+			}
+			Console.WriteLine($"Dump preparation finished for coredump: {coredump}");
+			return coredump;
+		}
+
+		public async Task AnalyzeAsync(string inputFile, string outputFile) {
+			IFileInfo coredump = Prepare(inputFile);
+			if (coredump == null) {
+				// TODO write error into output file
 				return;
 			}
 			Console.WriteLine($"Processing core dump file: {coredump}");
 
 			SDResult analysisResult = new SDResult();
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
+			(analysisResult.SystemContext as SDCDSystemContext).DumpFileName = coredump.FullName;
 			Console.WriteLine("Retrieving shared libraries ...");
 			await new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync();
 			Console.WriteLine("Finding executable file ...");

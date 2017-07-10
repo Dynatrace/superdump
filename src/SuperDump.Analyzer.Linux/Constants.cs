@@ -4,7 +4,7 @@
 
 		public const string DEBUG_SYMBOL_URL_PATTERN = "http://dbg-ruxit.dynatrace.vmta/{hash}/{file}";
 
-		public const string DEBUG_SYMBOL_PATH = "../../../debug/";
+		public const string DEBUG_SYMBOL_PATH = "/debugsymbols";
 
 		public const string SUMMARY_TXT = "summary.txt";
 	}

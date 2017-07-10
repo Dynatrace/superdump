@@ -25,7 +25,7 @@
 		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
-		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux ./" WorkingDirectory="$(RootFolder)\build\bin"/>
+		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
@@ -46,7 +46,7 @@
 		<Copy SourceFiles="$(RootFolder)\src\LibunwindWrapper\Dockerfile.Linux.Base" DestinationFolder="$(RootFolder)\build\bin"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
-		<Exec Command="docker build -f Dockerfile.Linux -t dotstone/sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
+		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
 		
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="Configuration=$(Configuration);Platform=x86" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpService\SuperDumpService.csproj" Properties="DeployOnBuild=true;PublishProfile=FolderProfile" />
