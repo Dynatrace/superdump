@@ -67,6 +67,7 @@ Build
    * .NET Core Tooling 1.0
    * .NET Core 1.1.1
    * .NET Framework 4.6
+   * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
    * DebugDiag (for automatic DebugDiag analysis)
    * Windows Debugging Tools (`cdb.exe`) (optional, for interactive mode)
