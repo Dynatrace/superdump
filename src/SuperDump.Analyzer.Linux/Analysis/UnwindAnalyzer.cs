@@ -90,7 +90,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private SDCDSystemContext SetContextFields(SDCDSystemContext context) {
 			context.ProcessArchitecture = "N/A";
 			context.SystemUpTime = "Could not be obtained.";
-			context.Modules = new List<SDModule>();
 			context.AppDomains = new List<SDAppDomain>();
 			context.ClrVersions = new List<SDClrVersion>();
 			Console.WriteLine("Retrieving filename and args ...");
