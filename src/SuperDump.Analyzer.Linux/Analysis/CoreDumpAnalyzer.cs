@@ -41,6 +41,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 			SDResult analysisResult = new SDResult();
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
+			(analysisResult.SystemContext as SDCDSystemContext).DumpFileName = coredump.FullName;
 			Console.WriteLine("Retrieving shared libraries ...");
 			await new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync();
 			Console.WriteLine("Finding executable file ...");
