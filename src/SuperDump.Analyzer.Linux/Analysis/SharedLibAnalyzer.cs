@@ -28,8 +28,12 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public async Task AnalyzeAsync() {
+			SDCDSystemContext context = (analysisResult.SystemContext as SDCDSystemContext);
+			if (context == null) {
+				context = new SDCDSystemContext();
+				analysisResult.SystemContext = context;
+			}
 			using (var readelf = await ProcessRunner.Run("readelf", new DirectoryInfo(coredump.DirectoryName), "-n", coredump.FullName)) {
-				SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
 				context.Modules = RetrieveLibsFromReadelfOutput(readelf.StdOut).ToList();
 			}
 		}

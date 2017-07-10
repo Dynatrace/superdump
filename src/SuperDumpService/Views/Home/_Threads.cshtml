@@ -181,12 +181,12 @@
 												</td>
 											}
 											<td class="nobreak stackvariables">
-												@if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
+												@if (frame is SuperDumpModels.SDCDCombinedStackFrame) {
 													<table>
-														@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).Args) {
 															<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
 														}
-														@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).Locals) {
 															<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
 														}
 													</table>

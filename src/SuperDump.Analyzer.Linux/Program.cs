@@ -3,6 +3,8 @@
 using SuperDump.Analyzer.Linux.Boundary;
 using SuperDump.Analyzer.Linux.Analysis;
 using System.Collections.Generic;
+using SuperDump.Common;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux {
 	public class Program {
@@ -13,22 +15,22 @@ namespace SuperDump.Analyzer.Linux {
 		private static readonly IProcessHandler processHandler = new ProcessHandler();
 		private static readonly IHttpRequestHandler requestHandler = new HttpRequestHandler(filesystem);
 
-		public static void Main(string[] args) {
+		public static int Main(string[] args) {
 			Console.WriteLine("SuperDump - Dump analysis tool");
 			Console.WriteLine("--------------------------");
 			var (arguments,options) = GetCommands(args);
 			if(options.Contains("-prepare")) {
 				if (arguments.Count < 1 || arguments.Count > 2) {
 					Console.WriteLine($"Invalid argument count! {EXPECTED_COMMAND}");
-					return;
+					return LinuxAnalyzerExitCode.InvalidArguments.Code;
 				}
-				Prepare(arguments[0]);
+				return Prepare(arguments[0]).Code;
 			} else {
 				if(arguments.Count != 2) {
 					Console.WriteLine($"Invalid argument count! {EXPECTED_COMMAND}");
-					return;
+					return LinuxAnalyzerExitCode.InvalidArguments.Code;
 				}
-				RunAnalysis(arguments[0], arguments[1]);
+				return RunAnalysis(arguments[0], arguments[1]).Code;
 			}
 		}
 
@@ -45,12 +47,15 @@ namespace SuperDump.Analyzer.Linux {
 			return (commands, options);
 		}
 
-		private static void RunAnalysis(string input, string output) {
-			new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).AnalyzeAsync(input, output).Wait();
+		private static LinuxAnalyzerExitCode RunAnalysis(string input, string output) {
+			var analysis = new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).AnalyzeAsync(input, output);
+			analysis.Wait();
+			return analysis.Result;
 		}
 
-		private static void Prepare(string input) {
-			new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).Prepare(input);
+		private static LinuxAnalyzerExitCode Prepare(string input) {
+			IFileInfo file = new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).Prepare(input);
+			return file == null ? LinuxAnalyzerExitCode.NoCoredumpFound : LinuxAnalyzerExitCode.Success;
 		}
 	}
 }

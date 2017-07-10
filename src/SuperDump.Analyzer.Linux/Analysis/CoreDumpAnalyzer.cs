@@ -6,6 +6,7 @@ using System.Linq;
 using SuperDump.Analyzer.Linux.Boundary;
 using System.Threading.Tasks;
 using SuperDump.Analyzer.Common;
+using SuperDump.Common;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalyzer {
@@ -31,19 +32,23 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			return coredump;
 		}
 
-		public async Task AnalyzeAsync(string inputFile, string outputFile) {
+		public async Task<LinuxAnalyzerExitCode> AnalyzeAsync(string inputFile, string outputFile) {
 			IFileInfo coredump = Prepare(inputFile);
 			if (coredump == null) {
-				// TODO write error into output file
-				return;
+				return LinuxAnalyzerExitCode.NoCoredumpFound;
 			}
 			Console.WriteLine($"Processing core dump file: {coredump}");
 
 			SDResult analysisResult = new SDResult();
-			new UnwindAnalyzer(coredump, analysisResult).Analyze();
-			(analysisResult.SystemContext as SDCDSystemContext).DumpFileName = coredump.FullName;
 			Console.WriteLine("Retrieving shared libraries ...");
 			await new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync();
+			if((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
+				Console.WriteLine("Failed to extract shared libraries from core dump. Terminating because further analysis will not make sense.");
+				return LinuxAnalyzerExitCode.FileNoteMissing;
+			} else {
+				Console.WriteLine($"Detected {analysisResult.SystemContext.Modules.Count} shared libraries.");
+			}
+			new UnwindAnalyzer(coredump, analysisResult).Analyze();
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult.SystemContext as SDCDSystemContext).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
@@ -62,6 +67,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			   .Analyze();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());
 			Console.WriteLine("Finished coredump analysis.");
+			return LinuxAnalyzerExitCode.Success;
 		}
 
 		private IFileInfo GetCoreDumpFilePath(string inputFile) {

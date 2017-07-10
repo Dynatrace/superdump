@@ -6,7 +6,7 @@
 		<!--anomalies-->
 		@{bool noAnomalies = true;}
 		@if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
-			<h5>Process was started with: <b>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Args)</b></h5>
+			<h5>Process was started with: <b>@((Model.Result.SystemContext as SuperDump.Models.SDCDSystemContext)?.Args)</b></h5>
 		}
 		@if (Model.Result.LastEvent != null) {
 			noAnomalies = false;
