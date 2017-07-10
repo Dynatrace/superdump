@@ -35,7 +35,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		public async Task<LinuxAnalyzerExitCode> AnalyzeAsync(string inputFile, string outputFile) {
 			IFileInfo coredump = Prepare(inputFile);
 			if (coredump == null) {
-				// TODO write error into output file
 				return LinuxAnalyzerExitCode.NoCoredumpFound;
 			}
 			Console.WriteLine($"Processing core dump file: {coredump}");
