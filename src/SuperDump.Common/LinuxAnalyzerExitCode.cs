@@ -23,10 +23,11 @@ namespace SuperDump.Common {
 		public static readonly LinuxAnalyzerExitCode UnknownCode = new LinuxAnalyzerExitCode(-1, "An unknown error occurred during the analysis. Please check the log files for more details.");
 
 		public static explicit operator LinuxAnalyzerExitCode(int code) {
-			if (instance.TryGetValue(code, out LinuxAnalyzerExitCode result))
+			if (instance.TryGetValue(code, out LinuxAnalyzerExitCode result)) {
 				return result;
-			else
+			} else {
 				return UnknownCode;
+			}
 		}
 	}
 }
