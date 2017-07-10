@@ -17,25 +17,31 @@ namespace SuperDumpService.Services {
 			if (Utility.IsLocalFile(url) && IsAlreadyInUploadsDir(url)) {
 				return new TempDirectoryHandle(new DirectoryInfo(Path.GetDirectoryName(url)));
 			} else {
-				var tempDir = new TempDirectoryHandle(FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir())));
-				tempDir.Dir.Create();
-				var tempPath = new FileInfo(Path.Combine(tempDir.Dir.FullName, Path.GetFileName(filename)));
+				DirectoryInfo dir = FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir()));
+				dir.Create();
+				var file = new FileInfo(Path.Combine(dir.FullName, Path.GetFileName(filename)));
 
-				if (Utility.IsLocalFile(url)) {
-					await Utility.CopyFile(new FileInfo(url), tempPath);
-				} else {
-					// download
-					using (var client = new HttpClient()) {
-						using (var download = await client.GetAsync(url)) {
-							using (var stream = await download.Content.ReadAsStreamAsync()) {
-								using (var outfile = File.OpenWrite(tempPath.FullName)) {
-									await stream.CopyToAsync(outfile);
+				try {
+					if (Utility.IsLocalFile(url)) {
+						await Utility.CopyFile(new FileInfo(url), file);
+					} else {
+						// download
+						using (var client = new HttpClient()) {
+							using (var download = await client.GetAsync(url)) {
+								using (var stream = await download.Content.ReadAsStreamAsync()) {
+									using (var outfile = File.OpenWrite(file.FullName)) {
+										await stream.CopyToAsync(outfile);
+									}
 								}
 							}
 						}
 					}
+				} catch(Exception e) {
+					Console.WriteLine($"Failed to download file from {url}. Deleting the download directory ...");
+					dir.Delete(true);
+					throw e;
 				}
-				return tempDir;
+				return new TempDirectoryHandle(dir);
 			}
 		}
 
