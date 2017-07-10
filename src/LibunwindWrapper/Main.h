@@ -40,6 +40,8 @@ MYAPI const char* getFileName();
 
 MYAPI const char* getArgs();
 
+MYAPI int is64Bit();
+
 MYAPI void destroy();
 
 #ifdef __cplusplus

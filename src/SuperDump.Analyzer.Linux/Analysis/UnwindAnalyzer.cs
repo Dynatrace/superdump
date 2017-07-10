@@ -58,6 +58,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		[DllImport(Constants.WRAPPER)]
 		private static extern string getArgs();
+		[DllImport(Constants.WRAPPER)]
+		private static extern int is64Bit();
 
 		[DllImport(Constants.WRAPPER)]
 		private static extern void destroy();
@@ -208,6 +210,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void SetAuxvFields(SDCDSystemContext context) {
+			// get system architecture directly from the header instead of using libunwind
+			// currently, libunwind only works for 64bit dumps.
+			context.SystemArchitecture = GetSystemArchitecture();
 			context.PageSize = (int)getAuxvValue(AuxType.PAGE_SIZE.Type);
 			context.EntryPoint = getAuxvValue(AuxType.ENTRY_POINT.Type);
 			context.BasePlatform = getAuxvString(AuxType.BASE_PLATFORM.Type);
@@ -215,7 +220,18 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			context.Euid = (int)getAuxvValue(AuxType.EUID.Type);
 			context.Gid = (int)getAuxvValue(AuxType.GID.Type);
 			context.Egid = (int)getAuxvValue(AuxType.EGID.Type);
-			context.SystemArchitecture = getAuxvString(AuxType.PLATFORM.Type);
+		}
+
+		private string GetSystemArchitecture() {
+			int arch = is64Bit();
+			if(arch == 0) {
+				return "x86";
+			} else if(arch == 1) {
+				return "Amd64";
+			} else {
+				Console.WriteLine($"Invalid system architecture {arch}!");
+				return "N/A";
+			}
 		}
 	}
 }
