@@ -4,6 +4,7 @@ using SuperDump.Analyzer.Linux.Boundary;
 using SuperDump.Analyzer.Linux.Analysis;
 using System.Collections.Generic;
 using SuperDump.Common;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux {
 	public class Program {
@@ -23,15 +24,14 @@ namespace SuperDump.Analyzer.Linux {
 					Console.WriteLine($"Invalid argument count! {EXPECTED_COMMAND}");
 					return LinuxAnalyzerExitCode.InvalidArguments.Code;
 				}
-				Prepare(arguments[0]);
+				return Prepare(arguments[0]).Code;
 			} else {
 				if(arguments.Count != 2) {
 					Console.WriteLine($"Invalid argument count! {EXPECTED_COMMAND}");
-					return (int) LinuxAnalyzerExitCode.InvalidArguments.Code;
+					return LinuxAnalyzerExitCode.InvalidArguments.Code;
 				}
 				return RunAnalysis(arguments[0], arguments[1]).Code;
 			}
-			return 1;
 		}
 
 		public static (IList<string>,IList<string>) GetCommands(string[] args) {
@@ -53,8 +53,9 @@ namespace SuperDump.Analyzer.Linux {
 			return analysis.Result;
 		}
 
-		private static void Prepare(string input) {
-			new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).Prepare(input);
+		private static LinuxAnalyzerExitCode Prepare(string input) {
+			IFileInfo file = new CoreDumpAnalyzer(archiveHandler, filesystem, processHandler, requestHandler).Prepare(input);
+			return file == null ? LinuxAnalyzerExitCode.NoCoredumpFound : LinuxAnalyzerExitCode.Success;
 		}
 	}
 }
