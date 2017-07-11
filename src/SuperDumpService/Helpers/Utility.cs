@@ -12,6 +12,7 @@ using System.Reflection;
 using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -175,6 +176,14 @@ namespace SuperDumpService.Helpers {
 				.ToList();
 			executable = parts.First();
 			arguments = string.Join(" ", parts.Skip(1).ToArray());
+		}
+
+		public static string Md5ForFile(FileInfo file) {
+			using (var md5 = MD5.Create()) {
+				using (var stream = File.OpenRead(file.FullName)) {
+					return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "‌​").ToLower();
+				}
+			}
 		}
 	}
 

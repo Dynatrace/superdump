@@ -12,9 +12,11 @@ namespace SuperDumpService.Models {
 		public BundleStatus Status { get; set; }
 		public Dictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
 		public string ErrorMessage { get; set; }
+		public string FileHash { get; set; }
+		public string OriginalBundleId { get; set; }
 	}
 
 	public enum BundleStatus {
-		Created, Downloading, Analyzing, Finished, Failed
+		Created, Downloading, Analyzing, Finished, Failed, Duplication
 	}
 }

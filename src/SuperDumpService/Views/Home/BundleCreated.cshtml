@@ -7,6 +7,11 @@
 @if (Model.Status == SuperDumpService.Models.BundleStatus.Failed) {
 	<h4>Bundle failed...</h4>
 	<pre>@Model.ErrorMessage</pre>
+}  else if (Model.Status == SuperDumpService.Models.BundleStatus.Duplication) {
+	<h4>This dump was already analyzed. You'll be redirected to the original dump.</h4>
+	<script>
+		window.location.replace("/Home/BundleCreated?bundleId=@Model.OriginalBundleId");
+	</script>
 } else if (Model.Status != SuperDumpService.Models.BundleStatus.Finished) {
 	<h4>..hang tight, bundle gets created..</h4>
 	<script>
