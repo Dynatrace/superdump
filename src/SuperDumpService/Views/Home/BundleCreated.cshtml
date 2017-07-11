@@ -10,7 +10,9 @@
 }  else if (Model.Status == SuperDumpService.Models.BundleStatus.Duplication) {
 	<h4>This dump was already analyzed. You'll be redirected to the original dump.</h4>
 	<script>
-		window.location.replace("/Home/BundleCreated?bundleId=@Model.OriginalBundleId");
+		setTimeout(function () {
+			window.location.replace("/Home/BundleCreated?bundleId=@Model.OriginalBundleId");
+		}, 3000)
 	</script>
 } else if (Model.Status != SuperDumpService.Models.BundleStatus.Finished) {
 	<h4>..hang tight, bundle gets created..</h4>
