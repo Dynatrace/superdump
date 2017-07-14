@@ -55,7 +55,7 @@ Technologies
  * [ASP.NET Core] and [Razor] for web-frontend and api.
  * [Hangfire] for task scheduling.
  * [websocket-manager] for in-browser terminal session for interactive WinDbg/Gdb session.
- * [Docker for Windows], [libunwind] and [gbd] for Linux analysis.
+ * [Docker for Windows], [libunwind] and [gdb] for Linux analysis.
  
  [CLRMD]: https://github.com/Microsoft/clrmd
  [ASP.NET Core]: https://github.com/aspnet/Home
