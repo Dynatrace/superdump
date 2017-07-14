@@ -42,6 +42,7 @@ Features
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
 <a href="doc/img/managedexception.png"><img src="doc/img/managedexception.png" title="managed exception" width="200"/></a>
+
 Demo
 ============
 Demo-Video: https://youtu.be/XdyDjkW8MDk
@@ -64,6 +65,8 @@ Technologies
  [Docker for Windows]: https://docs.docker.com/docker-for-windows/
  [gdb]: https://www.gnu.org/software/gdb/
  [libunwind]: http://www.nongnu.org/libunwind/
+ 
+ <a href="doc/img/superdump-architecture.png"><img src="doc/img/superdump-architecture.png" title="managed exception" width="200"/></a>
 
 Build
 =====
