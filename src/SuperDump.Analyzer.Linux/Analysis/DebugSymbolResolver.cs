@@ -12,10 +12,12 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private readonly IFilesystem filesystem;
 		private readonly IHttpRequestHandler requestHandler;
+		private readonly IProcessHandler processHandler;
 
-		public DebugSymbolResolver(IFilesystem filesystem, IHttpRequestHandler requestHandler) {
+		public DebugSymbolResolver(IFilesystem filesystem, IHttpRequestHandler requestHandler, IProcessHandler processHandler) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem Helper must not be null!");
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
+			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 		}
 
 		public void Resolve(IList<SDModule> libs) {
@@ -56,10 +58,10 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		/// </summary>
 		private async Task UnstripLibrary(SDCDModule module, string hash) {
 			if (IsDebugFileAvailable(module, hash)) {
-				File.Move(module.LocalPath, module.LocalPath + ".old");
-				using (var readelf = await ProcessRunner.Run("eu-unstrip", new DirectoryInfo("/opt/dump"), $"-o {module.LocalPath}", module.LocalPath + ".old", DebugFilePath(module.LocalPath, hash))) {
-				}
-				File.Delete(module.LocalPath + ".old");
+				filesystem.Move(module.LocalPath, module.LocalPath + ".old");
+				await processHandler.ExecuteProcessAndGetOutputAsync("eu-unstrip",
+					$"-o {module.LocalPath} {module.LocalPath}.old {DebugFilePath(module.LocalPath, hash)}");
+				filesystem.Delete(module.LocalPath + ".old");
 			}
 		}
 

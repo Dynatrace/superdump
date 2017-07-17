@@ -48,7 +48,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			} else {
 				Console.WriteLine($"Detected {analysisResult.SystemContext.Modules.Count} shared libraries.");
 			}
-			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
+			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
 			Console.WriteLine("Finding executable file ...");
