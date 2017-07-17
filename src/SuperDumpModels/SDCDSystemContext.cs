@@ -18,7 +18,5 @@ namespace SuperDump.Models {
 
 		public string FileName { get; set; } = "";
 		public string Args { get; set; } = "";
-		public string DumpFileName { get; set; }
-
 	}
 }
