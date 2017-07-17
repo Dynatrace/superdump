@@ -17,6 +17,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 		private DebugSymbolResolver resolver;
 		private Mock<IFilesystem> filesystem;
 		private Mock<IHttpRequestHandler> requestHandler;
+		private Mock<IProcessHandler> processHandler;
 
 		private List<SDModule> modules;
 		private SDCDModule module;
@@ -25,7 +26,8 @@ namespace SuperDump.Analyzer.Linux.Test {
 		public void Init() {
 			this.filesystem = new Mock<IFilesystem>();
 			this.requestHandler = new Mock<IHttpRequestHandler>();
-			this.resolver = new DebugSymbolResolver(filesystem.Object, requestHandler.Object);
+			this.processHandler = new Mock<IProcessHandler>();
+			this.resolver = new DebugSymbolResolver(filesystem.Object, requestHandler.Object, processHandler.Object);
 
 			this.modules = new List<SDModule>();
 			this.module = new SDCDModule() {
@@ -63,6 +65,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
 			AssertNoRequestsMade();
+			processHandler.Verify(p => p.ExecuteProcessAndGetOutputAsync("eu-unstrip", $"-o ./lib/ruxit/somelib.so ./lib/ruxit/somelib.so.old /debugsymbols{Path.DirectorySeparatorChar}some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"));
 		}
 
 		[TestMethod]

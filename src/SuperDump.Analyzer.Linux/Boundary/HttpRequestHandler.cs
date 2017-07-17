@@ -15,7 +15,7 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			HttpClient httpClient = new HttpClient();
 			HttpResponseMessage response = await httpClient.GetAsync(url);
 			if (response.IsSuccessStatusCode) {
-				filesystem.HttpContentToFile(response.Content, targetFile);
+				await filesystem.HttpContentToFile(response.Content, targetFile);
 				return true;
 			}
 			return false;
