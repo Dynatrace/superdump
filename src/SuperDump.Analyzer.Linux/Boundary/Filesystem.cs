@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Thinktecture.IO;
 using Thinktecture.IO.Adapters;
 
@@ -22,10 +23,10 @@ namespace SuperDump.Analyzer.Linux.Boundary {
 			}
 		}
 
-		public void HttpContentToFile(HttpContent inputstream, string filepath) {
+		public async Task HttpContentToFile(HttpContent inputstream, string filepath) {
 			Directory.CreateDirectory(Path.GetDirectoryName(filepath));
 			using (FileStream stream = new FileStream(filepath, FileMode.Create, FileAccess.Write, FileShare.None)) {
-				inputstream.CopyToAsync(stream);
+				await inputstream.CopyToAsync(stream);
 			}
 		}
 
