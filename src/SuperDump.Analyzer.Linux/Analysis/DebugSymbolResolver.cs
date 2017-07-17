@@ -1,4 +1,5 @@
 ﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Common;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
@@ -45,6 +46,20 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				} else {
 					await DownloadDebugSymbolsAsync(module, hash);
 				}
+
+				await UnstripLibrary(module, hash);
+			}
+		}
+
+		/// <summary>
+		/// Overrides the original *.so with the unstripped binary
+		/// </summary>
+		private async Task UnstripLibrary(SDCDModule module, string hash) {
+			if (IsDebugFileAvailable(module, hash)) {
+				File.Move(module.LocalPath, module.LocalPath + ".old");
+				using (var readelf = await ProcessRunner.Run("eu-unstrip", new DirectoryInfo("/opt/dump"), $"-o {module.LocalPath}", module.LocalPath + ".old", DebugFilePath(module.LocalPath, hash))) {
+				}
+				File.Delete(module.LocalPath + ".old");
 			}
 		}
 
