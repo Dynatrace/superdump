@@ -17,10 +17,6 @@ namespace SuperDumpModels {
 		public IDictionary<string, string> Locals { get; } = new Dictionary<string, string>();
 		public IDictionary<string, string> Args { get; } = new Dictionary<string, string>();
 
-		public bool HasStackInfo() {
-			return Locals.Count > 0 || Args.Count > 0;
-		}
-
 		/// <summary>
 		/// Split the values (= stack contents) by hex numbers. This is a dirty hack to enable gdb links in the UI.
 		/// The number of items in the returned dictionary must always be uneven.
