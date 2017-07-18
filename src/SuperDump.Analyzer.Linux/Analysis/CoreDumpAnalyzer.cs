@@ -23,17 +23,28 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public IFileInfo Prepare(string inputFile) {
-			IFileInfo coredump = GetCoreDumpFilePath(inputFile);
+			IFileInfo coredump = GetCoreDumpFile(inputFile);
 			if (coredump == null) {
 				Console.WriteLine("No core dump found.");
 				return null;
 			}
+
+			SDResult analysisResult = new SDResult();
+			Console.WriteLine("Retrieving shared libraries ...");
+			new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync().Wait();
+			if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
+				Console.WriteLine("Failed to extract shared libraries from core dump.");
+				return null;
+			}
+			Console.WriteLine("Resolving debug symbols ...");
+			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
+
 			Console.WriteLine($"Dump preparation finished for coredump: {coredump}");
 			return coredump;
 		}
 
 		public async Task<LinuxAnalyzerExitCode> AnalyzeAsync(string inputFile, string outputFile) {
-			IFileInfo coredump = Prepare(inputFile);
+			IFileInfo coredump = GetCoreDumpFile(inputFile);
 			if (coredump == null) {
 				return LinuxAnalyzerExitCode.NoCoredumpFound;
 			}
@@ -48,8 +59,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			} else {
 				Console.WriteLine($"Detected {analysisResult.SystemContext.Modules.Count} shared libraries.");
 			}
-			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Resolving debug symbols ...");
+			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
+			Console.WriteLine("Unwinding stacktraces ...");
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult.SystemContext as SDCDSystemContext).Analyze();
@@ -70,7 +82,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			return LinuxAnalyzerExitCode.Success;
 		}
 
-		private IFileInfo GetCoreDumpFilePath(string inputFile) {
+		private IFileInfo GetCoreDumpFile(string inputFile) {
 			IFileInfo file = filesystem.GetFile(inputFile);
 			if(file.Exists) {
 				if(file.Extension == ".core") {

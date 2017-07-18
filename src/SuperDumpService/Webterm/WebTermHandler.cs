@@ -12,6 +12,7 @@ using System.IO;
 using SuperDumpService.Helpers;
 using System.Net;
 using SuperDump.Models;
+using SuperDumpService.Models;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
@@ -54,9 +55,17 @@ namespace SuperDump.Webterm {
 			SDResult result = superdumpRepo.GetResult(bundleId, dumpId, out string error);
 			if (result != null) {
 				command = command.Replace("{execname}", (result.SystemContext as SDCDSystemContext)?.FileName);
-				command = command.Replace("{coredump}", (result.SystemContext as SDCDSystemContext)?.DumpFileName);
+				command = command.Replace("{coredump}", GetCoreDumpPath(bundleId, dumpId));
 			}
 			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
+		}
+
+		private string GetCoreDumpPath(string bundleId, string dumpId) {
+			string dumpFilename = Path.GetFileName(dumpRepo.GetDumpFilePath(bundleId, dumpId));
+			if (dumpFilename.EndsWith(".gz")) {
+				dumpFilename = dumpFilename.Substring(0, dumpFilename.Length - 3);
+			}
+			return dumpFilename;
 		}
 
 		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command, string bundleId, string dumpId) {
