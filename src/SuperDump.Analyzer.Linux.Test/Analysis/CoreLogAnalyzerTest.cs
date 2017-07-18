@@ -32,7 +32,8 @@ namespace SuperDump.Analyzer.Linux.Test.Analysis {
 		public void Init() {
 			module = new SDCDModule() {
 				Version = DEFAULT_MODULE_VERSION,
-				FileName = MODULE_FILENAME
+				FileName = MODULE_FILENAME,
+				FilePath = MODULE_FILENAME
 			};
 			modules = new List<SDModule> {
 				module

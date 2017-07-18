@@ -48,14 +48,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			} else {
 				Console.WriteLine($"Detected {analysisResult.SystemContext.Modules.Count} shared libraries.");
 			}
+			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
+			Console.WriteLine("Resolving debug symbols ...");
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
 			Console.WriteLine("Finding executable file ...");
 			new ExecutablePathAnalyzer(filesystem, analysisResult.SystemContext as SDCDSystemContext).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
 			new CoreLogAnalyzer(filesystem, coredump, analysisResult.SystemContext.Modules).Analyze();
 			Console.WriteLine("Fetching debug symbols ...");
-			new DebugSymbolResolver(filesystem, requestHandler).Resolve(analysisResult.SystemContext.Modules);
-			Console.WriteLine("Resolving debug symbols ...");
 			new DebugSymbolAnalysis(filesystem, processHandler, analysisResult).Analyze();
 			Console.WriteLine("Reading stack information ...");
 			new GdbAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
