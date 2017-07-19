@@ -67,9 +67,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public void Analyze() {
-			SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
+			SDCDSystemContext context = (SDCDSystemContext)analysisResult.SystemContext;
 			SetContextFields(context);
-			this.analysisResult.SystemContext = context;
 			this.analysisResult.ThreadInformation = UnwindThreads(context);
 			Console.WriteLine("Destroying unwindwrapper context ...");
 		}
@@ -102,13 +101,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 
 			bool foundLastExecuted = false;
-			for(int i = 0; i < nThreads; i++) {
+			for (int i = 0; i < nThreads; i++) {
 				int signal = getSignalNumber(i);
-				if(signal == -1) {
+				if (signal == -1) {
 					continue;
 				}
-				if(signal < 32 && signal != 19) {
-					if(foundLastExecuted) {
+				if (signal < 32 && signal != 19) {
+					if (foundLastExecuted) {
 						Console.WriteLine("Already found the last executed thread which was: " + analysisResult.LastExecutedThread + ". New one is " + i);
 					}
 					foundLastExecuted = true;
@@ -120,11 +119,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					};
 					if (signal == 4 || signal == 8) {
 						analysisResult.LastEvent.Description += ": Faulty instruction at address " + getSignalAddress(i);
-					} else if(signal == 11) {
+					} else if (signal == 11) {
 						analysisResult.LastEvent.Description += ": Invalid memory reference to address 0x" + getSignalAddress(i).ToString("X");
 					} else {
 						int error = getSignalErrorNo(i);
-						if(error != 0) {
+						if (error != 0) {
 							analysisResult.LastEvent.Description += " (error number " + error + ")";
 						}
 					}
@@ -134,7 +133,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string SignalNoToCode(int signal) {
-			switch(signal) {
+			switch (signal) {
 				case 1: return "SIGHUP";
 				case 2: return "SIGINT";
 				case 3: return "SIGQUIT";
@@ -209,9 +208,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private string GetSystemArchitecture() {
 			int arch = is64Bit();
-			if(arch == 0) {
+			if (arch == 0) {
 				return "x86";
-			} else if(arch == 1) {
+			} else if (arch == 1) {
 				return "Amd64";
 			} else {
 				Console.WriteLine($"Invalid system architecture {arch}!");

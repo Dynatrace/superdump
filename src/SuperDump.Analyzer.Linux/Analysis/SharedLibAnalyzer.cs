@@ -31,15 +31,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public async Task AnalyzeAsync() {
-			SDCDSystemContext context = (analysisResult.SystemContext as SDCDSystemContext);
-			if (context == null) {
-				context = new SDCDSystemContext();
-				analysisResult.SystemContext = context;
-			}
+			SDCDSystemContext context = (SDCDSystemContext)analysisResult.SystemContext;
 			using (var readelf = await ProcessRunner.Run("readelf", new DirectoryInfo(coredump.DirectoryName), "-n", coredump.FullName)) {
 				context.Modules = RetrieveLibsFromReadelfOutput(readelf.StdOut).ToList();
 			}
-			addBackingFilesFromNotes();
+			if (context.Modules.Count > 0) {
+				addBackingFilesFromNotes();
+			}
 		}
 
 		private IEnumerable<SDModule> RetrieveLibsFromReadelfOutput(string readelfOutput) {

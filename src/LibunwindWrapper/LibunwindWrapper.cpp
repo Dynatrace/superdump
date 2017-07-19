@@ -31,6 +31,14 @@ void LibunwindWrapper::addBackingFilesFromNotes() {
 	_UCD_add_backing_files_from_file_note(this->ucdInfo);
 }
 
+void LibunwindWrapper::addBackingFileAtAddr(const char* filename, unsigned long address) {
+	int ret = _UCD_add_backing_file_at_vaddr(this->ucdInfo, address, filename);
+	if (ret != 0) {
+		printf("Failed to add backing file (return value: %d) %lu: %s\n", ret, address, filename);
+		fflush(stdout);
+	}
+}
+
 string LibunwindWrapper::getFilepath() {
 	return filepath;
 }
@@ -211,13 +219,6 @@ const int LibunwindWrapper::is64Bit() {
 		printf("Invalid ei_class value %d! Not an ELF file?\n", ei_class);
 		return -1;
 	}
-}
-
-void LibunwindWrapper::addBackingFileAtAddr(const char* filename, unsigned long address) {
-	fflush(stdout);
-	int ret = _UCD_add_backing_file_at_vaddr(this->ucdInfo, address, filename);
-	printf("[%d] added backing file at %lu: %s\n", ret, address, filename);
-	fflush(stdout);
 }
 
 void demangle(char* procName, char* dest, int length) {

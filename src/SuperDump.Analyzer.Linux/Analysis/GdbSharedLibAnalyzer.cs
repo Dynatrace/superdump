@@ -40,13 +40,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump must not be null!");
 
-			if (result.SystemContext == null) {
-				this.systemContext = new SDCDSystemContext();
-				result.SystemContext = systemContext;
-			} else {
-				this.systemContext = (SDCDSystemContext)result.SystemContext;
-			}
-			systemContext.Modules = new List<SDModule>();
+			this.systemContext = (SDCDSystemContext)result.SystemContext;
+			this.systemContext.Modules = new List<SDModule>();
 		}
 
 		public void Analyze() {
