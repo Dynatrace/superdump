@@ -12,9 +12,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		public const int MAX_FRAMES = 128;
 
 		[DllImport(Constants.WRAPPER)]
-		private static extern void init(string filepath, string workindDir);
-
-		[DllImport(Constants.WRAPPER)]
 		private static extern int getNumberOfThreads();
 
 		[DllImport(Constants.WRAPPER)]
@@ -61,13 +58,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		[DllImport(Constants.WRAPPER)]
 		private static extern int is64Bit();
 
-		[DllImport(Constants.WRAPPER)]
-		private static extern void destroy();
-
 		private readonly SDResult analysisResult;
 		private readonly IFileInfo coredump;
-
-		private bool isDestroyed = false;
 
 		public UnwindAnalyzer(IFileInfo coredump, SDResult result) {
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
@@ -75,18 +67,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public void Analyze() {
-			if(isDestroyed) {
-				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
-			}
-			init(coredump.FullName, coredump.Directory.FullName);
-
 			SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
 			SetContextFields(context);
 			this.analysisResult.SystemContext = context;
 			this.analysisResult.ThreadInformation = UnwindThreads(context);
 			Console.WriteLine("Destroying unwindwrapper context ...");
-			destroy();
-			isDestroyed = true;
 		}
 
 		private SDCDSystemContext SetContextFields(SDCDSystemContext context) {

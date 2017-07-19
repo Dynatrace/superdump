@@ -23,6 +23,9 @@ public:
 	LibunwindWrapper(string filepath, string workingDir);
 	~LibunwindWrapper();
 
+	void addBackingFilesFromNotes();
+	void addBackingFileAtAddr(const char* filename, unsigned long address);
+
 	string getFilepath();
 
 	int getNumberOfThreads();

@@ -10,9 +10,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using SuperDump.Models;
 using SuperDump.Analyzer.Linux.Boundary;
+using System.Runtime.InteropServices;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class SharedLibAnalyzer {
+		[DllImport(Constants.WRAPPER)]
+		private static extern void addBackingFilesFromNotes();
 
 		private readonly Regex addressRegex = new Regex(@"0x([\da-f]+)\s+0x([\da-f]+)\s+0x([\da-f]+)\s+([^\s]+)", RegexOptions.Compiled);
 
@@ -36,6 +39,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			using (var readelf = await ProcessRunner.Run("readelf", new DirectoryInfo(coredump.DirectoryName), "-n", coredump.FullName)) {
 				context.Modules = RetrieveLibsFromReadelfOutput(readelf.StdOut).ToList();
 			}
+			addBackingFilesFromNotes();
 		}
 
 		private IEnumerable<SDModule> RetrieveLibsFromReadelfOutput(string readelfOutput) {

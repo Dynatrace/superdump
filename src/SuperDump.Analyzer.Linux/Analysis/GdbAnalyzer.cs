@@ -43,7 +43,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					Console.WriteLine("Finished gdb parsing");
 				}
 			} catch (ProcessStartFailedException e) {
-				Console.WriteLine("Failed to start GDB: " + e.GetType().Name + " (" + e.Message + "). Skipping GDB analysis.");
+				Console.WriteLine($"Failed to start GDB! Skipping GDB analysis: {e.ToString()}");
 				return;
 			}
 		}
