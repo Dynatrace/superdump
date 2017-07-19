@@ -24,10 +24,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private readonly IFileInfo coredump;
 		private readonly SDResult analysisResult;
 
-		public SharedLibAnalyzer(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult) {
+		private bool addBackingFiles;
+
+		public SharedLibAnalyzer(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult, bool addBackingFiles) {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump must not be null!");
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.analysisResult = analysisResult ?? throw new ArgumentNullException("Analysis result must not be null!");
+			this.addBackingFiles = addBackingFiles;
 		}
 
 		public async Task AnalyzeAsync() {
@@ -35,7 +38,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			using (var readelf = await ProcessRunner.Run("readelf", new DirectoryInfo(coredump.DirectoryName), "-n", coredump.FullName)) {
 				context.Modules = RetrieveLibsFromReadelfOutput(readelf.StdOut).ToList();
 			}
-			if (context.Modules.Count > 0) {
+			if (addBackingFiles && context.Modules.Count > 0) {
 				addBackingFilesFromNotes();
 			}
 		}

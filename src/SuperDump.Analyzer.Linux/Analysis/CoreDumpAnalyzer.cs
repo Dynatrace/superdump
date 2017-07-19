@@ -36,8 +36,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 
 			SDResult analysisResult = new SDResult();
+			analysisResult.SystemContext = new SDCDSystemContext();
 			Console.WriteLine("Retrieving shared libraries ...");
-			new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync().Wait();
+			new SharedLibAnalyzer(filesystem, coredump, analysisResult, false).AnalyzeAsync().Wait();
 			if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
 				Console.WriteLine("Failed to extract shared libraries from core dump.");
 				return null;
@@ -64,7 +65,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine("Retrieving main executable ...");
 			new ExecutablePathAnalyzer(filesystem, (SDCDSystemContext)analysisResult.SystemContext).Analyze();
 			Console.WriteLine("Retrieving shared libraries ...");
-			await new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync();
+			await new SharedLibAnalyzer(filesystem, coredump, analysisResult, true).AnalyzeAsync();
 			if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
 				Console.WriteLine("No shared libraries detected. Maybe NT_FILE note is missing? Trying to retrieve libraries via GDB.");
 				new GdbSharedLibAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
