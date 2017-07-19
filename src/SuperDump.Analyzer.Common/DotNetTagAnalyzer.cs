@@ -9,6 +9,9 @@ namespace SuperDump.Analyzer.Common {
 		}
 
 		public override void AnalyzeFrame(SDThread thread, SDCombinedStackFrame frame) {
+			if(frame.MethodName == null) {
+				return;
+			}
 			if (ContainsAny(frame.MethodName, "Thread::WaitSuspendEvents")) {
 				frame.Tags.Add(SDTag.ClrThreadSuspend);
 				thread.Tags.Add(SDTag.ClrThreadSuspend);

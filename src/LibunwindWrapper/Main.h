@@ -10,6 +10,10 @@ extern "C" {
 
 MYAPI void init(const char* filepath, const char* workingDir);
 
+MYAPI void addBackingFilesFromNotes();
+
+MYAPI void addBackingFileAtAddr(const char* filename, unsigned long address);
+
 MYAPI int getNumberOfThreads();
 
 MYAPI int getThreadId();

@@ -7,11 +7,16 @@ using System.Text.RegularExpressions;
 using Thinktecture.IO;
 using Thinktecture.IO.Adapters;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class ExecutablePathAnalyzer {
+		private static Regex ExecutableRegex = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
 
-		private static Regex EXECUTABLE_REGEX = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
+		[DllImport(Constants.WRAPPER)]
+		private static extern string getFileName();
+		[DllImport(Constants.WRAPPER)]
+		private static extern string getArgs();
 
 		private readonly IFilesystem filesystem;
 		private readonly SDCDSystemContext context;
@@ -22,6 +27,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public void Analyze() {
+			context.FileName = getFileName();
+			context.Args = getArgs();
+
 			context.FileName = ExecIfValid(PrependOrNull(".", GetExecutableFromSummary()))
 				?? ExecIfValid(PrependOrNull(".", context.FileName))
 				?? ExecIfValid(context.FileName)
@@ -58,7 +66,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 
 			return filesystem.ReadLines(summaryTxt).Select(line => {
-				Match match = EXECUTABLE_REGEX.Match(line);
+				Match match = ExecutableRegex.Match(line);
 				if (match.Success) {
 					return match.Groups[1].Value;
 				}

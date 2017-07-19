@@ -20,6 +20,7 @@ namespace SuperDump.Common {
 		public static readonly LinuxAnalyzerExitCode InvalidArguments = new LinuxAnalyzerExitCode(2, "Invalid analyzation call. Please verify the call arguments in the SuperDump settings.");
 		public static readonly LinuxAnalyzerExitCode NoCoredumpFound = new LinuxAnalyzerExitCode(3, "Could not find a coredump.");
 		public static readonly LinuxAnalyzerExitCode FileNoteMissing = new LinuxAnalyzerExitCode(4, "Cannot analyze dumps without NT_FILE note. This note is only present in more recent kernel releases.");
+		public static readonly LinuxAnalyzerExitCode NoSharedLibraries = new LinuxAnalyzerExitCode(5, "Could not detect any shared libraries. Please verify that the dump is valid.");
 		public static readonly LinuxAnalyzerExitCode UnknownCode = new LinuxAnalyzerExitCode(-1, "An unknown error occurred during the analysis. Please check the log files for more details.");
 
 		public static explicit operator LinuxAnalyzerExitCode(int code) {

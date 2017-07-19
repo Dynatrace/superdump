@@ -9,6 +9,9 @@ namespace SuperDump.Analyzer.Common {
 		}
 
 		public override void AnalyzeFrame(SDThread thread, SDCombinedStackFrame frame) {
+			if(frame.MethodName == null) {
+				return;
+			}
 			if (IsExceptionFrame(frame)) {
 				frame.Tags.Add(SDTag.ExceptionInStackTag);
 				thread.Tags.Add(SDTag.ExceptionInStackTag);

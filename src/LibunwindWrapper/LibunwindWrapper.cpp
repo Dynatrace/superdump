@@ -17,9 +17,6 @@ LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir)
 	this->pid = _UCD_get_pid(ucdInfo);
 	this->workingDir = workingDir;
 
-	_UCD_set_backing_files_sysroot(this->ucdInfo, workingDir.c_str());
-	_UCD_add_backing_files_from_file_note(this->ucdInfo);
-
 	printf("Initialization success\n");
 	fflush(stdout);
 }
@@ -27,6 +24,19 @@ LibunwindWrapper::LibunwindWrapper(string filepath, string workingDir)
 
 LibunwindWrapper::~LibunwindWrapper() {
 	_UCD_destroy(ucdInfo);
+}
+
+void LibunwindWrapper::addBackingFilesFromNotes() {
+	_UCD_set_backing_files_sysroot(this->ucdInfo, workingDir.c_str());
+	_UCD_add_backing_files_from_file_note(this->ucdInfo);
+}
+
+void LibunwindWrapper::addBackingFileAtAddr(const char* filename, unsigned long address) {
+	int ret = _UCD_add_backing_file_at_vaddr(this->ucdInfo, address, filename);
+	if (ret != 0) {
+		printf("Failed to add backing file (return value: %d) %lu: %s\n", ret, address, filename);
+		fflush(stdout);
+	}
 }
 
 string LibunwindWrapper::getFilepath() {

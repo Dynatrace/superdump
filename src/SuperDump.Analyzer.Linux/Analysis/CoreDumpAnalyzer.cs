@@ -7,9 +7,15 @@ using SuperDump.Analyzer.Linux.Boundary;
 using System.Threading.Tasks;
 using SuperDump.Analyzer.Common;
 using SuperDump.Common;
+using System.Runtime.InteropServices;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalyzer {
+		[DllImport(Constants.WRAPPER)]
+		private static extern void init(string filepath, string workindDir);
+		[DllImport(Constants.WRAPPER)]
+		private static extern void destroy();
+
 		private readonly IArchiveHandler archiveHandler;
 		private readonly IFilesystem filesystem;
 		private readonly IProcessHandler processHandler;
@@ -30,8 +36,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 
 			SDResult analysisResult = new SDResult();
+			analysisResult.SystemContext = new SDCDSystemContext();
 			Console.WriteLine("Retrieving shared libraries ...");
-			new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync().Wait();
+			new SharedLibAnalyzer(filesystem, coredump, analysisResult, false).AnalyzeAsync().Wait();
 			if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
 				Console.WriteLine("Failed to extract shared libraries from core dump.");
 				return null;
@@ -50,12 +57,22 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 			Console.WriteLine($"Processing core dump file: {coredump}");
 
+			init(coredump.FullName, coredump.Directory.FullName);
+
 			SDResult analysisResult = new SDResult();
+			analysisResult.SystemContext = new SDCDSystemContext();
+
+			Console.WriteLine("Retrieving main executable ...");
+			new ExecutablePathAnalyzer(filesystem, (SDCDSystemContext)analysisResult.SystemContext).Analyze();
 			Console.WriteLine("Retrieving shared libraries ...");
-			await new SharedLibAnalyzer(filesystem, coredump, analysisResult).AnalyzeAsync();
-			if((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
-				Console.WriteLine("Failed to extract shared libraries from core dump. Terminating because further analysis will not make sense.");
-				return LinuxAnalyzerExitCode.FileNoteMissing;
+			await new SharedLibAnalyzer(filesystem, coredump, analysisResult, true).AnalyzeAsync();
+			if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
+				Console.WriteLine("No shared libraries detected. Maybe NT_FILE note is missing? Trying to retrieve libraries via GDB.");
+				new GdbSharedLibAnalyzer(filesystem, processHandler, coredump, analysisResult).Analyze();
+				if ((analysisResult?.SystemContext?.Modules?.Count ?? 0) == 0) {
+					Console.WriteLine("Could not extract libs from GDB either. Terminating because further analysis will not make sense.");
+					return LinuxAnalyzerExitCode.NoSharedLibraries;
+				}
 			} else {
 				Console.WriteLine($"Detected {analysisResult.SystemContext.Modules.Count} shared libraries.");
 			}
@@ -63,8 +80,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Unwinding stacktraces ...");
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
-			Console.WriteLine("Finding executable file ...");
-			new ExecutablePathAnalyzer(filesystem, analysisResult.SystemContext as SDCDSystemContext).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
 			new CoreLogAnalyzer(filesystem, coredump, analysisResult.SystemContext.Modules).Analyze();
 			Console.WriteLine("Fetching debug symbols ...");
@@ -79,13 +94,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			   .Analyze();
 			File.WriteAllText(outputFile, analysisResult.SerializeToJSON());
 			Console.WriteLine("Finished coredump analysis.");
+			destroy();
 			return LinuxAnalyzerExitCode.Success;
 		}
 
 		private IFileInfo GetCoreDumpFile(string inputFile) {
 			IFileInfo file = filesystem.GetFile(inputFile);
-			if(file.Exists) {
-				if(file.Extension == ".core") {
+			if (file.Exists) {
+				if (file.Extension == ".core") {
 					return file;
 				} else if (file.Extension == ".tar" || file.Extension == ".gz" || file.Extension == ".tgz" || file.Extension == ".tar" || file.Extension == ".zip") {
 					IDirectoryInfo directory = file.Directory;
@@ -98,7 +114,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				}
 			} else {
 				IDirectoryInfo directory = filesystem.GetDirectory(inputFile);
-				if(directory.Exists) {
+				if (directory.Exists) {
 					Console.WriteLine($"Extracting archives in directory {directory.FullName}");
 					ExtractArchivesInDir(directory);
 					return FindCoredumpOrNull(directory);
