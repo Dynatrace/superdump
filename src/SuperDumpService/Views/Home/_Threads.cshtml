@@ -176,7 +176,12 @@
 												<td class="nobreak stackmethodname">
 													<span class="@tagclasses">@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@(frame.OffsetInMethod.ToString("x"))</span>
 													@if (frame.SourceInfo != null) {
-														<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
+														@if (frame.SourceInfo.IsLinkAvailable()) {
+															<span class="sourceinfo"><a _target="blank" href=@Model.SvnUrl@frame.SourceInfo.GetLink()>@frame.SourceInfo.FileName()</a>:@frame.SourceInfo.Line</span>
+														} else {
+															<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
+
+														}
 													}
 												</td>
 											}
