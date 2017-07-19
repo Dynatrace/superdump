@@ -93,7 +93,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					Console.WriteLine($"Failed to download debug symbols for {lib.FilePath}. URL: {url}");
 				}
 			} catch (Exception e) {
-				Console.WriteLine($"Failed to download debug symbol: {e.Message}");
+				Console.WriteLine($"Failed to download debug symbol: {e.ToString()}");
 			}
 		}
 
