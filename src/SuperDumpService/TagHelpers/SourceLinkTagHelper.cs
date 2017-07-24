@@ -17,9 +17,9 @@ namespace SuperDumpService.TagHelpers {
 				output.Attributes.Clear();
 				output.Content.Clear();
 			} else {
-				if (IsLinkAvailable()) {
+				if (IsDynatraceLinkAvailable()) {
 					output.TagName = "a";
-					output.Attributes.Add("href", RepositoryUrl + GetLink());
+					output.Attributes.Add("href", RepositoryUrl + GetDynatraceLink());
 				} else {
 					output.TagName = string.Empty;
 					output.Attributes.Clear();
@@ -28,16 +28,16 @@ namespace SuperDumpService.TagHelpers {
 			return base.ProcessAsync(context, output);
 		}
 
-		private bool IsLinkAvailable() {
-			return IsLinkAvailable('\\') || IsLinkAvailable('/');
+		private bool IsDynatraceLinkAvailable() {
+			return IsDynatraceLinkAvailable('\\') || IsDynatraceLinkAvailable('/');
 		}
 
-		private bool IsLinkAvailable(char separator) {
+		private bool IsDynatraceLinkAvailable(char separator) {
 			return !string.IsNullOrEmpty(RepositoryUrl) &&
 				SourceFile.Contains($"{separator}agent{separator}native") && SourceFile.Contains("sprint_");
 		}
 
-		private string GetLink() {
+		private string GetDynatraceLink() {
 			if (SourceFile.Contains("sprint_")) {
 				int sprintOffset = SourceFile.IndexOf("sprint_");
 				return "branches/" + SourceFile.Substring(sprintOffset);
