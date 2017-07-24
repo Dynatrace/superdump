@@ -8,26 +8,6 @@ namespace SuperDumpModels {
 		public string File;
 		public int Line;
 
-		public string FileName() {
-			return File;
-		}
-
-		public bool IsLinkAvailable() {
-			return File.Contains("/agent/native") && File.Contains("sprint_");
-		}
-
-		public string GetLink() {
-			if (File.Contains("sprint_")) {
-				int sprintOffset = File.IndexOf("sprint_");
-				return "branches/" + File.Substring(sprintOffset);
-			} else if (File.Contains("trunk/")) {
-				int trunkOffset = File.IndexOf("trunk/");
-				return File.Substring(trunkOffset);
-			} else {
-				return null;
-			}
-		}
-
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
