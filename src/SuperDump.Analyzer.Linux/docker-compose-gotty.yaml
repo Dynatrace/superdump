@@ -1,0 +1,20 @@
+version: '3.1'
+
+services:
+    gotty:
+        image: dotstone/gotty
+        ports:
+            - "3000:3000"
+        environment:
+            GOTTY_PORT: "3000"
+            GOTTY_ADDRESS: "127.0.0.1"
+            SSH_HOST: "interactive"
+            SSH_USER: "root"
+            SSH_PASSWD: "root"
+    interactive:
+        image: sdlinux:dev
+        command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; mkdir /var/run/sshd; /usr/sbin/sshd -D"
+        volumes:
+            - C:\workspaces\cs\superdump\data\dumps:/dumps:ro
+        expose:
+            - "22"
