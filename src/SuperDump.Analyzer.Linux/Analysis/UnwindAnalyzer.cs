@@ -49,12 +49,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		[DllImport(Constants.WRAPPER)]
 		private static extern ulong getSignalAddress(int threadNo);
-
-		[DllImport(Constants.WRAPPER)]
-		private static extern string getFileName();
-
-		[DllImport(Constants.WRAPPER)]
-		private static extern string getArgs();
 		[DllImport(Constants.WRAPPER)]
 		private static extern int is64Bit();
 
@@ -79,8 +73,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			context.AppDomains = new List<SDAppDomain>();
 			context.ClrVersions = new List<SDClrVersion>();
 			Console.WriteLine("Retrieving filename and args ...");
-			context.FileName = getFileName();
-			context.Args = getArgs();
 			SetAuxvFields(context);
 			return context;
 		}
