@@ -9,7 +9,7 @@ namespace SuperDumpModels {
 		public int Line;
 
 		public string FileName() {
-			return Path.GetFileNameWithoutExtension(File);
+			return File;
 		}
 
 		public string SerializeToJSON() {
