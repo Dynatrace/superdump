@@ -7,7 +7,7 @@ services:
             - 9200:9200
             - 9300:9300
         volumes:
-            - C:\workspaces\cs\superdump\data\elastic:/usr/share/elasticsearch/data
+            - ${ELASTIC_DIR}:/usr/share/elasticsearch/data
     
     kibana:
         image: kibana:5.4.2

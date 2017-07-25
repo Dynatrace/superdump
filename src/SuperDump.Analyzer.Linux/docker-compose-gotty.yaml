@@ -15,7 +15,7 @@ services:
         image: sdlinux
         command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; chown -R gdb:gdb /opt/dump; mkdir /var/run/sshd; /usr/sbin/sshd -D"
         volumes:
-            - /opt/dumps:/dumps:ro
-            - /opt/debug:/debugsymbols:ro
+            - ${DUMP_DIR}:/dumps:ro
+            - ${DEBUG_SYMBOL_DIR}:/debugsymbols:ro
         expose:
             - "22"
