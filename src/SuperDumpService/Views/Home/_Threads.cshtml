@@ -181,9 +181,9 @@
 												}
 												<td class="nobreak stackmethodname">
 													<span class="@tagclasses">@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@(frame.OffsetInMethod.ToString("x"))</span>
-													@if (frame.SourceInfo != null) {
-														<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
-													}
+													<span class="sourceinfo">
+														<dynatrace-source-link repository-url="@Model.RepositoryUrl" source-file="@frame.SourceInfo?.File">@frame.SourceInfo?.File:@frame.SourceInfo?.Line</dynatrace-source-link>
+													</span>
 												</td>
 											}
 											<td class="nobreak stackvariables">
