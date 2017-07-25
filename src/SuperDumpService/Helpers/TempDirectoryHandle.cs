@@ -3,16 +3,14 @@ using System.IO;
 
 namespace SuperDumpService.Helpers {
 	public class TempDirectoryHandle : IDisposable {
-		private bool delete;
 
 		public DirectoryInfo Dir { get; internal set; }
 
 		/// <summary>
-		/// Deletes the directory given, when disposed. Except "delete=false".
+		/// Deletes the directory given, when disposed.
 		/// </summary>
-		public TempDirectoryHandle(DirectoryInfo dir, bool delete = true) {
+		public TempDirectoryHandle(DirectoryInfo dir) {
 			this.Dir = dir;
-			this.delete = delete;
 		}
 
 		public void Dispose() {

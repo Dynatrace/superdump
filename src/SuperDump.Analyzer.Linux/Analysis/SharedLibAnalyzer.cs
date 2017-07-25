@@ -10,9 +10,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using SuperDump.Models;
 using SuperDump.Analyzer.Linux.Boundary;
+using System.Runtime.InteropServices;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class SharedLibAnalyzer {
+		[DllImport(Constants.WRAPPER)]
+		private static extern void addBackingFilesFromNotes();
 
 		private readonly Regex addressRegex = new Regex(@"0x([\da-f]+)\s+0x([\da-f]+)\s+0x([\da-f]+)\s+([^\s]+)", RegexOptions.Compiled);
 
@@ -21,16 +24,22 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private readonly IFileInfo coredump;
 		private readonly SDResult analysisResult;
 
-		public SharedLibAnalyzer(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult) {
+		private bool addBackingFiles;
+
+		public SharedLibAnalyzer(IFilesystem filesystem, IFileInfo coredump, SDResult analysisResult, bool addBackingFiles) {
 			this.coredump = coredump ?? throw new ArgumentNullException("Coredump must not be null!");
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem must not be null!");
 			this.analysisResult = analysisResult ?? throw new ArgumentNullException("Analysis result must not be null!");
+			this.addBackingFiles = addBackingFiles;
 		}
 
 		public async Task AnalyzeAsync() {
+			SDCDSystemContext context = (SDCDSystemContext)analysisResult.SystemContext;
 			using (var readelf = await ProcessRunner.Run("readelf", new DirectoryInfo(coredump.DirectoryName), "-n", coredump.FullName)) {
-				SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
 				context.Modules = RetrieveLibsFromReadelfOutput(readelf.StdOut).ToList();
+			}
+			if (addBackingFiles && context.Modules.Count > 0) {
+				addBackingFilesFromNotes();
 			}
 		}
 
@@ -58,7 +67,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 						ImageBase = 0,
 						FileName = GetFilenameFromPath(path),
 						LocalPath = GetLocalPathFromPath(path),
-						FileSize = (uint)GetFileSizeFromPath(path)
+						FileSize = (uint)GetFileSizeForLibrary(path)
 					};
 				}
 			}
@@ -82,12 +91,15 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			return null;
 		}
 
-		private long GetFileSizeFromPath(string filepath) {
-			IFileInfo file = filesystem.GetFile(filepath);
-			if (file.Exists) {
-				return file.Length;
+		private long GetFileSizeForLibrary(string filepath) {
+			IFileInfo file = filesystem.GetFile($".{filepath}");
+			if (!file.Exists) {
+				file = filesystem.GetFile(filepath);
+				if(!file.Exists) {
+					return 0;
+				}
 			}
-			return 0;
+			return file.Length;
 		}
 	}
 }

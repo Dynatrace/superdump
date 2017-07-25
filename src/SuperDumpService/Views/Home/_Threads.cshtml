@@ -161,9 +161,9 @@
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
 
 											<td class="nobreak stackinstructionptr">
-												<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="@disassemblyCmd" class="alert-link">
+												<interactive-link model="@Model" command="@disassemblyCmd">
 													@frame.InstructionPointer.ToString("x" + Model.PointerSize)
-												</a>
+												</interactive-link>
 											</td>
 											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
 											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
@@ -175,19 +175,41 @@
 												}
 												<td class="nobreak stackmethodname">
 													<span class="@tagclasses">@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@(frame.OffsetInMethod.ToString("x"))</span>
-													@if (frame.SourceInfo != null) {
-														<span class="sourceinfo">@frame.SourceInfo.FileName():@frame.SourceInfo.Line</span>
-													}
+													<span class="sourceinfo">
+														<dynatrace-source-link repository-url="@Model.RepositoryUrl" source-file="@frame.SourceInfo?.File">@frame.SourceInfo?.File:@frame.SourceInfo?.Line</dynatrace-source-link>
+													</span>
 												</td>
 											}
 											<td class="nobreak stackvariables">
-												@if (Model.DumpType == SuperDumpService.Models.DumpType.LinuxCoreDump) {
+												@if (frame is SuperDumpModels.SDCDCombinedStackFrame) {
 													<table>
-														@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Args) {
-															<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).ArgsWithLinks) {
+															<tr>
+																<td style="width:120px"><b>@(entry.Key)</b></td>
+																<td>
+																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																		@(entry.Value.ElementAt(i))
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
+																	}
+																	@(entry.Value.Last())
+																</td>
+															</tr>
 														}
-														@foreach (var entry in ((SuperDumpModels.SDCDCombinedStackFrame)frame).Locals) {
-															<tr><td style="width:120px"><b>@(entry.Key)</b></td><td>@(entry.Value)</td></tr>
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).LocalsWithLinks) {
+															<tr>
+																<td style="width:120px"><b>@(entry.Key)</b></td>
+																<td>
+																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																		@(entry.Value.ElementAt(i))
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
+																	}
+																	@(entry.Value.Last())
+																</td>
+															</tr>
 														}
 													</table>
 												}

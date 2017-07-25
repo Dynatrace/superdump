@@ -1,4 +1,5 @@
 ﻿using SuperDump.Analyzer.Linux.Boundary;
+using SuperDump.Common;
 using SuperDump.Models;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,12 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private readonly IFilesystem filesystem;
 		private readonly IHttpRequestHandler requestHandler;
+		private readonly IProcessHandler processHandler;
 
-		public DebugSymbolResolver(IFilesystem filesystem, IHttpRequestHandler requestHandler) {
+		public DebugSymbolResolver(IFilesystem filesystem, IHttpRequestHandler requestHandler, IProcessHandler processHandler) {
 			this.filesystem = filesystem ?? throw new ArgumentNullException("Filesystem Helper must not be null!");
 			this.requestHandler = requestHandler ?? throw new ArgumentNullException("RequestHandler must not be null!");
+			this.processHandler = processHandler ?? throw new ArgumentNullException("ProcessHandler must not be null!");
 		}
 
 		public void Resolve(IList<SDModule> libs) {
@@ -45,6 +48,20 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				} else {
 					await DownloadDebugSymbolsAsync(module, hash);
 				}
+
+				await UnstripLibrary(module, hash);
+			}
+		}
+
+		/// <summary>
+		/// Overrides the original *.so with the unstripped binary
+		/// </summary>
+		private async Task UnstripLibrary(SDCDModule module, string hash) {
+			if (IsDebugFileAvailable(module, hash)) {
+				filesystem.Move(module.LocalPath, module.LocalPath + ".old");
+				await processHandler.ExecuteProcessAndGetOutputAsync("eu-unstrip",
+					$"-o {module.LocalPath} {module.LocalPath}.old {DebugFilePath(module.LocalPath, hash)}");
+				filesystem.Delete(module.LocalPath + ".old");
 			}
 		}
 
@@ -76,7 +93,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					Console.WriteLine($"Failed to download debug symbols for {lib.FilePath}. URL: {url}");
 				}
 			} catch (Exception e) {
-				Console.WriteLine($"Failed to download debug symbol: {e.Message}");
+				Console.WriteLine($"Failed to download debug symbol: {e.ToString()}");
 			}
 		}
 

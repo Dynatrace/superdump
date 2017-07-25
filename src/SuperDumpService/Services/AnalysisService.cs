@@ -149,7 +149,8 @@ namespace SuperDumpService.Services {
 				}
 
 				if (process.ExitCode != 0) {
-					string error = $"Analysis failed with exit code {process.ExitCode}. See log files for more details.";
+					LinuxAnalyzerExitCode exitCode = (LinuxAnalyzerExitCode)process.ExitCode;
+					string error = $"Exit code {process.ExitCode}: {exitCode.Message}";
 					Console.WriteLine(error);
 					throw new Exception(error);
 				}

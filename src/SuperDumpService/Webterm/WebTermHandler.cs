@@ -12,6 +12,7 @@ using System.IO;
 using SuperDumpService.Helpers;
 using System.Net;
 using SuperDump.Models;
+using SuperDumpService.Models;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
@@ -44,18 +45,6 @@ namespace SuperDump.Webterm {
 		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
 			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
-			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
-		}
-
-		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
-			string command = settings.Value.LinuxInteractiveCommand;
-			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
-
-			SDResult result = superdumpRepo.GetResult(bundleId, dumpId, out string error);
-			if (result != null) {
-				command = command.Replace("{execname}", (result.SystemContext as SDCDSystemContext)?.FileName);
-				command = command.Replace("{coredump}", (result.SystemContext as SDCDSystemContext)?.DumpFileName);
-			}
 			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
@@ -105,8 +94,6 @@ namespace SuperDump.Webterm {
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
 					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
-				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
 				}

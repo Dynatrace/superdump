@@ -16,8 +16,9 @@ What SuperDump is not:
 Features
 ========
  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
- * Any windows-crash-dump (Fulldump or Minidump) can be analyzed (`.dmp` files).
- * `.zip` files containing multiple crash-dumps are also supported.
+ * Windows-crash-dumps (Fulldump or Minidump) can be analyzed (`.dmp` files). Only process-dumps, not kernel-dumps.
+ * Linux-crach-dumps can be analyzed (`.core` files).
+ * `.zip` files containing multiple crash-dumps are also supported. Each contained dump is processed.
  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
  * SuperDump report shows: 
    * Basic information (bitness, system/process uptime, lastevent, ...)
@@ -25,24 +26,26 @@ Features
    * Stacktraces of all threads (native and .NET frames)
    * AppDomains
    * Basic memory analyis (number of bytes used by .NET types)
+   * Linux Signals
  * SuperDump detects exceptions (native and managed) and marks the responsible threads.
  * Deadlock detection.
- * SuperDump also invokes a number of `WinDbg` commands and logs them to a separate log-file.
+ * SuperDump also invokes a number of `WinDbg` commands automatically and logs them to a separate log-file.
  * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
- * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally.
- * Linux coredumps (`.core`) are supported in a very limited way. They can be uploaded, and are prepared the same way windows crash dumps are prepared. Then a configurable command is invoked for analysis (`LinuxAnalysisCommand`). The actual analyis-scripts are *not* part of this repository (yet).
- * "Interactive mode" for linux coredumps is possible as well, but again it's just a command that is invoked (`LinuxInteractiveCommand`). The actual helper-script for this is not part of this repository (yet).
-   * If anyone is interested in a _how-to-set-up-superdump-for-linux_ guide, please contact me on twitter (https://twitter.com/discostu105).
+ * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally. (Isn't that awesome?)
+ * Linux coredumps (`.core`) are supported too. The analysis is triggered via a docker container (the actual command is configurable via  `LinuxAnalysisCommand`. Note, that linux dumps must be uploaded in archives in a specific format. In addition to the `.core` file, it must also contain linux system libraries as `libs.tar.gz`, otherwise symbols cannot be resolved correctly. If you're interested in seriously using this, please get in touch and we'll document this better. 
+ * "Interactive mode" for linux coredumps is possible as well, but again it's just a command that is invoked (`LinuxInteractiveCommand`).
+ * Slack Notifications for finished analysis (see `SlackNotificationUrls` config setting)
+ * (Upcoming) Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps. (this is still in a branch: https://github.com/Dynatrace/superdump/tree/elasticsearch-support)
+ 
  
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
 <a href="doc/img/managedexception.png"><img src="doc/img/managedexception.png" title="managed exception" width="200"/></a>
+
 Demo
 ============
 Demo-Video: https://youtu.be/XdyDjkW8MDk
-
-Demo-Deployment: http://superdump-demo.azurewebsites.net (older version though)
 
 Slides about SuperDump (explaining some of the architecture): https://www.slideshare.net/ChristophNeumller/large-scale-crash-dump-analysis-with-superdump
 
@@ -51,13 +54,19 @@ Technologies
  * [CLRMD] for analysis.
  * [ASP.NET Core] and [Razor] for web-frontend and api.
  * [Hangfire] for task scheduling.
- * [websocket-manager] for websocket communication for interactive WinDbg session.
+ * [websocket-manager] for in-browser terminal session for interactive WinDbg/Gdb session.
+ * [Docker for Windows], [libunwind] and [gdb] for Linux analysis.
  
  [CLRMD]: https://github.com/Microsoft/clrmd
  [ASP.NET Core]: https://github.com/aspnet/Home
  [Razor]: https://github.com/aspnet/Razor
  [Hangfire]: https://github.com/HangfireIO/Hangfire
- [websocket-manager]: https://github.com/aspnet/websockets
+ [websocket-manager]: https://github.com/radu-matei/websocket-manager
+ [Docker for Windows]: https://docs.docker.com/docker-for-windows/
+ [gdb]: https://www.gnu.org/software/gdb/
+ [libunwind]: http://www.nongnu.org/libunwind/
+ 
+ <a href="doc/img/superdump-architecture.png"><img src="doc/img/superdump-architecture.png" title="managed exception" width="200"/></a>
 
 Build
 =====
@@ -91,17 +100,16 @@ We've open sourced SuperDump, because we believe it can be helpful for others. A
 Some high-level ideas we've been poking around: 
 
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
- * _Linux coredumps:_ Use Linux/GDB to automatically analyze linux coredumps, and use SuperDumpService as frontend (for file upload, REST-API, view reports).
-   * Some of this is already implemented. See "Features".
  * _Duplication Detection:_ Find a way to detect if the same crash has already been reported.
  * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. This is useful if a crash is entered as a bug in a ticket system.
 
 Credit
 ======
-Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace].
+Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace]. [Dominik Steinbinder] also contributed large parts, such as Linux analysis, elastic search integration and much more. Thank you!
 
 [Andreas Lobmaier]: https://github.com/alobmaier
 [Christoph Neumüller]: https://github.com/discostu105
+[Dominik Steinbinder]: https://github.com/dotstone
 [Dynatrace]: https://www.dynatrace.com
 
 License

@@ -81,10 +81,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private async Task<Tuple<SDFileAndLineNumber, string>> Address2MethodSourceAsync(ulong instrPtr, SDCDModule module) {
 			ulong relativeIp = instrPtr;
-
-			if (module.DebugSymbolPath != null && module.DebugSymbolPath != "") {
-				// If there is a debug file, link it (required for addr2line to find the dbg file)
-				LinkDebugFile(module.LocalPath, module.DebugSymbolPath);
+			string mainExecutable = ((SDCDSystemContext)analysisResult.SystemContext).FileName;
+			mainExecutable = Path.GetFileName(mainExecutable);
+			if (mainExecutable != module.FileName) {
+				// Subtract modules start address unless it's the main executable
+				relativeIp -= module.StartAddress;
 			}
 			string output = await processHandler.ExecuteProcessAndGetOutputAsync("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
 			string[] lines = output.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
@@ -96,15 +97,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			string fileLine = lines[1];
 			SDFileAndLineNumber sourceInfo = RetrieveSourceInfo(fileLine);
 			return Tuple.Create(sourceInfo, methodName);
-		}
-
-		private void LinkDebugFile(string localPath, string debugPath) {
-			IFileInfo targetDebugFile = filesystem.GetFile(Path.Combine(Path.GetDirectoryName(localPath), DebugSymbolResolver.DebugFileName(localPath)));
-			if (targetDebugFile.Exists) {
-				return;
-			}
-			Console.WriteLine($"Creating symbolic link: {debugPath}, {targetDebugFile}");
-			filesystem.CreateSymbolicLink(debugPath, targetDebugFile.FullName);
 		}
 
 		private SDFileAndLineNumber RetrieveSourceInfo(string output) {

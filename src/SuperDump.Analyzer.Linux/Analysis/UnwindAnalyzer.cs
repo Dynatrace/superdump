@@ -12,9 +12,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		public const int MAX_FRAMES = 128;
 
 		[DllImport(Constants.WRAPPER)]
-		private static extern void init(string filepath, string workindDir);
-
-		[DllImport(Constants.WRAPPER)]
 		private static extern int getNumberOfThreads();
 
 		[DllImport(Constants.WRAPPER)]
@@ -52,20 +49,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		[DllImport(Constants.WRAPPER)]
 		private static extern ulong getSignalAddress(int threadNo);
-
 		[DllImport(Constants.WRAPPER)]
-		private static extern string getFileName();
-
-		[DllImport(Constants.WRAPPER)]
-		private static extern string getArgs();
-
-		[DllImport(Constants.WRAPPER)]
-		private static extern void destroy();
+		private static extern int is64Bit();
 
 		private readonly SDResult analysisResult;
 		private readonly IFileInfo coredump;
-
-		private bool isDestroyed = false;
 
 		public UnwindAnalyzer(IFileInfo coredump, SDResult result) {
 			this.analysisResult = result ?? throw new ArgumentNullException("SD Result must not be null!");
@@ -73,29 +61,18 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public void Analyze() {
-			if(isDestroyed) {
-				throw new InvalidOperationException("Cannot use analysis on the same object twice!");
-			}
-			init(coredump.FullName, coredump.Directory.FullName);
-
-			SDCDSystemContext context = analysisResult.SystemContext as SDCDSystemContext ?? new SDCDSystemContext();
+			SDCDSystemContext context = (SDCDSystemContext)analysisResult.SystemContext;
 			SetContextFields(context);
-			this.analysisResult.SystemContext = context;
 			this.analysisResult.ThreadInformation = UnwindThreads(context);
 			Console.WriteLine("Destroying unwindwrapper context ...");
-			destroy();
-			isDestroyed = true;
 		}
 
 		private SDCDSystemContext SetContextFields(SDCDSystemContext context) {
 			context.ProcessArchitecture = "N/A";
 			context.SystemUpTime = "Could not be obtained.";
-			context.Modules = new List<SDModule>();
 			context.AppDomains = new List<SDAppDomain>();
 			context.ClrVersions = new List<SDClrVersion>();
 			Console.WriteLine("Retrieving filename and args ...");
-			context.FileName = getFileName();
-			context.Args = getArgs();
 			SetAuxvFields(context);
 			return context;
 		}
@@ -116,13 +93,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			}
 
 			bool foundLastExecuted = false;
-			for(int i = 0; i < nThreads; i++) {
+			for (int i = 0; i < nThreads; i++) {
 				int signal = getSignalNumber(i);
-				if(signal == -1) {
+				if (signal == -1) {
 					continue;
 				}
-				if(signal < 32 && signal != 19) {
-					if(foundLastExecuted) {
+				if (signal < 32 && signal != 19) {
+					if (foundLastExecuted) {
 						Console.WriteLine("Already found the last executed thread which was: " + analysisResult.LastExecutedThread + ". New one is " + i);
 					}
 					foundLastExecuted = true;
@@ -134,11 +111,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 					};
 					if (signal == 4 || signal == 8) {
 						analysisResult.LastEvent.Description += ": Faulty instruction at address " + getSignalAddress(i);
-					} else if(signal == 11) {
+					} else if (signal == 11) {
 						analysisResult.LastEvent.Description += ": Invalid memory reference to address 0x" + getSignalAddress(i).ToString("X");
 					} else {
 						int error = getSignalErrorNo(i);
-						if(error != 0) {
+						if (error != 0) {
 							analysisResult.LastEvent.Description += " (error number " + error + ")";
 						}
 					}
@@ -148,7 +125,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string SignalNoToCode(int signal) {
-			switch(signal) {
+			switch (signal) {
 				case 1: return "SIGHUP";
 				case 2: return "SIGINT";
 				case 3: return "SIGQUIT";
@@ -209,6 +186,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private void SetAuxvFields(SDCDSystemContext context) {
+			// get system architecture directly from the header instead of using libunwind
+			// currently, libunwind only works for 64bit dumps.
+			context.SystemArchitecture = GetSystemArchitecture();
 			context.PageSize = (int)getAuxvValue(AuxType.PAGE_SIZE.Type);
 			context.EntryPoint = getAuxvValue(AuxType.ENTRY_POINT.Type);
 			context.BasePlatform = getAuxvString(AuxType.BASE_PLATFORM.Type);
@@ -216,7 +196,18 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			context.Euid = (int)getAuxvValue(AuxType.EUID.Type);
 			context.Gid = (int)getAuxvValue(AuxType.GID.Type);
 			context.Egid = (int)getAuxvValue(AuxType.EGID.Type);
-			context.SystemArchitecture = getAuxvString(AuxType.PLATFORM.Type);
+		}
+
+		private string GetSystemArchitecture() {
+			int arch = is64Bit();
+			if (arch == 0) {
+				return "x86";
+			} else if (arch == 1) {
+				return "Amd64";
+			} else {
+				Console.WriteLine($"Invalid system architecture {arch}!");
+				return "N/A";
+			}
 		}
 	}
 }

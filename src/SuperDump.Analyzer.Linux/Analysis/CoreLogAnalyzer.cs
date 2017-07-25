@@ -36,9 +36,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				Match match = VERSION_REGEX.Match(line);
 				if (match.Success) {
 					foreach (SDModule module in modules) {
-						if (line.Contains(module.FileName)) {
+						if (line.Contains(module.FilePath)) {
 							module.Version = match.Groups[1].Value;
-							break;
 						}
 					}
 				}

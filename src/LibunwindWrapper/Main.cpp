@@ -31,6 +31,14 @@ MYAPI void init(const char* filepath, const char* workingDir) {
 	wrapper = new LibunwindWrapper(filepath, workingDir);
 }
 
+MYAPI void addBackingFileAtAddr(const char* filename, unsigned long address) {
+	wrapper->addBackingFileAtAddr(filename, address);
+}
+
+MYAPI void addBackingFilesFromNotes() {
+	wrapper->addBackingFilesFromNotes();
+}
+
 MYAPI int getNumberOfThreads() {
 	return wrapper->getNumberOfThreads();
 }
@@ -89,6 +97,10 @@ MYAPI const char* getFileName() {
 
 MYAPI const char* getArgs() {
 	return wrapper->getArgs();
+}
+
+MYAPI int is64Bit() {
+	return wrapper->is64Bit();
 }
 
 MYAPI void destroy() {

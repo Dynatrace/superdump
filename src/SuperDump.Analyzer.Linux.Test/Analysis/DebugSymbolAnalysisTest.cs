@@ -78,7 +78,6 @@ namespace SuperDump.Analyzer.Linux.Test {
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			filesystem.Verify(fs => fs.CreateSymbolicLink(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
 		}
 
 		[TestMethod]
@@ -90,7 +89,6 @@ namespace SuperDump.Analyzer.Linux.Test {
 			Assert.AreEqual("src/file.cpp", GetFirstStackFrame().SourceInfo.File);
 			Assert.AreEqual(777, GetFirstStackFrame().SourceInfo.Line);
 			Assert.AreEqual("meth-name", GetFirstStackFrame().MethodName);
-			filesystem.Verify(fs => fs.CreateSymbolicLink(DEBUG_SYMBOLS_PATH, DEBUG_FILE_PATH));
 		}
 
 		private SDCDModule PrepareModuleWithDebugInfo(ulong instrPtr, string moduleName) {
@@ -107,7 +105,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 		}
 
 		private SDCDModule PrepareSampleModule(ulong instrPtr, string moduleName) {
-			result.SystemContext = new SDSystemContext();
+			result.SystemContext = new SDCDSystemContext();
 			result.SystemContext.Modules = new List<SDModule>();
 
 			SDCDModule module = new SDCDModule() {
