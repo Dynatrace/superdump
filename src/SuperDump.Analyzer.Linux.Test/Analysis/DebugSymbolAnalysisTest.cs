@@ -105,7 +105,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 		}
 
 		private SDCDModule PrepareSampleModule(ulong instrPtr, string moduleName) {
-			result.SystemContext = new SDSystemContext();
+			result.SystemContext = new SDCDSystemContext();
 			result.SystemContext.Modules = new List<SDModule>();
 
 			SDCDModule module = new SDCDModule() {
