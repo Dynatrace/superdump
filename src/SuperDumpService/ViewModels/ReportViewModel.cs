@@ -21,6 +21,7 @@ namespace SuperDumpService.ViewModels {
 		public string SDResultReadError { get; set; }
 		public DumpType DumpType { get; set; }
 		public string RepositoryUrl { get; set; }
+		public string InteractiveGdbHost { get; set; }
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;

@@ -24,6 +24,8 @@
 		<!-- Linux Build -->
 		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\docker-compose-elastic.yaml" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\docker-compose-gotty.yaml" DestinationFolder="$(RootFolder)\build\bin"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\gdb.sh" DestinationFolder="$(RootFolder)\build\bin\SuperDump.Analyzer.Linux"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
 		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
@@ -42,10 +44,12 @@
 		<MSBuild Projects="$(RootFolder)\src\SuperDump\SuperDump.csproj" Properties="Configuration=$(Configuration);Platform=x64;OutputPath=$(RootFolder)\build\bin\SuperDumpx64" Targets="Build" />
 		<MSBuild Projects="$(RootFolder)\src\SuperDumpSelector\SuperDumpSelector.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;OutputPath=$(RootFolder)\build\bin\SuperDumpSelector" Targets="Build" />
 		
-		<!-- Linux Build -->
+		<!-- Linux Build - as of now, the .NET core CLR for Linux does not support 32 bit systems: https://github.com/dotnet/coreclr/issues/9265 -->
 		<Copy SourceFiles="@(UnwindWrapperSources)" DestinationFolder="$(RootFolder)\build\bin\LibunwindWrapper"/>
-		<Copy SourceFiles="$(RootFolder)\src\LibunwindWrapper\Dockerfile.Linux.Base" DestinationFolder="$(RootFolder)\build\bin"/>
 		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\Dockerfile.Linux" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\docker-compose-elastic.yaml" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\docker-compose-gotty.yaml" DestinationFolder="$(RootFolder)\build\bin"/>
+		<Copy SourceFiles="$(RootFolder)\src\SuperDump.Analyzer.Linux\gdb.sh" DestinationFolder="$(RootFolder)\build\bin\SuperDump.Analyzer.Linux"/>
 		<MSBuild Projects="$(RootFolder)\src\SuperDump.Analyzer.Linux\SuperDump.Analyzer.Linux.csproj" Properties="Configuration=$(Configuration);Platform=AnyCPU;DeployOnBuild=true;PublishDir=$(RootFolder)\build\bin\SuperDump.Analyzer.Linux\" Targets="Publish" />
 		<Exec Command="docker build -f Dockerfile.Linux -t sdlinux:dev ./" WorkingDirectory="$(RootFolder)\build\bin"/>
 		

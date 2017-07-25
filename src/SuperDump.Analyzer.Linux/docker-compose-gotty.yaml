@@ -12,7 +12,7 @@ services:
             SSH_USER: "root"
             SSH_PASSWD: "root"
     interactive:
-        image: sdlinux:dev
+        image: sdlinux
         command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; mkdir /var/run/sshd; /usr/sbin/sshd -D"
         volumes:
             - C:\workspaces\cs\superdump\data\dumps:/dumps:ro

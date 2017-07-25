@@ -48,26 +48,6 @@ namespace SuperDump.Webterm {
 			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
-		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
-			string command = settings.Value.LinuxInteractiveCommand;
-			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
-
-			SDResult result = superdumpRepo.GetResult(bundleId, dumpId, out string error);
-			if (result != null) {
-				command = command.Replace("{execname}", (result.SystemContext as SDCDSystemContext)?.FileName);
-				command = command.Replace("{coredump}", GetCoreDumpPath(bundleId, dumpId));
-			}
-			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
-		}
-
-		private string GetCoreDumpPath(string bundleId, string dumpId) {
-			string dumpFilename = Path.GetFileName(dumpRepo.GetDumpFilePath(bundleId, dumpId));
-			if (dumpFilename.EndsWith(".gz")) {
-				dumpFilename = dumpFilename.Substring(0, dumpFilename.Length - 3);
-			}
-			return dumpFilename;
-		}
-
 		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command, string bundleId, string dumpId) {
 
 			command = command.Replace("{bundleid}", bundleId);
@@ -114,8 +94,6 @@ namespace SuperDump.Webterm {
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
 					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
-				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
 				}
