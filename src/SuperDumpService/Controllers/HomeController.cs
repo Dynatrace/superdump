@@ -176,7 +176,7 @@ namespace SuperDumpService.Controllers {
 				CustomTextResult = ReadCustomTextResult(dumpInfo),
 				SDResultReadError = error,
 				DumpType = dumpInfo.DumpType,
-				RepositoryUrl = settings.RepositoryURL
+				RepositoryUrl = settings.RepositoryUrl
 			});
 		}
 

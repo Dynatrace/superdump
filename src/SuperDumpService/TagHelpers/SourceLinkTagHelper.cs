@@ -11,8 +11,7 @@ namespace SuperDumpService.TagHelpers {
 		public string RepositoryUrl { get; set; }
 
 		public override Task ProcessAsync(TagHelperContext context, TagHelperOutput output) {
-			Console.WriteLine($"{SourceFile}: {RepositoryUrl}");
-			if(SourceFile == null) {
+			if(string.IsNullOrEmpty(SourceFile)) {
 				output.TagName = string.Empty;
 				output.Attributes.Clear();
 				output.Content.Clear();
@@ -20,6 +19,7 @@ namespace SuperDumpService.TagHelpers {
 				if (IsDynatraceLinkAvailable()) {
 					output.TagName = "a";
 					output.Attributes.Add("href", RepositoryUrl + GetDynatraceLink());
+					output.Attributes.Add("target", "_blank");
 				} else {
 					output.TagName = string.Empty;
 					output.Attributes.Clear();
