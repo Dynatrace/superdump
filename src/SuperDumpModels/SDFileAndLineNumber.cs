@@ -8,10 +8,6 @@ namespace SuperDumpModels {
 		public string File;
 		public int Line;
 
-		public string FileName() {
-			return Path.GetFileNameWithoutExtension(File);
-		}
-
 		public string SerializeToJSON() {
 			return JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
