@@ -34,7 +34,7 @@ namespace SuperDumpService.TagHelpers {
 
 		private bool IsDynatraceLinkAvailable(char separator) {
 			return !string.IsNullOrEmpty(RepositoryUrl) &&
-				SourceFile.Contains($"{separator}agent{separator}native") && SourceFile.Contains("sprint_");
+				(SourceFile.Contains($"{separator}agent{separator}native") || SourceFile.Contains("sprint_"));
 		}
 
 		private string GetDynatraceLink() {
