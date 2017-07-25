@@ -33,7 +33,7 @@ namespace SuperDumpService.TagHelpers {
 				if (Type == DumpType.LinuxCoreDump) {
 					url = $"{InteractiveGdbHost}/?arg={BundleId}&arg={DumpId}&arg={Executable}";
 					if (!string.IsNullOrEmpty(Command)) {
-						url += $"&arg={Command}";
+						url += $"&arg=\"{Command}\"";
 					}
 				} else {
 					url = $"Interactive?bundleId={BundleId}&dumpId={DumpId}";
