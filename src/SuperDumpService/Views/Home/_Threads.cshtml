@@ -161,9 +161,9 @@
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
 
 											<td class="nobreak stackinstructionptr">
-												<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="@disassemblyCmd" class="alert-link">
+												<interactive-link model="@Model" command="@disassemblyCmd">
 													@frame.InstructionPointer.ToString("x" + Model.PointerSize)
-												</a>
+												</interactive-link>
 											</td>
 											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
 											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
@@ -189,18 +189,23 @@
 																<td>
 																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
 																		@(entry.Value.ElementAt(i))
-																		<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="x/32xw @(entry.Value.ElementAt(i + 1))" class="alert-link">@(entry.Value.ElementAt(i + 1))</a>
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
 																	}
 																	@(entry.Value.Last())
 																</td>
 															</tr>
 														}
 														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).LocalsWithLinks) {
-															<tr><td style="width:120px"><b>@(entry.Key)</b></td>
+															<tr>
+																<td style="width:120px"><b>@(entry.Key)</b></td>
 																<td>
-																	@for (int i = 0; i+1 < entry.Value.Count(); i += 2) {
+																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
 																		@(entry.Value.ElementAt(i))
-																		<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="x/32xw @(entry.Value.ElementAt(i + 1))" class="alert-link">@(entry.Value.ElementAt(i + 1))</a>
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
 																	}
 																	@(entry.Value.Last())
 																</td>

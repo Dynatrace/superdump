@@ -23,5 +23,6 @@ namespace SuperDumpService {
 		public string[] SlackNotificationUrls { get; set; }
 		public string SuperDumpUrl { get; set; }
 		public string RepositoryUrl { get; set; }
+		public string InteractiveGdbHost { get; set; }
 	}
 }
