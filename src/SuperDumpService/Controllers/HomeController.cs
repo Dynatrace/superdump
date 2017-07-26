@@ -124,8 +124,7 @@ namespace SuperDumpService.Controllers {
 				int colon = portlessUrl.LastIndexOf(':');
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
-			string elasticUi = portlessUrl + ":5601";
-			return Redirect(elasticUi);
+			return Redirect(portlessUrl + ":5601");
 		}
 
 		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
