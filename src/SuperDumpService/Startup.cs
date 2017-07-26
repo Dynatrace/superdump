@@ -182,10 +182,6 @@ namespace SuperDumpService {
 					name: "default",
 					template: "{controller=Home}/{action=Index}/{id?}");
 			});
-
-			// push all results to ES host
-			ElasticSearchService elasticService = app.ApplicationServices.GetService<ElasticSearchService>();
-			Hangfire.BackgroundJob.Enqueue(() => elasticService.PushAllResultsAsync());
 		}
 	}
 

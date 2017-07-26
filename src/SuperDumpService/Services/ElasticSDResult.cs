@@ -45,7 +45,7 @@ namespace SuperDumpService.Services {
 		[Keyword(Name="bundleId")]
 		public string BundleId { get; set; }
 		[Keyword(Name="dumpId")]
-		private string DumpId { get; set; }
+		public string DumpId { get; set; }
 		[Date(Name="timestamp")]
 		public DateTime Timestamp { get; set; }
 		[Keyword(Name="type")]

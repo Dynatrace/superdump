@@ -3,6 +3,8 @@ using Nest;
 using SuperDump.Models;
 using SuperDumpService.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +22,7 @@ namespace SuperDumpService.Services {
 			this.bundleRepo = bundleRepo;
 
 			string host = settings.Value.ElasticSearchHost;
-			if(host == null || host == "") {
+			if (string.IsNullOrEmpty(host)) {
 				elasticClient = null;
 				return;
 			}
@@ -34,30 +36,61 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("elasticsearch", Order = 3)]
-		public async Task PushAllResultsAsync() {
-			if(elasticClient == null) {
+		public async Task PushAllResultsAsync(bool clean) {
+			if (elasticClient == null) {
 				throw new InvalidOperationException("ElasticSearch has not been initialized! Please verify that the settings specify a correct elastic search host.");
 			}
 
+			if (clean) {
+				CleanIndex();
+			}
+			IEnumerable<string> documentIds = GetAllDocumentIds();
+
 			int nErrorsLogged = 0;
 			var bundles = bundleRepo.GetAll();
+			if (bundles == null) {
+				throw new InvalidOperationException("Bundle repository must be populated before pushing data into ES.");
+			}
 			// Note that this ES push can be improved significantly by using bulk operations to create the documents
 			foreach (BundleMetainfo bundle in bundles) {
 				var dumps = dumpRepo.Get(bundle.BundleId);
-				if(dumps == null) {
-					throw new InvalidOperationException("Dump repository must be populated before pushing data into ES.");
+				if (dumps == null) {
+					continue;
 				}
 				foreach (DumpMetainfo dump in dumps) {
+					if (documentIds.Contains(bundle.BundleId + "/" + dump.DumpId)) {
+						continue;
+					}
 					SDResult result = dumpRepo.GetResult(bundle.BundleId, dump.DumpId, out string error);
 					if (result != null) {
 						bool success = await PushResultAsync(result, bundle, dump);
-						if(!success && nErrorsLogged < 20) {
+						if (!success && nErrorsLogged < 20) {
 							Console.WriteLine($"Failed to create document for {dump.BundleId}/{dump.DumpId}");
 							nErrorsLogged++;
 						}
 					}
 				}
 			}
+		}
+
+		private void CleanIndex() {
+			elasticClient.DeleteIndex(Indices.Index("sdresults"));
+		}
+
+		private IEnumerable<string> GetAllDocumentIds() {
+			List<string> ids = new List<string>();
+			// Get the documents in 10.000 steps because this is the max number of documents to be retrieved at once from ES
+			for (int i = 0; true; i++) {
+				var result = elasticClient.Search<ElasticSDResult>(s =>
+					s.Source(src => src.Includes(e => e.Field(p => p.Id).Field(p => p.BundleId).Field(p => p.DumpId)))
+					.Query(q => q.MatchAll())
+					.From(i*10000).Size(10000));
+				if (result.Documents.Count == 0) {
+					break;
+				}
+				ids.AddRange(result.Documents.Select(doc => doc.Id));
+			}
+			return ids;
 		}
 
 		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
