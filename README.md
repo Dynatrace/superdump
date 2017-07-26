@@ -33,9 +33,10 @@ Features
  * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
  * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally. (Isn't that awesome?)
  * Linux coredumps (`.core`) are supported too. The analysis is triggered via a docker container (the actual command is configurable via  `LinuxAnalysisCommand`. Note, that linux dumps must be uploaded in archives in a specific format. In addition to the `.core` file, it must also contain linux system libraries as `libs.tar.gz`, otherwise symbols cannot be resolved correctly. If you're interested in seriously using this, please get in touch and we'll document this better. 
- * "Interactive mode" for linux coredumps is possible as well, but again it's just a command that is invoked (`LinuxInteractiveCommand`).
+ * "Interactive mode" for linux coredumps is possible as well. Starts a fully TTY-Compliant browser session with GDB.
  * Slack Notifications for finished analysis (see `SlackNotificationUrls` config setting)
- * (Upcoming) Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps. (this is still in a branch: https://github.com/Dynatrace/superdump/tree/elasticsearch-support)
+ * Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps.
+ * Link to source (see `RepositoryUrl` setting)
  
  
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
@@ -54,8 +55,10 @@ Technologies
  * [CLRMD] for analysis.
  * [ASP.NET Core] and [Razor] for web-frontend and api.
  * [Hangfire] for task scheduling.
- * [websocket-manager] for in-browser terminal session for interactive WinDbg/Gdb session.
+ * [websocket-manager] for in-browser terminal session for interactive WinDbg session.
+ * [gotty] for TTY-enabled browser terminal session with GDB.
  * [Docker for Windows], [libunwind] and [gdb] for Linux analysis.
+ 
  
  [CLRMD]: https://github.com/Microsoft/clrmd
  [ASP.NET Core]: https://github.com/aspnet/Home
@@ -65,6 +68,7 @@ Technologies
  [Docker for Windows]: https://docs.docker.com/docker-for-windows/
  [gdb]: https://www.gnu.org/software/gdb/
  [libunwind]: http://www.nongnu.org/libunwind/
+ [gotty]: https://github.com/yudai/gotty
  
  <a href="doc/img/superdump-architecture.png"><img src="doc/img/superdump-architecture.png" title="managed exception" width="200"/></a>
 
