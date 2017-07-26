@@ -11,6 +11,7 @@ namespace SuperDumpService.Models {
 		public string DumpFileName { get; set; } // original filename. just informational.
 		public DumpType DumpType { get; set; } = DumpType.WindowsDump; // default to windows, for compatibility to existing repos (which will only contain windows dumps)
 		public DateTime Created { get; set; }
+		public DateTime Started { get; set; }
 		public DateTime Finished { get; set; }
 		public DumpStatus Status { get; set; }
 		public string ErrorMessage { get; set; }

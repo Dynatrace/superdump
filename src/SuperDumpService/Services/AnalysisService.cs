@@ -6,21 +6,26 @@ using SuperDump.Common;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System.Diagnostics;
+using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
 		private readonly DumpStorageFilebased dumpStorage;
 		private readonly DumpRepository dumpRepo;
+		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
 		private readonly IOptions<SuperDumpSettings> settings;
 		private readonly NotificationService notifications;
+		private readonly ElasticSearchService elasticSearch;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
+			this.bundleRepo = bundleRepo;
 			this.pathHelper = pathHelper;
 			this.settings = settings;
 			this.notifications = notifications;
+			this.elasticSearch = elasticSearch;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -47,6 +52,12 @@ namespace SuperDumpService.Services {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
+
+				SDResult result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string err);
+				if (result != null) {
+					var bundle = bundleRepo.Get(dumpInfo.BundleId);
+					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
+				}
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());

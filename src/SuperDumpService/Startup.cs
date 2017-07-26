@@ -122,6 +122,7 @@ namespace SuperDumpService {
 			services.AddSingleton<UnpackService>();
 			services.AddSingleton<NotificationService>();
 			services.AddSingleton<SlackNotificationService>();
+			services.AddSingleton<ElasticSearchService>();
 			services.AddWebSocketManager();
 		}
 
@@ -151,6 +152,10 @@ namespace SuperDumpService {
 			app.UseHangfireServer(new BackgroundJobServerOptions {
 				Queues = new[] { "analysis" },
 				WorkerCount = settings.Value.MaxConcurrentAnalysis
+			});
+			app.UseHangfireServer(new BackgroundJobServerOptions {
+				Queues = new[] { "elasticsearch" },
+				WorkerCount = 1
 			});
 
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });

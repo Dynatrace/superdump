@@ -117,6 +117,16 @@ namespace SuperDumpService.Controllers {
 			});
 		}
 
+		[HttpGet(Name = "Elastic")]
+		public IActionResult Elastic() {
+			string portlessUrl = settings.ElasticSearchHost;
+			if (portlessUrl.Contains(':')) {
+				int colon = portlessUrl.LastIndexOf(':');
+				portlessUrl = portlessUrl.Substring(0, colon);
+			}
+			return Redirect(portlessUrl + ":5601");
+		}
+
 		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
 			if (includeEmptyBundles) return bundles;
 
