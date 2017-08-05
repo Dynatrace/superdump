@@ -16,6 +16,11 @@ namespace SuperDump {
 		private static DataTarget target;
 
 		private static int Main(string[] args) {
+			if (Environment.Is64BitProcess) {
+				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64;");
+			} else {
+				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86;");
+			}
 			using (context = new DumpContext()) {
 				Console.WriteLine("SuperDump - Windows dump analysis tool");
 				Console.WriteLine("--------------------------");
