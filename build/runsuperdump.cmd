@@ -1,3 +1,5 @@
+cd /d %~dp0
+
 REM adapt port
 SET ASPNETCORE_URLS=http://*:5000
 
