@@ -30,8 +30,8 @@ namespace SuperDumpService.Services {
 				.MapDefaultTypeIndices(m => m.Add(typeof(ElasticSDResult), RESULT_IDX));
 			elasticClient = new ElasticClient(connSettings);
 
-			if (!elasticClient.IndexExists(RESULT_IDX).Exists) {
-				elasticClient.CreateIndex(RESULT_IDX, i => i.Mappings(m => m.Map<ElasticSDResult>(ms => ms.AutoMap())));
+			if (!IndexExists()) {
+				CreateIndex();
 			}
 		}
 
@@ -42,7 +42,8 @@ namespace SuperDumpService.Services {
 			}
 
 			if (clean) {
-				CleanIndex();
+				DeleteIndex();
+				CreateIndex();
 			}
 			IEnumerable<string> documentIds = GetAllDocumentIds();
 
@@ -73,7 +74,25 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private void CleanIndex() {
+		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
+			if (elasticClient != null) {
+				var response = await elasticClient.CreateAsync(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo));
+				if (!response.Created) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private bool IndexExists() {
+			return elasticClient.IndexExists(RESULT_IDX).Exists;
+		}
+
+		private void CreateIndex() {
+			elasticClient.CreateIndex(RESULT_IDX, i => i.Mappings(m => m.Map<ElasticSDResult>(ms => ms.AutoMap())));
+		}
+
+		private void DeleteIndex() {
 			elasticClient.DeleteIndex(Indices.Index("sdresults"));
 		}
 
@@ -91,16 +110,6 @@ namespace SuperDumpService.Services {
 				ids.AddRange(result.Documents.Select(doc => doc.Id));
 			}
 			return ids;
-		}
-
-		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
-			if (elasticClient != null) {
-				var response = await elasticClient.CreateAsync(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo));
-				if (!response.Created) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 }
