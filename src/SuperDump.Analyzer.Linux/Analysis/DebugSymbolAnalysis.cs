@@ -85,7 +85,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			mainExecutable = Path.GetFileName(mainExecutable);
 			if (mainExecutable != module.FileName) {
 				// Subtract modules start address unless it's the main executable
-				relativeIp -= module.StartAddress;
+				relativeIp -= module.StartAddress + 1;
 			}
 			string output = await processHandler.ExecuteProcessAndGetOutputAsync("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
 			string[] lines = output.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
