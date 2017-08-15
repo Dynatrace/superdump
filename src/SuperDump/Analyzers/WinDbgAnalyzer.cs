@@ -53,22 +53,15 @@ namespace SuperDump.Analyzers {
 		}
 
 		private static void LoadExtensions(IDebugControl6 debugControl) {
-			if (Environment.Is64BitProcess) {
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\winext\ext.dll"); // do we need this configurable? should we ship these?
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP\exts.dll");
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP\uext.dll");
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP\ntsdexts.dll");
-			} else {
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\winext\ext.dll"); // do we need this configurable? should we ship these?
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP\exts.dll");
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP\uext.dll");
-				LoadExtension(debugControl, @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP\ntsdexts.dll");
-			}
+			LoadExtension(debugControl, @"ext.dll");
+			LoadExtension(debugControl, @"exts.dll");
+			LoadExtension(debugControl, @"uext.dll");
+			LoadExtension(debugControl, @"ntsdexts.dll");
 		}
 
 		private static ulong LoadExtension(IDebugControl6 debugControl, string path) {
 			ulong handle;
-			LogOnErrorHR(debugControl.AddExtension("\"" + path + "\"", 0, out handle), $"failed to load '{path}'");
+			LogOnErrorHR(debugControl.AddExtension(path, 0, out handle), $"failed to load '{path}'");
 			return handle;
 		}
 
