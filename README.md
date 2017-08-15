@@ -77,8 +77,8 @@ Build
 
  * Prerequisites:
    * Visual Studio 2017
-   * .NET Core Tooling 1.0
-   * .NET Core 1.1.1
+   * .NET Core Tooling 2.0
+   * .NET Core 2.0
    * .NET Framework 4.6
    * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
