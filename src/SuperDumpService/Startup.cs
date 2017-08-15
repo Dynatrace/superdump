@@ -167,7 +167,7 @@ namespace SuperDumpService {
 
 			if (env.IsDevelopment()) {
 				app.UseDeveloperExceptionPage();
-				app.UseBrowserLink();
+				BrowserLinkExtensions.UseBrowserLink(app); // using the extension method directly somehow did not work in .NET Core 2.0 (ambiguous extension method)
 			} else {
 				app.UseExceptionHandler("/Home/Error");
 			}
