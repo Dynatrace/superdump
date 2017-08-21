@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace SuperDumpService.Helpers {
 	public static class Utility {
@@ -180,9 +181,22 @@ namespace SuperDumpService.Helpers {
 
 		public static string Md5ForFile(FileInfo file) {
 			using (var md5 = MD5.Create()) {
-				using (var stream = File.OpenRead(file.FullName)) {
-					return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "‌​").ToLower();
+				// The .OpenRead method fails if the file is currently open in another process. Let's keep trying for a second.
+				for (int i = 0; i < 10; i++) {
+					try {
+						return ComputeMd5(file, md5);
+					} catch (IOException e) {
+						Console.WriteLine($"[{i}] Failed to compute MD5 for file {file.FullName} due to a {e.GetType().ToString()}: {e.Message}");
+						Thread.Sleep(100);
+					}
 				}
+				return ComputeMd5(file, md5);
+			}
+		}
+
+		private static string ComputeMd5(FileInfo file, MD5 md5) {
+			using (var stream = File.OpenRead(file.FullName)) {
+				return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "‌​").ToLower();
 			}
 		}
 	}
