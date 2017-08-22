@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using SuperDumpModels;
+using SuperDump.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +12,14 @@ namespace SuperDumpService.TagHelpers {
 		public string RepositoryUrl { get; set; }
 
 		public override Task ProcessAsync(TagHelperContext context, TagHelperOutput output) {
-			if(string.IsNullOrEmpty(SourceFile)) {
+			if (string.IsNullOrEmpty(SourceFile)) {
 				output.TagName = string.Empty;
 				output.Attributes.Clear();
 				output.Content.Clear();
 			} else {
 				if (IsDynatraceLinkAvailable()) {
 					output.TagName = "a";
-					output.Attributes.Add("href", RepositoryUrl + GetDynatraceLink());
+					output.Attributes.Add("href", RepositoryUrl + DynatraceSourceLink.GetRepoPathIfAvailable(SourceFile));
 					output.Attributes.Add("target", "_blank");
 				} else {
 					output.TagName = string.Empty;
@@ -35,18 +36,6 @@ namespace SuperDumpService.TagHelpers {
 		private bool IsDynatraceLinkAvailable(char separator) {
 			return !string.IsNullOrEmpty(RepositoryUrl) &&
 				(SourceFile.Contains($"{separator}agent{separator}native") || SourceFile.Contains("sprint_"));
-		}
-
-		private string GetDynatraceLink() {
-			if (SourceFile.Contains("sprint_")) {
-				int sprintOffset = SourceFile.IndexOf("sprint_");
-				return "branches/" + SourceFile.Substring(sprintOffset);
-			} else if (SourceFile.Contains("trunk")) {
-				int trunkOffset = SourceFile.IndexOf("trunk");
-				return SourceFile.Substring(trunkOffset);
-			} else {
-				return null;
-			}
 		}
 	}
 }

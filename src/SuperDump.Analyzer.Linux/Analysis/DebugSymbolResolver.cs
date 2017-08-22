@@ -82,7 +82,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private async Task DownloadDebugSymbolsAsync(SDCDModule lib, string hash) {
 			Console.WriteLine($"Trying to retrieve debug symbols for {lib.FilePath}");
-			string url = Constants.DEBUG_SYMBOL_URL_PATTERN.Replace("{hash}", hash).Replace("{file}", DebugFileName(lib.LocalPath));
+			if(string.IsNullOrEmpty(Configuration.DEBUG_SYMBOL_URL_PATTERN)) {
+				Console.WriteLine("Debug symbol URL pattern is not set. No debug symbols will be downloaded.");
+				return;
+			}
+			string url = Configuration.DEBUG_SYMBOL_URL_PATTERN.Replace("{hash}", hash).Replace("{file}", DebugFileName(lib.LocalPath));
 
 			string localDebugFile = DebugFilePath(lib.LocalPath, hash);
 			try {
@@ -98,7 +102,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string DebugFilePath(string path, string hash) {
-			return Path.Combine(Constants.DEBUG_SYMBOL_PATH, hash, DebugFileName(path));
+			return Path.Combine(Configuration.DEBUG_SYMBOL_PATH, hash, DebugFileName(path));
 		}
 
 		public static string DebugFileName(string path) {
