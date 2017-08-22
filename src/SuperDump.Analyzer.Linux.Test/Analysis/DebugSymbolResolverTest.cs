@@ -92,7 +92,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 			filesystem.Setup(fs => fs.Md5FromFile(this.module.LocalPath)).Returns("some-md5-hash");
 			var debugFileInfo = new Mock<IFileInfo>();
 			debugFileInfo.Setup(fi => fi.Exists).Returns(exists);
-			filesystem.Setup(fs => fs.GetFile(Path.Combine(Constants.DEBUG_SYMBOL_PATH, "some-md5-hash", "somelib.dbg"))).Returns(debugFileInfo.Object);
+			filesystem.Setup(fs => fs.GetFile(Path.Combine(Configuration.DEBUG_SYMBOL_PATH, "some-md5-hash", "somelib.dbg"))).Returns(debugFileInfo.Object);
 		}
 
 		private void AssertNoRequestsMade() {
@@ -101,7 +101,7 @@ namespace SuperDump.Analyzer.Linux.Test {
 
 		private void AssertValidRequestDone() {
 			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsNotNull<string>(), 
-				It.Is<string>(file => file.StartsWith(Constants.DEBUG_SYMBOL_PATH) && 
+				It.Is<string>(file => file.StartsWith(Configuration.DEBUG_SYMBOL_PATH) && 
 				file.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"))), 
 				Times.Once);
 			//Assert.IsNotNull(requestHandler.FromUrl);

@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class SharedLibAnalyzer {
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern void addBackingFilesFromNotes();
 
 		private readonly Regex addressRegex = new Regex(@"0x([\da-f]+)\s+0x([\da-f]+)\s+0x([\da-f]+)\s+([^\s]+)", RegexOptions.Compiled);
