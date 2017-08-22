@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Thinktecture.IO;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class SourceFileProvider {
@@ -46,11 +47,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 						continue;
 					}
 					string url = Configuration.SOURCE_REPO_URL + repoPath;
+
+					// GDB requires paths beginning with /src. Therefore, all source files must be merged into a common /src directory.
 					string shortPath = file.Substring(1);
 					if (shortPath.Contains("/src/")) {
 						shortPath = shortPath.Substring(shortPath.IndexOf("/src/") + 1);
 					}
-					FileInfo targetFile = new FileInfo(Path.Combine(directory, shortPath));
+					IFileInfo targetFile = filesystem.GetFile(Path.Combine(directory, shortPath));
 					if (files.Contains(targetFile.FullName)) {
 						continue;
 					}
