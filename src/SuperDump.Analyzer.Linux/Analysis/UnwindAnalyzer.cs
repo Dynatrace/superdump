@@ -11,45 +11,45 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 	public class UnwindAnalyzer {
 		public const int MAX_FRAMES = 128;
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern int getNumberOfThreads();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern int getThreadId();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern void selectThread(uint threadNumber);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern ulong getInstructionPointer();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern ulong getStackPointer();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern string getProcedureName();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern ulong getProcedureOffset();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern bool step();
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern ulong getAuxvValue(int type);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern string getAuxvString(int type);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern int getSignalNumber(int threadNo);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern int getSignalErrorNo(int threadNo);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern ulong getSignalAddress(int threadNo);
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern int is64Bit();
 
 		private readonly SDResult analysisResult;

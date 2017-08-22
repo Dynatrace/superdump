@@ -13,9 +13,9 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 	public class ExecutablePathAnalyzer {
 		private static Regex ExecutableRegex = new Regex("executablePath: ([^\\s]+)", RegexOptions.Compiled);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern string getFileName();
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern string getArgs();
 
 		private readonly IFilesystem filesystem;
@@ -60,7 +60,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		private string GetExecutableFromSummary() {
-			IFileInfo summaryTxt = filesystem.GetFile(Constants.SUMMARY_TXT);
+			IFileInfo summaryTxt = filesystem.GetFile(Configuration.SUMMARY_TXT);
 			if (!summaryTxt.Exists) {
 				return null;
 			}

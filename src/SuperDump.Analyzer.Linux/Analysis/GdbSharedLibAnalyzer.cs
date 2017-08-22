@@ -26,7 +26,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private static readonly Regex ProgramHeaderLoadRegex = new Regex(@"LOAD\s+0x(?:[\da-f]+)\s+0x([\da-f]+)", RegexOptions.Compiled);
 		private static readonly Regex GdbLibraryRegex = new Regex(@"0x([\da-f]+)\s+0x([\da-f]+)\s+\w*\s+(?:\(\*\)\s+)?(.*)", RegexOptions.Compiled);
 
-		[DllImport(Constants.WRAPPER)]
+		[DllImport(Configuration.WRAPPER)]
 		private static extern void addBackingFileAtAddr(string filepath, ulong address);
 
 		private readonly IFilesystem filesystem;
