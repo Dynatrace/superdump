@@ -13,10 +13,14 @@ namespace SuperDumpService {
 				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), "appsettings.json"), optional: false, reloadOnChange: true)
 				.AddEnvironmentVariables();
-
 			Configuration = builder.Build();
+			int maxUploadSizeMB = Configuration.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
+			if(maxUploadSizeMB == 0) {
+				maxUploadSizeMB = 16000;
+			}
+
 			var host = new WebHostBuilder()
-				.UseKestrel(opt => opt.Limits.MaxRequestBodySize = 8589934592L)  // 8gb
+				.UseKestrel(opt => opt.Limits.MaxRequestBodySize = 1024L * 1024L * maxUploadSizeMB)
 				.ConfigureServices(s => s.AddSingleton<IConfigurationRoot>(Configuration))
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.UseIISIntegration()
