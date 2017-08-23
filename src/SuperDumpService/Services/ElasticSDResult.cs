@@ -103,6 +103,10 @@ namespace SuperDumpService.Services {
 					break;
 				}
 			}
+			if(dumpSize == -1) {
+				// No dump found
+				return -1;
+			}
 			return dumpSize / 1024;
 		}
 	}
