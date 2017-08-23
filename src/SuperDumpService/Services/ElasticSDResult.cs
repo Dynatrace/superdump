@@ -1,12 +1,14 @@
 ﻿using Nest;
 using SuperDump.Models;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
+using System.IO;
 using System.Linq;
 
 namespace SuperDumpService.Services {
 	public class ElasticSDResult {
-		public static ElasticSDResult FromResult(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
+		public static ElasticSDResult FromResult(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
 			ElasticSDResult eResult = new ElasticSDResult() {
 				BundleId = dumpInfo.BundleId,
 				DumpId = dumpInfo.DumpId,
@@ -33,32 +35,39 @@ namespace SuperDumpService.Services {
 					eResult.AnalyzationDuration = durationSecs;
 				}
 			}
+
+			long dumpSize = ComputeDumpFileSizeKb(bundleInfo, dumpInfo, pathHelper);
+			if (dumpSize >= 0) {
+				eResult.DumpSizeKb = dumpSize;
+			}
 			return eResult;
 		}
 
 		[Keyword(Name = "Id")]
-		public string Id { get {
+		public string Id {
+			get {
 				return this.BundleId + "/" + this.DumpId;
-			} }
+			}
+		}
 
 		// Meta Information
-		[Keyword(Name="bundleId")]
+		[Keyword(Name = "bundleId")]
 		public string BundleId { get; set; }
-		[Keyword(Name="dumpId")]
+		[Keyword(Name = "dumpId")]
 		public string DumpId { get; set; }
-		[Date(Name="timestamp")]
+		[Date(Name = "timestamp")]
 		public DateTime Timestamp { get; set; }
-		[Keyword(Name="type")]
+		[Keyword(Name = "type")]
 		public string Type { get; set; }
-		[Keyword(Name="ref")]
+		[Keyword(Name = "ref")]
 		public string Reference { get; set; }
 		[Number(Name = "analyzationDurationSecs")]
 		public int? AnalyzationDuration { get; set; }
-		
+
 		// Dump Information
-		[Keyword(Name="executable")]
+		[Keyword(Name = "executable")]
 		public string Executable { get; set; }
-		[Boolean(Name="isManaged")]
+		[Boolean(Name = "isManaged")]
 		public bool IsManaged { get; set; }
 		[Keyword(Name = "processArch")]
 		public string ProcessArchitecture { get; set; }
@@ -78,5 +87,23 @@ namespace SuperDumpService.Services {
 		public string LoadedModulesVersioned { get; set; }
 		[Text(Name = "dynatraceLoadedModulesVersioned", Fielddata = true, Analyzer = "whitespace")]
 		public string DynatraceLoadedModulesVersioned { get; set; }
+		[Number(Name = "dumpSize")]
+		public long DumpSizeKb { get; set; }
+
+		private static long ComputeDumpFileSizeKb(BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
+			long dumpSize = -1;
+			string dumpDirectory = pathHelper.GetDumpDirectory(bundleInfo.BundleId, dumpInfo.DumpId);
+			if (!Directory.Exists(dumpDirectory)) {
+				return -1;
+			}
+			foreach (var file in Directory.EnumerateFiles(dumpDirectory)) {
+				if (file.EndsWith(".core.gz") || file.EndsWith(".dmp")) {
+					FileInfo fi = new FileInfo(file);
+					dumpSize = fi.Length;
+					break;
+				}
+			}
+			return dumpSize / 1024;
+		}
 	}
 }
