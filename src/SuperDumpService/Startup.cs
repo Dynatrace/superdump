@@ -25,21 +25,11 @@ using Sakura.AspNetCore.Mvc;
 
 namespace SuperDumpService {
 	public class Startup {
-		public Startup(IHostingEnvironment env) {
-			var builder = new ConfigurationBuilder()
-				.SetBasePath(env.ContentRootPath)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), "appsettings.json"), optional: false, reloadOnChange: true)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), $"appsettings.{env.EnvironmentName}.json"), optional: true)
-				.AddEnvironmentVariables();
-
-			if (env.IsDevelopment()) {
-				//builder.AddApplicationInsightsSettings(developerMode: true);
-			}
-
-			Configuration = builder.Build();
-		}
-
 		public IConfigurationRoot Configuration { get; }
+
+		public Startup(IConfigurationRoot configuration) {
+			this.Configuration = configuration;
+		}
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
