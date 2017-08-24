@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Nest;
 using SuperDump.Models;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
@@ -16,10 +17,12 @@ namespace SuperDumpService.Services {
 
 		private readonly DumpRepository dumpRepo;
 		private readonly BundleRepository bundleRepo;
+		private readonly PathHelper pathHelper;
 
-		public ElasticSearchService(DumpRepository dumpRepo, BundleRepository bundleRepo, IOptions<SuperDumpSettings> settings) {
-			this.dumpRepo = dumpRepo;
-			this.bundleRepo = bundleRepo;
+		public ElasticSearchService(DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
+			this.dumpRepo = dumpRepo ?? throw new NullReferenceException("DumpRepository must not be null!");
+			this.bundleRepo = bundleRepo ?? throw new NullReferenceException("BundleRepository must not be null!");
+			this.pathHelper = pathHelper ?? throw new NullReferenceException("PathHelper must not be null!");
 
 			string host = settings.Value.ElasticSearchHost;
 			if (string.IsNullOrEmpty(host)) {
@@ -76,7 +79,7 @@ namespace SuperDumpService.Services {
 
 		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
 			if (elasticClient != null) {
-				var response = await elasticClient.CreateAsync(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo));
+				var response = await elasticClient.CreateAsync(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper));
 				if (!response.Created) {
 					return false;
 				}
