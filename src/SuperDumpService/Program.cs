@@ -5,7 +5,7 @@ namespace SuperDumpService {
 	public static class Program {
 		public static void Main(string[] args) {
 			var host = new WebHostBuilder()
-				.UseKestrel(opt => opt.Limits.MaxRequestBodySize = 8589934592L)  // 8gb
+				.UseKestrel(opt => opt.Limits.MaxRequestBodySize = long.MaxValue)
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.UseIISIntegration()
 				.UseStartup<Startup>()
