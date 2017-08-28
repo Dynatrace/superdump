@@ -28,7 +28,10 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			if (result.ThreadInformation == null) {
 				return;
 			}
-			if (string.IsNullOrEmpty(Configuration.SOURCE_REPO_URL)) {
+
+			string repoUrl = Environment.GetEnvironmentVariable(EnvironmentName.REPOSITORY_URL.Name);
+			string repoAuth = Environment.GetEnvironmentVariable(EnvironmentName.REPOSITORY_AUTHENTICATION.Name);
+			if (string.IsNullOrEmpty(repoUrl)) {
 				return;
 			}
 			foreach (var thread in result.ThreadInformation) {
@@ -46,7 +49,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 						// source not available
 						continue;
 					}
-					string url = Configuration.SOURCE_REPO_URL + repoPath;
+					string url = repoUrl + repoPath;
 
 					// GDB requires paths beginning with /src. Therefore, all source files must be merged into a common /src directory.
 					string shortPath = file.Substring(1);
@@ -58,7 +61,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 						continue;
 					}
 					files.Add(targetFile.FullName);
-					tasks.Add(requestHandler.DownloadFromUrlAsync(url, targetFile.FullName, Configuration.SOURCE_REPO_AUTHENTICATION));
+					tasks.Add(requestHandler.DownloadFromUrlAsync(url, targetFile.FullName, repoAuth));
 				}
 			}
 			foreach (Task t in tasks) {
