@@ -53,6 +53,9 @@ namespace SuperDumpService.Services {
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
 
+				// Re-fetch dump info as it was updated
+				dumpInfo = dumpRepo.Get(dumpInfo.BundleId, dumpInfo.DumpId);
+
 				SDResult result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string err);
 				if (result != null) {
 					var bundle = bundleRepo.Get(dumpInfo.BundleId);
