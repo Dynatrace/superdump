@@ -34,7 +34,7 @@ namespace SuperDump.Common {
 					process.Start();
 					TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
 					if (process.StartInfo.RedirectStandardOutput) {
-						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { StdOut += e.Data; };
+						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { StdOut += e.Data + Environment.NewLine; };
 						process.BeginOutputReadLine();
 					}
 					if (process.StartInfo.RedirectStandardError) {
