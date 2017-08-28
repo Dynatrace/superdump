@@ -34,7 +34,8 @@ namespace SuperDump.Common {
 					process.Start();
 					TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
 					if (process.StartInfo.RedirectStandardOutput) {
-						StdOut = process.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
+						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { StdOut += e.Data; };
+						process.BeginOutputReadLine();
 					}
 					if (process.StartInfo.RedirectStandardError) {
 						StdErr = process.StandardError.ReadToEnd();
