@@ -14,6 +14,9 @@ services:
     interactive:
         image: sdlinux
         command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; chown -R gdb:gdb /opt/dump; mkdir /var/run/sshd; /usr/sbin/sshd -D"
+        environment:
+            REPOSITORY_URL: "${REPOSITORY_URL}"
+            REPOSITORY_AUTH: "${REPOSITORY_AUTH}"
         volumes:
             - ${DUMP_DIR}:/dumps:ro
             - ${DEBUG_SYMBOL_DIR}:/debugsymbols:ro

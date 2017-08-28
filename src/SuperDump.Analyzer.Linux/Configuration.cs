@@ -31,12 +31,5 @@
 		/// Set to null or empty to disable debug symbol retrieval.
 		/// </summary>
 		public const string DEBUG_SYMBOL_URL_PATTERN = "";
-
-		/// <summary>
-		/// SOURCE_REPO_URL and SOURCE_REPO_AUTHENTICATION are used in GDB interactive mode for retrieving source files
-		/// Set to null or empty to disable source file retrieval.
-		/// </summary>
-		public const string SOURCE_REPO_URL = "";
-		public const string SOURCE_REPO_AUTHENTICATION = "username:(base64 encoded password)";
 	}
 }
