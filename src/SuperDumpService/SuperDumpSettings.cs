@@ -14,6 +14,8 @@ namespace SuperDumpService {
 		public bool DeleteDumpAfterAnalysis { get; set; }
 		public bool DumpDownloadable { get; set; } = true;
 		public int MaxUploadSizeMB { get; set; } = 16000;
+		public int DumpRetentionDays { get; set; } = 0;
+		public string DumpRetentionCron { get; set; } = "";
 		public bool IncludeOtherFilesInReport { get; set; }
 		public IEnumerable<string> BinPath { get; set; }
 		public string WindowsInteractiveCommandx86 { get; set; }
