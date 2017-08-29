@@ -32,10 +32,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private async Task DownloadDebugSymbolsAsync(IEnumerable<SDModule> modules) {
 			foreach (SDModule module in modules) {
-				if (module is SDCDModule) {
-					await DownloadDebugSymbolForModuleAsync((SDCDModule)module);
-				} else {
-					throw new InvalidCastException("Provided module is not a coredump module!");
+				try {
+					if (module is SDCDModule) {
+						await DownloadDebugSymbolForModuleAsync((SDCDModule)module);
+					} else {
+						throw new InvalidCastException("Provided module is not a coredump module!");
+					}
+				} catch (Exception e) {
+					Console.WriteLine($"Failed to resolve debug symbols for {module.FileName}: {e.Message}");
 				}
 			}
 		}
@@ -58,10 +62,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		/// </summary>
 		private async Task UnstripLibrary(SDCDModule module, string hash) {
 			if (IsDebugFileAvailable(module, hash)) {
-				filesystem.Move(module.LocalPath, module.LocalPath + ".old");
+				string tempBinary = module.LocalPath + ".old";
+				if (filesystem.GetFile(tempBinary).Exists) {
+					filesystem.Delete(tempBinary);
+				}
+				filesystem.Move(module.LocalPath, tempBinary);
 				await processHandler.ExecuteProcessAndGetOutputAsync("eu-unstrip",
-					$"-o {module.LocalPath} {module.LocalPath}.old {DebugFilePath(module.LocalPath, hash)}");
-				filesystem.Delete(module.LocalPath + ".old");
+					$"-o {module.LocalPath} {tempBinary} {DebugFilePath(module.LocalPath, hash)}");
+				filesystem.Delete(tempBinary);
 			}
 		}
 
@@ -82,7 +90,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private async Task DownloadDebugSymbolsAsync(SDCDModule lib, string hash) {
 			Console.WriteLine($"Trying to retrieve debug symbols for {lib.FilePath}");
-			if(string.IsNullOrEmpty(Configuration.DEBUG_SYMBOL_URL_PATTERN)) {
+			if (string.IsNullOrEmpty(Configuration.DEBUG_SYMBOL_URL_PATTERN)) {
 				Console.WriteLine("Debug symbol URL pattern is not set. No debug symbols will be downloaded.");
 				return;
 			}
