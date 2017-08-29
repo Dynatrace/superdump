@@ -58,10 +58,14 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		/// </summary>
 		private async Task UnstripLibrary(SDCDModule module, string hash) {
 			if (IsDebugFileAvailable(module, hash)) {
-				filesystem.Move(module.LocalPath, module.LocalPath + ".old");
+				string tempBinary = module.LocalPath + ".old";
+				if(filesystem.GetFile(tempBinary).Exists) {
+					filesystem.Delete(tempBinary);
+				}
+				filesystem.Move(module.LocalPath, tempBinary);
 				await processHandler.ExecuteProcessAndGetOutputAsync("eu-unstrip",
-					$"-o {module.LocalPath} {module.LocalPath}.old {DebugFilePath(module.LocalPath, hash)}");
-				filesystem.Delete(module.LocalPath + ".old");
+					$"-o {module.LocalPath} {tempBinary} {DebugFilePath(module.LocalPath, hash)}");
+				filesystem.Delete(tempBinary);
 			}
 		}
 
