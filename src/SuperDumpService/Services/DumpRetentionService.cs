@@ -22,7 +22,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public void StartService() {
-			if(string.IsNullOrEmpty(settings.DumpRetentionCron) || settings.DumpRetentionDays == 0) {
+			if(string.IsNullOrEmpty(settings.DumpRetentionCron) || settings.DumpRetentionDays <= 0) {
 				return;
 			}
 			RecurringJob.AddOrUpdate(() => RemoveOldDumps(), settings.DumpRetentionCron, null, "retention");
