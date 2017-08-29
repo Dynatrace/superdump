@@ -11,12 +11,11 @@ services:
             SSH_HOST: "interactive"
             SSH_USER: "gdb"
             SSH_PASSWD: "gdb"
-    interactive:
-        image: sdlinux
-        command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; chown -R gdb:gdb /opt/dump; mkdir /var/run/sshd; /usr/sbin/sshd -D"
-        environment:
             REPOSITORY_URL: "${REPOSITORY_URL}"
             REPOSITORY_AUTH: "${REPOSITORY_AUTH}"
+    interactive:
+        image: sdlinux
+        command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; chown -R gdb:gdb /opt/dump; mkdir /var/run/sshd; echo AcceptEnv REPOSITORY_URL >> /etc/ssh/sshd_config; echo AcceptEnv REPOSITORY_AUTH >> /etc/ssh/sshd_config; /usr/sbin/sshd -D"
         volumes:
             - ${DUMP_DIR}:/dumps:ro
             - ${DEBUG_SYMBOL_DIR}:/debugsymbols:ro
