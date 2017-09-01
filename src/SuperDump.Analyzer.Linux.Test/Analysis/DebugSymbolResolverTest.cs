@@ -1,5 +1,4 @@
 ﻿using SuperDump.Analyzer.Linux;
-using SuperDump.Doubles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SuperDump.Models;
 using System.Collections.Generic;
@@ -9,6 +8,7 @@ using Moq;
 using SuperDump.Analyzer.Linux.Boundary;
 using Thinktecture.IO;
 using System.Threading.Tasks;
+using System;
 
 namespace SuperDump.Analyzer.Linux.Test {
 	[TestClass]
@@ -62,10 +62,27 @@ namespace SuperDump.Analyzer.Linux.Test {
 		[TestMethod]
 		public void TestDebugFilePresent() {
 			SetDebugFileExists(true);
+			SetTempFileExists(false);
+
 			resolver.Resolve(this.modules);
 			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
 			AssertNoRequestsMade();
-			processHandler.Verify(p => p.ExecuteProcessAndGetOutputAsync("eu-unstrip", $"-o ./lib/ruxit/somelib.so ./lib/ruxit/somelib.so.old /debugsymbols{Path.DirectorySeparatorChar}some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"));
+			filesystem.Verify(fs => fs.Move(module.LocalPath, module.LocalPath + ".old"));
+			processHandler.Verify(p => p.ExecuteProcessAndGetOutputAsync("eu-unstrip", $"-o {module.LocalPath} {module.LocalPath}.old /debugsymbols{Path.DirectorySeparatorChar}some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"));
+			filesystem.Verify(fs => fs.Delete(module.LocalPath + ".old"), Times.Once());
+		}
+
+		[TestMethod]
+		public void TestDebugAndTempFilesPresent() {
+			SetDebugFileExists(true);
+			SetTempFileExists(true);
+
+			resolver.Resolve(this.modules);
+			Assert.IsTrue(module.DebugSymbolPath.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol path: {module.DebugSymbolPath}");
+			AssertNoRequestsMade();
+			filesystem.Verify(fs => fs.Move(module.LocalPath, module.LocalPath + ".old"));
+			processHandler.Verify(p => p.ExecuteProcessAndGetOutputAsync("eu-unstrip", $"-o {module.LocalPath} {module.LocalPath}.old /debugsymbols{Path.DirectorySeparatorChar}some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"));
+			filesystem.Verify(fs => fs.Delete(module.LocalPath + ".old"), Times.Exactly(2));
 		}
 
 		[TestMethod]
@@ -95,19 +112,21 @@ namespace SuperDump.Analyzer.Linux.Test {
 			filesystem.Setup(fs => fs.GetFile(Path.Combine(Configuration.DEBUG_SYMBOL_PATH, "some-md5-hash", "somelib.dbg"))).Returns(debugFileInfo.Object);
 		}
 
+		private void SetTempFileExists(bool exists) {
+			var tempFile = new Mock<IFileInfo>();
+			tempFile.Setup(file => file.Exists).Returns(exists);
+			filesystem.Setup(fs => fs.GetFile(this.module.LocalPath + ".old")).Returns(tempFile.Object);
+		}
+
 		private void AssertNoRequestsMade() {
 			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
 		}
 
 		private void AssertValidRequestDone() {
-			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsNotNull<string>(), 
-				It.Is<string>(file => file.StartsWith(Configuration.DEBUG_SYMBOL_PATH) && 
-				file.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"))), 
+			requestHandler.Verify(r => r.DownloadFromUrlAsync(It.IsNotNull<string>(),
+				It.Is<string>(file => file.StartsWith(Configuration.DEBUG_SYMBOL_PATH) &&
+					file.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"))),
 				Times.Once);
-			//Assert.IsNotNull(requestHandler.FromUrl);
-			//Assert.AreNotEqual("", requestHandler.FromUrl);
-			//Assert.IsTrue(requestHandler.ToFile.StartsWith(Constants.DEBUG_SYMBOL_PATH), "Invalid DebugSymbol target: " + requestHandler.ToFile);
-			//Assert.IsTrue(requestHandler.ToFile.EndsWith($"some-md5-hash{Path.DirectorySeparatorChar}somelib.dbg"), $"Invalid DebugSymbol target: {requestHandler.ToFile}");
 		}
 
 		private Task<T> ImmediateTask<T>(T result) {
