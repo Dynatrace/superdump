@@ -53,15 +53,9 @@ namespace SuperDump.Models {
 		public static readonly SDTag DynatraceNginxAgentTag = new SDTag("dynatrace-agent-nginx", 10);
 		public static readonly SDTag DynatraceVarnishAgentTag = new SDTag("dynatrace-agent-varnish", 10);
 		public static readonly SDTag DynatraceWatchdogTag = new SDTag("dynatrace-agent-watchdog", 10);
+		public static readonly SDTag DynatraceAgentLoaderTag = new SDTag("dynatrace-agent-loader", 10);
 		public static readonly SDTag ClrWaitForGc = new SDTag("clr-wait-for-gc", 0);
 		public static readonly SDTag ClrGcThread = new SDTag("clr-gc-thread", 0);
 		public static readonly SDTag BreakInstructionTag = new SDTag("break-instruction", 0);
-
-		public static bool ContainsAgentName(string thing) {
-			string lower = thing.ToLower();
-			return lower.Contains("oneagent")
-				|| lower.Contains("dtagent")
-				|| lower.Contains("ruxitagent");
-		}
 	}
 }
