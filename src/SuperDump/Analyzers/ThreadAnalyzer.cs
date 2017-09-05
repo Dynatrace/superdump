@@ -181,8 +181,11 @@ namespace SuperDump.Analyzers {
 								where type != null && type.Name == "System.Threading.Thread"
 								select obj;
 			ClrType threadType = heap.GetTypeByName("System.Threading.Thread");
+			if (threadType == null) return result;
 			ClrInstanceField nameField = threadType.GetFieldByName("m_Name");
+			if (threadType == null) return result;
 			ClrInstanceField managedIdField = threadType.GetFieldByName("m_ManagedThreadId");
+			if (managedIdField == null) return result;
 
 			foreach (var threadObject in threadObjects) {
 				string name = (string)nameField.GetValue(threadObject);
