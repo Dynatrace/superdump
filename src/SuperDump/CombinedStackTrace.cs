@@ -49,13 +49,29 @@ namespace SuperDump {
 		}
 
 		/// <summary>
+		/// Helper struct to store the offsets of a DEBUG_STACK_FRAME
+		/// </summary>
+		private struct StackFrameOffset {
+			public ulong frameOffset;
+			public ulong stackOffset;
+			public ulong instructionOffset;
+
+			public void Update(ref DEBUG_STACK_FRAME frame) {
+				frameOffset = frame.FrameOffset;
+				stackOffset = frame.StackOffset;
+				instructionOffset = frame.InstructionOffset;
+			}
+		}
+
+		/// <summary>
 		/// Gets the native frames of a thread's stack trace
 		/// </summary>
 		/// <param name="engineThreadId"></param>
 		/// <returns></returns>
 		private IList<CombinedStackFrame> GetNativeStackTrace(uint engineThreadId) {
 			Utility.CheckHRESULT(((IDebugSystemObjects)this.debugClient).SetCurrentThreadId(engineThreadId));
-			var stackFrames = new DEBUG_STACK_FRAME[200];
+			const int cBufferSize = 1000;
+			var stackFrames = new DEBUG_STACK_FRAME[cBufferSize];
 			uint framesFilled;
 
 #if DEBUG
@@ -66,10 +82,22 @@ namespace SuperDump {
 			context.WriteLine("Path: " + name.ToString());*/
 #endif
 			//((IDebugSymbols)debugClient).SetSymbolOptions(SYMOPT.DEBUG);
-			Utility.CheckHRESULT(((IDebugControl)debugClient).GetStackTrace(0, 0, 0, stackFrames, stackFrames.Length, out framesFilled));
+			var debugControl = debugClient as IDebugControl;
 			var stackTrace = new List<CombinedStackFrame>();
-			for (uint i = 0; i < framesFilled; i++) {
-				stackTrace.Add(new CombinedStackFrame(stackFrames[i], (IDebugSymbols3)this.debugClient));
+
+			uint startOffset = 0;
+			StackFrameOffset pos = new StackFrameOffset();
+			Utility.CheckHRESULT(debugControl.GetStackTrace(pos.frameOffset, pos.stackOffset, pos.instructionOffset, stackFrames, stackFrames.Length, out framesFilled));
+
+			while (framesFilled > startOffset) {
+				for (uint i = startOffset; i < framesFilled; i++) {
+					stackTrace.Add(new CombinedStackFrame(stackFrames[i], (IDebugSymbols3)this.debugClient));
+				}
+
+				// update iterator with last frame
+				pos.Update(ref stackFrames[framesFilled - 1]);
+				startOffset = 1; // last frame is included at first position
+				Utility.CheckHRESULT(debugControl.GetStackTrace(pos.frameOffset, pos.stackOffset, pos.instructionOffset, stackFrames, stackFrames.Length, out framesFilled));
 			}
 
 			return stackTrace;
