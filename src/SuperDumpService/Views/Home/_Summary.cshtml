@@ -27,7 +27,15 @@
 				</thead>
 				<tbody>
 					<tr>
-						<td><a class="thread-link" href="#@Model.Result.ThreadInformation.Where(x => x.Value.EngineId == Model.Result.LastEvent.ThreadId).Single().Value.OsId">#@Model.Result.LastEvent.ThreadId</a></td>
+						<td>
+							@{ var lastEventThreads = @Model.Result.ThreadInformation.Where(x => x.Value.EngineId == Model.Result.LastEvent.ThreadId); }
+
+							@if (lastEventThreads.Count() == 0) {
+								<span>#@Model.Result.LastEvent.ThreadId (no corresponding thread found)</span>
+							} else {
+								<a class="thread-link" href="#@lastEventThreads.Single().Value.OsId">#@Model.Result.LastEvent.ThreadId</a>
+							}
+						</td>
 						<td>@Model.Result.LastEvent.Type</td>
 						<td>@Model.Result.LastEvent.Description</td>
 					</tr>
