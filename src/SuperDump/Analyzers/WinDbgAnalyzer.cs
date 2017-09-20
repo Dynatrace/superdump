@@ -1,7 +1,6 @@
 ﻿using Microsoft.Diagnostics.Runtime;
 using Microsoft.Diagnostics.Runtime.Interop;
 using System;
-using System.Runtime.ExceptionServices;
 
 namespace SuperDump.Analyzers {
 	public class WinDbgAnalyzer {
