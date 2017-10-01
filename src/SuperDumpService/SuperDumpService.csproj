@@ -29,7 +29,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink.Loader" Version="14.1.0" />
     <PackageReference Include="NEST" Version="5.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="RazorLight" Version="2.0.0-alpha2" />
+    <PackageReference Include="RazorLight" Version="2.0.0-alpha3" />
     <PackageReference Include="Sakura.AspNetCore.Mvc.PagedList" Version="2.0.12" />
     <PackageReference Include="Sakura.AspNetCore.PagedList" Version="2.0.2" />
     <PackageReference Include="Slack.Webhooks.Core" Version="1.0.1" />
