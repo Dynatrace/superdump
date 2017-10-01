@@ -26,13 +26,22 @@ RUN New-Item -Type Directory warmup; \
     cd ..; \
     Remove-Item -Force -Recurse warmup
 
+# ASP.NET Core
+ENV ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL https://dist.asp.net/runtimestore/2.0.0/win-x64/aspnetcore.runtimestore.zip
+
+# set up the runtime store
+RUN Write-Host \"Downloading and extracting ${env:ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL}\"; \
+    Invoke-WebRequest $env:ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL -OutFile cache.zip; \
+    $env:DOTNET_HOME = $(Split-Path -Parent (Get-Command dotnet.exe).Source); \
+    Expand-Archive -Force cache.zip -DestinationPath $env:DOTNET_HOME; \
+    Remove-Item -Force cache.zip
+
 # Install Windows Debugging Tools
 ENV WINDBG_DOWNLOAD_URL https://download.microsoft.com/download/F/9/1/F91B5312-4385-4476-9688-055E3B1ED10F/windowssdk/winsdksetup.exe
 
 RUN Invoke-WebRequest $Env:WINDBG_DOWNLOAD_URL -OutFile winsdksetup.exe; \
     start-Process winsdksetup.exe -ArgumentList '/features OptionId.WindowsDesktopDebuggers /q' -Wait ; \
     Remove-Item -Force winsdksetup.exe
-
 
 # Install DebugDiag 2.2
 ENV DEBUGDIAG_DOWNLOAD_URL https://download.microsoft.com/download/D/C/9/DC98BD0E-5A9A-4D8A-B313-22BC3604FB05/DebugDiagx64.msi
@@ -41,12 +50,17 @@ RUN Invoke-WebRequest $Env:DEBUGDIAG_DOWNLOAD_URL -OutFile DebugDiagx64.msi; \
     start-Process DebugDiagx64.msi -ArgumentList '/qn' -Wait ; \
     Remove-Item -Force DebugDiagx64.msi
 
-
 # setup superdump
 RUN mkdir C:/superdump
 COPY . C:/superdump
-WORKDIR C:/superdump
+WORKDIR C:/superdump/bin/SuperDumpService
 
-CMD C:/superdump/runsuperdump.cmd
+# volumes
+VOLUME C:/superdump/data/dumps
 
-# TODO: volumes
+# default MS symbol servers. override this with your own list if necessary.
+ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
+
+# run
+ENV ASPNETCORE_URLS http://*:80
+CMD dotnet SuperDumpService.dll
