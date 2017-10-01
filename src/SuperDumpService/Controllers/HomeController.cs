@@ -13,6 +13,7 @@ using SuperDump.Models;
 using SuperDumpService.ViewModels;
 using System.Collections.Generic;
 using Sakura.AspNetCore;
+using Microsoft.Extensions.Options;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
@@ -21,14 +22,16 @@ namespace SuperDumpService.Controllers {
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
 		public DumpStorageFilebased dumpStorage;
+		public SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, PathHelper pathHelper) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			this.dumpStorage = dumpStorage;
+			this.settings = settings.Value;
 			this.pathHelper = pathHelper;
 		}
 
@@ -114,6 +117,16 @@ namespace SuperDumpService.Controllers {
 			});
 		}
 
+		[HttpGet(Name = "Elastic")]
+		public IActionResult Elastic() {
+			string portlessUrl = settings.ElasticSearchHost;
+			if (portlessUrl.Contains(':')) {
+				int colon = portlessUrl.LastIndexOf(':');
+				portlessUrl = portlessUrl.Substring(0, colon);
+			}
+			return Redirect(portlessUrl + ":5601");
+		}
+
 		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
 			if (includeEmptyBundles) return bundles;
 
@@ -172,7 +185,9 @@ namespace SuperDumpService.Controllers {
 				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
 				CustomTextResult = ReadCustomTextResult(dumpInfo),
 				SDResultReadError = error,
-				DumpType = dumpInfo.DumpType
+				DumpType = dumpInfo.DumpType,
+				RepositoryUrl = settings.RepositoryUrl,
+				InteractiveGdbHost = settings.InteractiveGdbHost
 			});
 		}
 

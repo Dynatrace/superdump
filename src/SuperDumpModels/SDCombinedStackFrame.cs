@@ -27,7 +27,7 @@ namespace SuperDump.Models {
 		public ISet<SDTag> Tags { get; } = new HashSet<SDTag>();
 
 		public SDCombinedStackFrame LinkedStackFrame { get; set; }
-		public SDFileAndLineNumber SourceInfo { get; private set; }
+		public SDFileAndLineNumber SourceInfo { get; set; }
 
 		public SDCombinedStackFrame(StackFrameType type, string moduleName, string methodName, ulong offsetInMethod, ulong ip, ulong sp, ulong returnOffset, ulong spOffset, SDFileAndLineNumber sourceInfo) {
 			this.Type = type;

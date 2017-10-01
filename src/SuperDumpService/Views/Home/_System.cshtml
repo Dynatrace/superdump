@@ -11,34 +11,53 @@
 	<div id="system-info" class="panel-collapse in">
 		<div class="panel-body">
 			<dl class="dl-horizontal">
-				<dt>OS version:</dt>
-				<dd>@Model.Result.SystemContext.OSVersion</dd>
+				@if (Model.Result.SystemContext is SuperDump.Models.SDCDSystemContext) {
+					// Linux Core Dump
+					<dt>Platform</dt>
+					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).SystemArchitecture)</dd>
 
-				<dt>Architecture:</dt>
-				<dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+					<dt>User ID</dt>
+					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Uid)</dd>
+
+					<dt>Group ID</dt>
+					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Gid)</dd>
+
+					<dt>Entry Point</dt>
+					<dd>@String.Format("0x{0:x}", ((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).EntryPoint)</dd>
+
+					<dt>Page Size</dt>
+					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).PageSize) bytes</dd>
+				} else {
+					// Windows Crash Dump
+					<dt>OS version:</dt>
+					<dd>@Model.Result.SystemContext.OSVersion</dd>
+
+					<dt>Architecture:</dt>
+					<dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+
+					<dt>Process up-time:</dt>
+					<dd>@Model.Result.SystemContext.ProcessUpTime</dd>
+
+					<dt>System up-time:</dt>
+					<dd>@Model.Result.SystemContext.SystemUpTime</dd>
+
+					<dt># of logical processors:</dt>
+					<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
+				}
 
 				@foreach (var clr in Model.Result.SystemContext.ClrVersions) {
 					<dt>.NET CLR:</dt>
 					<dd>@clr.Version (@clr.ClrFlavor)</dd>
 				}
-
-				<dt>Process up-time:</dt>
-				<dd>@Model.Result.SystemContext.ProcessUpTime</dd>
-
-				<dt>System up-time:</dt>
-				<dd>@Model.Result.SystemContext.SystemUpTime</dd>
-
-				<dt># of logical processors:</dt>
-				<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
 			</dl>
 			<dl class="dl-horizontal">
 				<dt># of modules:</dt>
-				<dd>@Model.Result.SystemContext.Modules.Count</dd>
+				<dd>@Model.Result.SystemContext.DistinctModules().Count()</dd>
 				@{
-					var moduleTags = Model.Result.SystemContext.Modules.SelectMany(x => x.Tags).Distinct();
+					var moduleTags = Model.Result.SystemContext.DistinctModules().SelectMany(x => x.Tags).Distinct();
 					@foreach (var moduleTag in moduleTags.OrderByDescending(x => x.Importance)) {
 						<dt><span class="tag tag-@moduleTag">@moduleTag</span>-modules:</dt>
-						var matchingModules = Model.Result.SystemContext.Modules.Where(x => x.Tags.Contains(moduleTag));
+						var matchingModules = Model.Result.SystemContext.DistinctModules().Where(x => x.Tags.Contains(moduleTag));
 						<dd>@matchingModules.Select(x => $"{x.FileName} ({x.Version})").Aggregate((i, j) => i + ", " + j)</dd>
 					}
 				}
@@ -61,7 +80,7 @@
 							</span>
 						}
 					</dd>
-				}
+							}
 			</dl>
 		</div>
 	</div>

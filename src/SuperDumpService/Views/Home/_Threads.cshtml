@@ -1,6 +1,33 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 @using SuperDumpService.Helpers;
 
+<script>
+	var modalWin = new CreateModalPopUpObject();
+	//Uncomment below line to make look buttons as link
+	//modalWin.SetButtonStyle("background:none;border:none;textDecoration:underline;cursor:pointer");
+
+	function ShowMessage(msg, lines) {
+		modalWin.ShowMessage(msg, 220 + lines * 23, 550, 'User Information');
+	}
+
+
+	function EnrollNow(msg) {
+		modalWin.HideModalPopUp();
+		modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+	}
+
+	function EnrollLater() {
+		modalWin.HideModalPopUp();
+		modalWin.ShowMessage(msg, 600, 300, 'User Information', null, null);
+	}
+
+	function HideModalWindow() {
+		modalWin.HideModalPopUp();
+	}
+</script>
+
+
+
 <div class="panel panel-primary">
 	<div class="panel-heading">
 		<h4 class="panel-title">
@@ -84,6 +111,7 @@
 										<li class="text-nowrap"><label><input type="checkbox" class="showaddresses" name="@thread.OsId" checked />show addresses</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showsourceinfo" name="@thread.OsId" checked />show sourceinfo</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showstackptroffset" name="@thread.OsId" />show stackptr offsets</label></li>
+										<li class="text-nowrap"><label><input type="checkbox" class="showstackvars" name="@thread.OsId" />show stack variables</label></li>
 									</ul>
 								</td>
 							</tr>
@@ -96,16 +124,22 @@
 							<table class="table table-stacktrace" id="thread-@thread.OsId-stacktrace">
 								<thead>
 									<tr>
-										<th class="nobreak stacktype" style="width: 55px">Type</th>
+										@if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+											// Frames in core dumps are always native, no need to display
+											<th class="nobreak stacktype" style="width: 55px">Type</th>
+										}
 										<th class="nobreak stackptr" style="width: 79px">StackPtr</th>
 										<th class="nobreak stackptroffset">StackPtr.Offset</th>
 										<th class="nobreak stackinstructionptr" style="width: 79px">Instruct.Ptr</th>
 										<th class="nobreak stackreturnaddr" style="width: 79px">Ret.Addr.</th>
 										<th class="nobreak stackmethodname">Module/Method name</th>
+										<th class="nobreak stackvariables">Stack Variables</th>
 									</tr>
 								</thead>
 								<tbody>
+									@{ int frameNr = 0; }
 									@foreach (var frame in thread.StackTrace) {
+										frameNr++;
 										string frameType = string.Empty;
 										string rowClass = string.Empty;
 										if (frame.Type == SuperDump.Models.StackFrameType.Native) {
@@ -115,36 +149,71 @@
 										} else if (frame.Type == SuperDump.Models.StackFrameType.Special) {
 											rowClass = "custom-special";
 										}
-										string modulename = $"{frame.ModuleName}!{frame.MethodName}+{frame.OffsetInMethod.ToString("x")}";
 
-										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ? 
+										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ?
 											(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
 											"disas 0x" + (frame.InstructionPointer).ToString("x");
 										<tr class="@rowClass">
-											<td class="nobreak stacktype">@frame.Type.ToString()</td>
+											@if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
+												<td class="nobreak stacktype">@frame.Type.ToString()</td>
+											}
 											<td class="nobreak stackptr">@frame.StackPointer.ToString("x" + Model.PointerSize)</td>
 											<td class="nobreak stackptroffset">0x<span>@frame.StackPointerOffset.ToString("x")</span> bytes</td>
-											
+
 											<td class="nobreak stackinstructionptr">
-												<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-cmd="@disassemblyCmd" class="alert-link">
+												<interactive-link model="@Model" command="@disassemblyCmd">
 													@frame.InstructionPointer.ToString("x" + Model.PointerSize)
-												</a>
+												</interactive-link>
 											</td>
 											<td class="nobreak stackreturnaddr">@frame.ReturnOffset.ToString("x" + Model.PointerSize)</td>
 											@if (frame.Type == SuperDump.Models.StackFrameType.Special) {
-												<td class="nobreak stackmethodname">[@frame.ModuleName!@frame.MethodName+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
+												<td class="nobreak stackmethodname">[@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@frame.OffsetInMethod.ToString("x" + Model.PointerSize)]</td>
 											} else {
 												string tagclasses = "";
 												if (frame.Tags.Count > 0) {
 													tagclasses = "inline-tag " + string.Join(" ", frame.Tags.Select(x => "tag-" + x.Name));
 												}
 												<td class="nobreak stackmethodname">
-													<span class="@tagclasses">@modulename</span>
-													@if (frame.SourceInfo != null) {
-														<span class="sourceinfo">@frame.SourceInfo.File:@frame.SourceInfo.Line</span>
-													}
+													<span class="@tagclasses">@(frame.ModuleName)!<b>@(frame.MethodName)</b>+@(frame.OffsetInMethod.ToString("x"))</span>
+													<span class="sourceinfo">
+														<dynatrace-source-link repository-url="@Model.RepositoryUrl" source-file="@frame.SourceInfo?.File">@frame.SourceInfo?.File:@frame.SourceInfo?.Line</dynatrace-source-link>
+													</span>
 												</td>
 											}
+											<td class="nobreak stackvariables">
+												@if (frame is SuperDumpModels.SDCDCombinedStackFrame) {
+													<table>
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).ArgsWithLinks) {
+															<tr>
+																<td style="width:120px"><b>@(entry.Key)</b></td>
+																<td>
+																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																		@(entry.Value.ElementAt(i))
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
+																	}
+																	@(entry.Value.Last())
+																</td>
+															</tr>
+														}
+														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).LocalsWithLinks) {
+															<tr>
+																<td style="width:120px"><b>@(entry.Key)</b></td>
+																<td>
+																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																		@(entry.Value.ElementAt(i))
+																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																			@(entry.Value.ElementAt(i + 1))
+																		</interactive-link>
+																	}
+																	@(entry.Value.Last())
+																</td>
+															</tr>
+														}
+													</table>
+												}
+											</td>
 										</tr>
 									}
 								</tbody>
@@ -152,7 +221,7 @@
 							<div class="hidden-stacktrace-hack">{noformat}</div>
 						</div>
 					</div>
-				}
+										}
 			</div>
 		</div>
 	</div>

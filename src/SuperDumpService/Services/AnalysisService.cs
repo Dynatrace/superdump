@@ -1,26 +1,31 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SuperDump.Common;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
+using System.Diagnostics;
+using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
 		private readonly DumpStorageFilebased dumpStorage;
 		private readonly DumpRepository dumpRepo;
+		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
 		private readonly IOptions<SuperDumpSettings> settings;
 		private readonly NotificationService notifications;
+		private readonly ElasticSearchService elasticSearch;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
+			this.bundleRepo = bundleRepo;
 			this.pathHelper = pathHelper;
 			this.settings = settings;
 			this.notifications = notifications;
+			this.elasticSearch = elasticSearch;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -42,11 +47,20 @@ namespace SuperDumpService.Services {
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
-					await AnalyzeLinux(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
+					await LinuxAnalyzationAsync(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
+
+				// Re-fetch dump info as it was updated
+				dumpInfo = dumpRepo.Get(dumpInfo.BundleId, dumpInfo.DumpId);
+
+				SDResult result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string err);
+				if (result != null) {
+					var bundle = bundleRepo.Get(dumpInfo.BundleId);
+					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
+				}
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
@@ -108,7 +122,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private async Task AnalyzeLinux(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
+		private async Task LinuxAnalyzationAsync(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string command = settings.Value.LinuxAnalysisCommand;
 
 			if (string.IsNullOrEmpty(command)) {
@@ -127,8 +141,22 @@ namespace SuperDumpService.Services {
 
 			Console.WriteLine($"running exe='{executable}', args='{arguments}'");
 			using (var process = await ProcessRunner.Run(executable, workingDir, arguments)) {
-				File.WriteAllText(Path.Combine(workingDir.FullName, "linux-analysis.txt"), process.StdOut);
-				dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "linux-analysis.txt", SDFileType.CustomTextResult);
+				Console.WriteLine($"stdout: {process.StdOut}");
+				Console.WriteLine($"stderr: {process.StdErr}");
+
+				if (process.StdOut?.Length > 0) {
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.log"), process.StdOut);
+				}
+				if (process.StdErr?.Length > 0) {
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.err.log"), process.StdErr);
+				}
+
+				if (process.ExitCode != 0) {
+					LinuxAnalyzerExitCode exitCode = (LinuxAnalyzerExitCode)process.ExitCode;
+					string error = $"Exit code {process.ExitCode}: {exitCode.Message}";
+					Console.WriteLine(error);
+					throw new Exception(error);
+				}
 			}
 		}
 	}

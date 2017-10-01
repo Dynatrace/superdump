@@ -325,6 +325,62 @@
 	background-color: #5bc0de;
 	border-color: #5bc0de;
 }
+.tag-dynatrace-agent-java {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-dotnet {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-iis {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-node {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-php {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-process {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-log {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-os {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-plugin {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-network {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-nginx {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-varnish {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-watchdog {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
+.tag-dynatrace-agent-loader {
+	background-color: #5bc0de;
+	border-color: #5bc0de;
+}
 .tag-exception-in-stack {
 	background-color: #E6BD87;
 	border-color: #DEAE6F;
@@ -391,6 +447,10 @@ a.copyButtonForJira:hover {
 .stackreturnaddr {
 	text-align: right;
 }
+.stackvariables {
+	text-align: left;
+	display: none;
+}
 .sourceinfo {
 	color: rgb(173, 173, 173);
 }
@@ -453,4 +513,8 @@ a.copyButtonForJira:hover {
   -webkit-transition: height 0s linear;
        -o-transition: height 0s linear;
           transition: height 0s linear;
+}
+
+div.hidden {
+    display: none;
 }

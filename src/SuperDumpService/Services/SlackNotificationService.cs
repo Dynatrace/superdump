@@ -29,7 +29,7 @@ namespace SuperDumpService.Services {
 			if (this.webhookUrls == null) return;
 
 			try {
-				string msg = GetMessage(dumpInfo);
+				string msg = await GetMessage(dumpInfo);
 
 				foreach (string webhook in webhookUrls) {
 					await SendMessage(webhook, msg);
@@ -39,12 +39,12 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public string GetMessage(DumpMetainfo dumpInfo) {
+		public async Task<string> GetMessage(DumpMetainfo dumpInfo) {
 			var model = new SlackMessageViewModel();
 
 			var res = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string error);
-
-			var engine = EngineFactory.CreateEmbedded(typeof(SlackMessageViewModel));
+			
+			var engine = new EngineFactory().ForEmbeddedResources(typeof(SlackMessageViewModel));
 			model.TopProperties.Add(dumpInfo.DumpType == DumpType.WindowsDump ? "Windows" : "Linux");
 			model.DumpFilename = Path.GetFileName(dumpInfo.DumpFileName);
 			model.Url = $"{superDumpUrl}/Home/Report?bundleId={dumpInfo.BundleId}&dumpId={dumpInfo.DumpId}";
@@ -77,8 +77,8 @@ namespace SuperDumpService.Services {
 					model.LastEvent = $"{res.LastEvent.Type}: {res.LastEvent.Description}";
 				}
 			}
-
-			return engine.Parse("SlackMessage", model);
+			
+			return await engine.CompileRenderAsync("SlackMessage", model);
 		}
 
 		private async Task SendMessage(string url, string msg) {

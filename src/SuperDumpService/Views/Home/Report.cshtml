@@ -34,7 +34,11 @@
 			}
 			@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
 				<dt>DumpFileName:</dt>
-				<dd>@Model.DumpFileName (<a asp-controller="Home" asp-action="Interactive" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" class="alert-link">Start interactive session</a>)</dd>
+				<dd>@Model.DumpFileName (
+				<interactive-link  model="@(Model)">
+					Start interactive session
+				</interactive-link>
+				)</dd>
 			}
 
 			<dt>Time:</dt>

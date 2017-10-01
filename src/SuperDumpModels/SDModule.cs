@@ -31,8 +31,18 @@ namespace SuperDump.Models {
 		}
 
 		public override int GetHashCode() {
-			return base.GetHashCode();
-		}
+            int hash = 17;
+            hash = hash * 23 + Version.GetHashCode();
+            hash = hash * 23 + ImageBase.GetHashCode();
+            hash = hash * 23 + FilePath.GetHashCode();
+            hash = hash * 23 + FileName.GetHashCode();
+            hash = hash * 23 + FileSize.GetHashCode();
+            hash = hash * 23 + IsManaged.GetHashCode();
+            hash = hash * 23 + TimeStamp.GetHashCode();
+            hash = hash * 23 + PdbInfo.GetHashCode();
+            hash = hash * 23 + Tags.GetHashCode();
+            return hash;
+        }
 
 		public override bool Equals(object obj) {
 			if (obj is SDModule) {

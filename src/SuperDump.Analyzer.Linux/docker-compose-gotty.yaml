@@ -1,0 +1,23 @@
+version: '3.1'
+
+services:
+    gotty:
+        image: dotstone/gotty
+        ports:
+            - "3000:3000"
+        environment:
+            GOTTY_PORT: "3000"
+            GOTTY_ADDRESS: "127.0.0.1"
+            SSH_HOST: "interactive"
+            SSH_USER: "gdb"
+            SSH_PASSWD: "gdb"
+            REPOSITORY_URL: "${REPOSITORY_URL}"
+            REPOSITORY_AUTH: "${REPOSITORY_AUTH}"
+    interactive:
+        image: sdlinux
+        command: bash -c "useradd -s /bin/bash gdb; echo gdb:gdb | chpasswd; chown -R gdb:gdb /opt/dump; mkdir /var/run/sshd; echo AcceptEnv REPOSITORY_URL >> /etc/ssh/sshd_config; echo AcceptEnv REPOSITORY_AUTH >> /etc/ssh/sshd_config; /usr/sbin/sshd -D"
+        volumes:
+            - ${DUMP_DIR}:/dumps:ro
+            - ${DEBUG_SYMBOL_DIR}:/debugsymbols:ro
+        expose:
+            - "22"

@@ -11,13 +11,17 @@ namespace SuperDump.Common {
 		public string StdErr { get; private set; }
 		public int ExitCode { get; private set; }
 
-		public ProcessRunner(string executable, DirectoryInfo workingDir, params string[] arguments) {
+		public ProcessRunner(string executable, DirectoryInfo workingDir, params string[] arguments)
+			: this(executable, workingDir, true, true, arguments) {
+		}
+
+		public ProcessRunner(string executable, DirectoryInfo workingDir, bool redirectOutput, bool redirectError, params string[] arguments) {
 			this.process = new Process();
 			this.process.StartInfo.FileName = executable;
 			this.process.StartInfo.WorkingDirectory = workingDir.FullName;
 			this.process.StartInfo.Arguments = string.Join(" ", arguments);
-			this.process.StartInfo.RedirectStandardOutput = true;
-			this.process.StartInfo.RedirectStandardError = true;
+			this.process.StartInfo.RedirectStandardOutput = redirectOutput;
+			this.process.StartInfo.RedirectStandardError = redirectError;
 			this.process.StartInfo.UseShellExecute = false;
 			this.process.StartInfo.CreateNoWindow = true;
 		}
@@ -29,8 +33,13 @@ namespace SuperDump.Common {
 				try {
 					process.Start();
 					TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
-					StdOut = process.StandardOutput.ReadToEnd(); // important to do ReadToEnd before WaitForExit to avoid deadlock
-					StdErr = process.StandardError.ReadToEnd();
+					if (process.StartInfo.RedirectStandardOutput) {
+						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { StdOut += e.Data + Environment.NewLine; };
+						process.BeginOutputReadLine();
+					}
+					if (process.StartInfo.RedirectStandardError) {
+						StdErr = process.StandardError.ReadToEnd();
+					}
 					process.WaitForExit();
 					ExitCode = process.ExitCode;
 				} catch (Exception e) {
@@ -50,6 +59,10 @@ namespace SuperDump.Common {
 
 		public async static Task<ProcessRunner> Run(string executable, DirectoryInfo workingDir, params string[] arguments) {
 			return await new ProcessRunner(executable, workingDir, arguments).Start();
+		}
+
+		public async static Task<ProcessRunner> RunWithoutRedirection(string executable, DirectoryInfo workingDir, params string[] arguments) {
+			return await new ProcessRunner(executable, workingDir, false, false, arguments).Start();
 		}
 
 		public void Dispose() {

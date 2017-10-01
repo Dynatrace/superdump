@@ -122,6 +122,8 @@ namespace SuperDumpService {
 			services.AddSingleton<UnpackService>();
 			services.AddSingleton<NotificationService>();
 			services.AddSingleton<SlackNotificationService>();
+			services.AddSingleton<ElasticSearchService>();
+			services.AddSingleton<DumpRetentionService>();
 			services.AddWebSocketManager();
 		}
 
@@ -152,6 +154,16 @@ namespace SuperDumpService {
 				Queues = new[] { "analysis" },
 				WorkerCount = settings.Value.MaxConcurrentAnalysis
 			});
+			app.UseHangfireServer(new BackgroundJobServerOptions {
+				Queues = new[] { "elasticsearch" },
+				WorkerCount = 1
+			});
+			app.UseHangfireServer(new BackgroundJobServerOptions {
+				Queues = new[] { "retention" },
+				WorkerCount = 1
+			});
+
+			app.ApplicationServices.GetService<DumpRetentionService>().StartService();
 
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
@@ -162,7 +174,7 @@ namespace SuperDumpService {
 
 			if (env.IsDevelopment()) {
 				app.UseDeveloperExceptionPage();
-				app.UseBrowserLink();
+				BrowserLinkExtensions.UseBrowserLink(app); // using the extension method directly somehow did not work in .NET Core 2.0 (ambiguous extension method)
 			} else {
 				app.UseExceptionHandler("/Home/Error");
 			}

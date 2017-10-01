@@ -5,6 +5,7 @@ using SuperDump.Models;
 using System.IO;
 using SuperDump.Analyzers;
 using SuperDump.Printers;
+using System.Runtime.ExceptionServices;
 
 namespace SuperDump {
 	public static class Program {
@@ -16,6 +17,11 @@ namespace SuperDump {
 		private static DataTarget target;
 
 		private static int Main(string[] args) {
+			if (Environment.Is64BitProcess) {
+				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64;");
+			} else {
+				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86;");
+			}
 			using (context = new DumpContext()) {
 				Console.WriteLine("SuperDump - Windows dump analysis tool");
 				Console.WriteLine("--------------------------");
@@ -49,8 +55,10 @@ namespace SuperDump {
 						LoadDump(absoluteDumpFile);
 
 						// do this as early as possible, as some WinDbg commands help us get the right DAC files
-						var windbgAnalyzer = new WinDbgAnalyzer(context, Path.Combine(context.DumpDirectory, "windbg.log"));
-						windbgAnalyzer.Analyze();
+						RunSafe(nameof(WinDbgAnalyzer), () => {
+							var windbgAnalyzer = new WinDbgAnalyzer(context, Path.Combine(context.DumpDirectory, "windbg.log"));
+							windbgAnalyzer.Analyze();
+						});
 
 						// start analysis
 						var analysisResult = new SDResult();
@@ -60,44 +68,56 @@ namespace SuperDump {
 							SetupCLRRuntime();
 						}
 
-						var sysInfo = new SystemAnalyzer(context);
-						analysisResult.SystemContext = sysInfo.systemInfo;
+						RunSafe(nameof(ExceptionAnalyzer), () => {
+							var sysInfo = new SystemAnalyzer(context);
+							analysisResult.SystemContext = sysInfo.systemInfo;
 
-						var exceptionAnalyzer = new ExceptionAnalyzer(context, analysisResult);
+							//get non loaded symbols
+							List<string> notLoadedSymbols = new List<string>();
+							foreach (var item in sysInfo.systemInfo.Modules) {
+								if (item.PdbInfo == null || string.IsNullOrEmpty(item.PdbInfo.FileName) || string.IsNullOrEmpty(item.PdbInfo.Guid)) {
+									notLoadedSymbols.Add(item.FileName);
+								}
+								analysisResult.NotLoadedSymbols = notLoadedSymbols;
+							}
 
-						context.WriteInfo("--- Thread analysis ---");
-						ThreadAnalyzer threadAnalyzer = new ThreadAnalyzer(context);
-						analysisResult.ExceptionRecord = threadAnalyzer.exceptions;
-						analysisResult.ThreadInformation = threadAnalyzer.threads;
-						analysisResult.DeadlockInformation = threadAnalyzer.deadlocks;
-						analysisResult.LastExecutedThread = threadAnalyzer.GetLastExecutedThreadOSId();
-						context.WriteInfo("Last executed thread (engine id): " + threadAnalyzer.GetLastExecutedThreadEngineId().ToString());
+							// print to log
+							sysInfo.PrintArchitecture();
+							sysInfo.PrintCLRVersions();
+							sysInfo.PrintAppDomains();
+							sysInfo.PrintModuleList();
+						});
 
-						var analyzer = new MemoryAnalyzer(context);
-						analysisResult.MemoryInformation = analyzer.memDict;
-						analysisResult.BlockingObjects = analyzer.blockingObjects;
+						RunSafe(nameof(ExceptionAnalyzer), () => {
+							var exceptionAnalyzer = new ExceptionAnalyzer(context, analysisResult);
+						});
+
+						RunSafe(nameof(ThreadAnalyzer), () => {
+							context.WriteInfo("--- Thread analysis ---");
+							ThreadAnalyzer threadAnalyzer = new ThreadAnalyzer(context);
+							analysisResult.ExceptionRecord = threadAnalyzer.exceptions;
+							analysisResult.ThreadInformation = threadAnalyzer.threads;
+							analysisResult.DeadlockInformation = threadAnalyzer.deadlocks;
+							analysisResult.LastExecutedThread = threadAnalyzer.GetLastExecutedThreadOSId();
+							context.WriteInfo("Last executed thread (engine id): " + threadAnalyzer.GetLastExecutedThreadEngineId().ToString());
+
+							threadAnalyzer.PrintManagedExceptions();
+							threadAnalyzer.PrintCompleteStackTrace();
+						});
+
+						RunSafe(nameof(MemoryAnalyzer), () => {
+							var memoryAnalyzer = new MemoryAnalyzer(context);
+							analysisResult.MemoryInformation = memoryAnalyzer.memDict;
+							analysisResult.BlockingObjects = memoryAnalyzer.blockingObjects;
+
+							memoryAnalyzer.PrintExceptionsObjects();
+						});
 
 						// this analyzer runs after all others to put tags onto taggableitems
-						var tagAnalyzer = new TagAnalyzer(analysisResult);
-						tagAnalyzer.Analyze();
-
-						//get non loaded symbols
-						List<string> notLoadedSymbols = new List<string>();
-						foreach (var item in sysInfo.systemInfo.Modules) {
-							if (item.PdbInfo == null || string.IsNullOrEmpty(item.PdbInfo.FileName) || string.IsNullOrEmpty(item.PdbInfo.Guid)) {
-								notLoadedSymbols.Add(item.FileName);
-							}
-						}
-						analysisResult.NotLoadedSymbols = notLoadedSymbols;
-
-						// print to log
-						sysInfo.PrintArchitecture();
-						sysInfo.PrintCLRVersions();
-						sysInfo.PrintAppDomains();
-						sysInfo.PrintModuleList();
-						threadAnalyzer.PrintManagedExceptions();
-						threadAnalyzer.PrintCompleteStackTrace();
-						analyzer.PrintExceptionsObjects();
+						RunSafe(nameof(TagAnalyzer), () => {
+							var tagAnalyzer = new TagAnalyzer(analysisResult);
+							tagAnalyzer.Analyze();
+						});
 
 						// write to json
 						analysisResult.WriteResultToJSONFile(OUTPUT_LOC);
@@ -180,6 +200,18 @@ namespace SuperDump {
 			}
 			Uri folderUri = new Uri(folder);
 			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+		}
+
+		/// <summary>
+		/// Executes the action, catches any exception and logs it
+		/// </summary>
+		[HandleProcessCorruptedStateExceptions] // some operations out of our control (WinDbg ExecuteCommand) cause AccessViolationExceptions in some cases. Be brave and try to continute to run. This attribute allows an exception-handler to catch it.
+		private static void RunSafe(string name, Action action) {
+			try {
+				action();
+			} catch (Exception e) {
+				context.WriteError($"WinDbgAnalyzer failed: {e}");
+			}
 		}
 	}
 }

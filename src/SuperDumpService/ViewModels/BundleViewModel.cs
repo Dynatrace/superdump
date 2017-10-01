@@ -10,6 +10,7 @@ namespace SuperDumpService.ViewModels {
 		public IDictionary<string, string> CustomProperties { get; set; }
 		public IEnumerable<DumpMetainfo> DumpInfos { get; set; }
 		public string ErrorMessage { get; set; }
+		public string OriginalBundleId { get; set; }
 
 		public BundleViewModel(BundleMetainfo bundleInfo, IEnumerable<DumpMetainfo> dumpInfos) {
 			this.BundleId = bundleInfo.BundleId;
@@ -18,6 +19,7 @@ namespace SuperDumpService.ViewModels {
 			this.CustomProperties = bundleInfo.CustomProperties;
 			this.DumpInfos = dumpInfos ?? new List<DumpMetainfo>();
 			this.ErrorMessage = bundleInfo.ErrorMessage;
+			this.OriginalBundleId = bundleInfo.OriginalBundleId;
 		}
 	}
 }

@@ -161,6 +161,11 @@ namespace SuperDumpService.Services {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
 			try {
 				using (TempDirectoryHandle tempDir = await downloadService.Download(bundleId, url, filename)) {
+					if(!SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
+						// duplication detected
+						return;
+					}
+
 					// this class should only do downloading. 
 					// unf. i could not find a good way to *not* make this call from with DownloadService
 					// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
@@ -170,6 +175,24 @@ namespace SuperDumpService.Services {
 			} catch (Exception e) {
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Failed, e.ToString());
 			}
+		}
+
+		private bool SetHashAndCheckIfDuplicated(string bundleId, FileInfo archiveFile) {
+			if (!archiveFile.Exists) {
+				Console.WriteLine($"Unable to find file {archiveFile.FullName}! Aborting analysis.");
+				return false;
+			}
+			string md5 = Utility.Md5ForFile(archiveFile);
+			var duplicates = bundleRepo.GetAll().Where(b => b.Status != BundleStatus.Duplication && b.FileHash == md5);
+			if (duplicates.Any()) {
+				string originalBundleId = duplicates.First().BundleId;
+				Console.WriteLine($"This bundle has already been analyzed. See bundle id {originalBundleId}.");
+				bundleRepo.Get(bundleId).OriginalBundleId = originalBundleId;
+				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Duplication);
+				return false;
+			}
+			bundleRepo.Get(bundleId).FileHash = md5;
+			return true;
 		}
 
 		public void RerunAnalysis(string bundleId, string dumpId) {

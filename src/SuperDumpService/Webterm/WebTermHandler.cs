@@ -11,15 +11,19 @@ using Microsoft.Extensions.Options;
 using System.IO;
 using SuperDumpService.Helpers;
 using System.Net;
+using SuperDump.Models;
+using SuperDumpService.Models;
 
 namespace SuperDump.Webterm {
 	public class WebTermHandler : WebSocketHandler {
 		private Dictionary<string, ConsoleAppManager> socketIdToProcess = new Dictionary<string, ConsoleAppManager>();
 		private Dictionary<ConsoleAppManager, string> processToSocketId = new Dictionary<ConsoleAppManager, string>();
+		private SuperDumpRepository superdumpRepo;
 		private DumpRepository dumpRepo;
 		private IOptions<SuperDumpSettings> settings;
 
-		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) : base(webSocketConnectionManager) {
+		public WebTermHandler(WebSocketConnectionManager webSocketConnectionManager, SuperDumpRepository superdumpRepo, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) : base(webSocketConnectionManager) {
+			this.superdumpRepo = superdumpRepo;
 			this.dumpRepo = dumpRepo;
 			this.settings = settings;
 		}
@@ -41,12 +45,6 @@ namespace SuperDump.Webterm {
 		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
 			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
-			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
-		}
-
-		private ConsoleAppManager StartGdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
-			string command = settings.Value.LinuxInteractiveCommand;
-			if (string.IsNullOrEmpty(command)) throw new ArgumentException("LinuxInteractiveCommand not set.");
 			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
 		}
 
@@ -89,14 +87,13 @@ namespace SuperDump.Webterm {
 				var dumpFilePathInfo = dumpFilePath != null ? new FileInfo(dumpFilePath) : null;
 				var workingDirectory = dumpFilePathInfo?.Directory;
 
-				bool is64bit = dumpInfo.Is64Bit.HasValue ? dumpInfo.Is64Bit.Value : true; // default to 64 bit in case it's not known.
+				var sdResult = dumpRepo.GetResult(bundleId, dumpId, out string error);
+				bool is64bit = sdResult?.SystemContext.ProcessArchitecture.Contains("64") ?? true; // default to 64 bit in case it's not known
 				ConsoleAppManager mgr = null;
 				var initialCommands = new List<string>();
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
 					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
-				} else if (dumpInfo.DumpFileName.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartGdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");
 				}

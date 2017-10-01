@@ -74,7 +74,7 @@ namespace SuperDumpService.Services {
 			if (!string.IsNullOrEmpty(errorMessage)) {
 				bundleInfo.ErrorMessage = errorMessage;
 			}
-			if (status == BundleStatus.Finished || status == BundleStatus.Failed) {
+			if (status == BundleStatus.Finished || status == BundleStatus.Failed || status == BundleStatus.Duplication) {
 				bundleInfo.Finished = DateTime.Now;
 			}
 			storage.Store(bundleInfo);

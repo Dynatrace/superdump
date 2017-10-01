@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SuperDump.Models;
 using System;
+using System.IO;
 
 namespace SuperDumpModels {
 	public class SDFileAndLineNumber : IEquatable<SDFileAndLineNumber>, ISerializableJson {
