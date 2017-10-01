@@ -59,6 +59,7 @@ WORKDIR C:/superdump/bin/SuperDumpService
 VOLUME C:/superdump/data/dumps
 
 # default MS symbol servers. override this with your own list if necessary.
+RUN mkdir C:/symbols
 ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
 
 # run
