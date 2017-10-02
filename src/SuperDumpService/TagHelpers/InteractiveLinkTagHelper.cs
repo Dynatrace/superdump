@@ -23,27 +23,29 @@ namespace SuperDumpService.TagHelpers {
 			DumpId = Model.DumpId;
 			BundleId = Model.BundleId;
 			Executable = (Model.Result?.SystemContext as SDCDSystemContext)?.FileName;
-
-			if (string.IsNullOrEmpty(InteractiveGdbHost)) {
-				output.TagName = null;
-				output.Attributes.Clear();
-			} else {
-				string url;
-				output.TagName = "a";
-				if (Type == DumpType.LinuxCoreDump) {
-					url = $"{InteractiveGdbHost}/?arg={BundleId}&arg={DumpId}&arg={Executable}";
-					if (!string.IsNullOrEmpty(Command)) {
-						url += $"&arg=\"{Command}\"";
-					}
-				} else {
-					url = $"Interactive?bundleId={BundleId}&dumpId={DumpId}";
-					if(!string.IsNullOrEmpty(Command)) {
-						url += $"&cmd={Command}";
-					}
+	
+	string url;
+			output.TagName = "a";
+			if (Type == DumpType.LinuxCoreDump) {
+				if (string.IsNullOrEmpty(InteractiveGdbHost)) {
+					output.TagName = null;
+					output.Attributes.Clear();
+					return base.ProcessAsync(context, output);
 				}
-				output.Attributes.Add("href", url);
-				output.Attributes.Add("target", "_blank");
+
+				url = $"{InteractiveGdbHost}/?arg={BundleId}&arg={DumpId}&arg={Executable}";
+				if (!string.IsNullOrEmpty(Command)) {
+					url += $"&arg=\"{Command}\"";
+				}
+			} else {
+				url = $"Interactive?bundleId={BundleId}&dumpId={DumpId}";
+				if(!string.IsNullOrEmpty(Command)) {
+					url += $"&cmd={Command}";
+				}
 			}
+			output.Attributes.Add("href", url);
+			output.Attributes.Add("target", "_blank");
+			
 			return base.ProcessAsync(context, output);
 		}
 	}
