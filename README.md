@@ -18,7 +18,7 @@ Docker
 Windows analyis can be run simply in Docker for Windows:
  * Have Windows Containers enabled on your Docker for Windows.
  * Just run `docker run -d -p 80:5000 -v superdump:C:\superdump\data\dumps discostu105/superdump`
- * Due to a [Windows/Docker glitch][winglitch], it's not possible to find the serviec under `localhost:5000` though. Use `docker inspect <id>` to get the IP address of the container and access it directly `<ip-of-container>:80`. This should improve [in future Windows versions][winfuture].
+ * Due to a [Windows/Docker glitch][winglitch], it's not possible to find the service under `localhost:5000` though. Use `docker inspect <id>` to get the IP address of the container and access it directly `<ip-of-container>:80`. This should improve [in future Windows versions][winfuture].
 
 [winglitch]: https://github.com/docker/for-win/issues/221
 [winfuture]: https://twitter.com/stefscherer/status/906463103503695872
