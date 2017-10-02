@@ -50,18 +50,20 @@ RUN Invoke-WebRequest $Env:DEBUGDIAG_DOWNLOAD_URL -OutFile DebugDiagx64.msi; \
     start-Process DebugDiagx64.msi -ArgumentList '/qn' -Wait ; \
     Remove-Item -Force DebugDiagx64.msi
 
+# default MS symbol servers. override this with your own list if necessary.
+RUN mkdir C:/symbols
+ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
+# needed, otherwise symbol servers are not reachable
+RUN "reg.exe" "add \"HKLM\Software\Microsoft\Symbol Server\" /v NoInternetProxy /t REG_DWORD /d 1 /f"
+
 # setup superdump
 RUN mkdir C:/superdump
 COPY . C:/superdump
-WORKDIR C:/superdump/bin/SuperDumpService
 
 # volumes
 VOLUME C:/superdump/data/dumps
 
-# default MS symbol servers. override this with your own list if necessary.
-RUN mkdir C:/symbols
-ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
-
 # run
 ENV ASPNETCORE_URLS http://*:80
+WORKDIR C:/superdump/bin/SuperDumpService
 CMD dotnet SuperDumpService.dll

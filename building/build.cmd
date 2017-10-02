@@ -22,7 +22,7 @@ if exist %MSBUILD% (
     %MSBUILD% msbuild.targets /l:FileLogger,Microsoft.Build.Engine;logfile=msbuild.log /target:%target%
     REM ugly hack for a bug in VS2017 (SuperDumpService.xml documentation not included in publishing)
     REM missing SuperDumpService.xml breaks swashbuckle
-    copy "..\src\SuperDumpService\bin\Release\netcoreapp1.1\SuperDumpService.xml" "..\build\bin\SuperDumpService\SuperDumpService.xml"
+    copy "..\src\SuperDumpService\bin\Release\netcoreapp2.0\SuperDumpService.xml" "..\build\bin\SuperDumpService\SuperDumpService.xml"
 ) else (
     echo Could not find msbuild.exe at %MSBUILD% (Is Visual Studio installed?)
     exit /B 1
