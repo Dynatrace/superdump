@@ -1,7 +1,7 @@
 SuperDump
 =========
 
-*SuperDump* is a service for **_automated crash-dump analysis_**.
+*SuperDump* is a service for **_automated crash-dump analysis_**. It has a web- as well as a REST-interface to upload Windows crash dumps or Linux coredumps.
 
 SuperDump was made with these goals in mind: 
 
@@ -12,6 +12,16 @@ What SuperDump is not:
 
   * A replacement for in-depth analysis tools such as WinDbg.
   * A windows kernel dump analysis tool.
+
+Docker
+=============
+Windows analyis can be run simply in Docker for Windows:
+ * Have Windows Containers enabled on your Docker for Windows.
+ * Just run `docker run -d -p 80:5000 -v superdump:C:\superdump\data\dumps discostu105/superdump`
+ * Due to a [Windows/Docker glitch], it's not possible to find the serviec under `localhost:5000` though. Use `docker inspect <id>` to get the IP address of the container and access it directly `<ip-of-container>:80`. This should improve [in future Windows versions].
+
+[Windows/Docker glitch] https://github.com/docker/for-win/issues/221
+[in future Windows versions] https://twitter.com/stefscherer/status/906463103503695872
 
 Features
 ========
@@ -95,7 +105,7 @@ Though it currently works great for us at Dynatrace, there are areas that need t
 
  * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
  * Some stuff is tailored for our needs at Dynatrace. E.g. we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
-  * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
+ * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
 
 Future
 ======
