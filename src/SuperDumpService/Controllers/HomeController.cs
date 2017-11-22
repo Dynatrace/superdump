@@ -215,7 +215,7 @@ namespace SuperDumpService.Controllers {
 				|| file.Extension == ".json") {
 				return Content(System.IO.File.ReadAllText(file.FullName));
 			}
-			return File(System.IO.File.ReadAllBytes(file.FullName), "application/octet-stream", file.Name);
+			return File(System.IO.File.OpenRead(file.FullName), "application/octet-stream", file.Name);
 		}
 
 		[HttpPost]
