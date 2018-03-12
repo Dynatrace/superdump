@@ -530,3 +530,52 @@ a.copyButtonForJira:hover {
 div.hidden {
     display: none;
 }
+
+.ErrorMessage {
+	color: red;
+}
+
+.dump-log-input {
+	font-family: Courier New, Courier, monospace;
+	font-size: 12px;
+	width: 100%;
+}
+
+.dump-log-result {
+	font-family: Courier New, Courier, monospace;
+	font-size: 12px;
+	word-break: keep-all;
+	white-space: nowrap;
+	background-color: #fefbea;
+	display: inline-block;
+}
+
+.green {
+	background-color: lawngreen;
+}
+
+.blue {
+	background-color: deepskyblue;
+}
+
+.ignored {
+	background-color: white;
+}
+
+.filegroups dl.dl-horizontal {
+	padding: 4px 0px;
+}
+.filegroup-Primary_Dump {
+
+}
+.filegroup-Other_Files {
+}
+.filegroup-Metadata a {
+	color: rgb(173, 173, 173);
+}
+.filegroup-Logs a {
+	color: rgb(173, 173, 173);
+}
+.filegroup-Results {
+	font-weight: bold;
+}

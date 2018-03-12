@@ -14,6 +14,7 @@ using SuperDumpService.ViewModels;
 using System.Collections.Generic;
 using Sakura.AspNetCore;
 using Microsoft.Extensions.Options;
+using System.Net.Mime;
 
 namespace SuperDumpService.Controllers {
 	public class HomeController : Controller {
@@ -182,7 +183,7 @@ namespace SuperDumpService.Controllers {
 				Files = dumpRepo.GetFileNames(bundleId, dumpId),
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
-				PointerSize = res == null ? 8 : (res.SystemContext.ProcessArchitecture == "X86" ? 8 : 12),
+				PointerSize = res == null ? 8 : (res.SystemContext?.ProcessArchitecture == "X86" ? 8 : 12),
 				CustomTextResult = ReadCustomTextResult(dumpInfo),
 				SDResultReadError = error,
 				DumpType = dumpInfo.DumpType,
@@ -213,9 +214,23 @@ namespace SuperDumpService.Controllers {
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"
 				|| file.Extension == ".json") {
-				return Content(System.IO.File.ReadAllText(file.FullName));
+				return ContentWithFilename(System.IO.File.ReadAllText(file.FullName), file.Name);
 			}
 			return File(System.IO.File.OpenRead(file.FullName), "application/octet-stream", file.Name);
+		}
+
+		/// <summary>
+		/// Adds Filename to Content-Disposition Headers, so that "Save As..." in the browser uses the correct file name.
+		/// When normally requesting this, the content is direclty shown in the browser.
+		/// </summary>
+		private IActionResult ContentWithFilename(string content, string filename) {
+			ContentDisposition cd = new ContentDisposition {
+				FileName = filename,
+				Inline = true  // false = prompt the user for downloading;  true = browser to try to show the file inline
+			};
+			Response.Headers.Add("Content-Disposition", cd.ToString());
+			Response.Headers.Add("X-Content-Type-Options", "nosniff");
+			return Content(content);
 		}
 
 		[HttpPost]

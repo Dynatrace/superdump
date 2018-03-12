@@ -23,6 +23,7 @@ namespace SuperDumpService.Services {
 
 		public void Populate() {
 			foreach(var info in storage.ReadBundleMetainfos()) {
+				if (info == null) continue;
 				bundles[info.BundleId] = info;
 			}
 		}

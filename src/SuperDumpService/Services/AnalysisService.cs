@@ -73,7 +73,7 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task AnalyzeWindows(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
-			string dumpselector = pathHelper.GetDumpSelectorExePath();
+			string dumpselector = "SuperDumpSelector.exe"; // should be on PATH
 
 			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
 			using (var process = await ProcessRunner.Run(dumpselector, workingDir, WrapInQuotes(dumpFilePath), WrapInQuotes(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)))) {

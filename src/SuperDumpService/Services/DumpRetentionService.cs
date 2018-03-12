@@ -31,7 +31,9 @@ namespace SuperDumpService.Services {
 		[Hangfire.Queue("retention", Order = 2)]
 		public void RemoveOldDumps() {
 			foreach(var bundle in bundleRepo.GetAll()) {
+				if (bundle == null) continue;
 				foreach(var dump in dumpRepo.Get(bundle.BundleId)) {
+					if (dump == null) continue;
 					if(dump.Created < DateTime.Now.Subtract(TimeSpan.FromDays(settings.DumpRetentionDays))) {
 						RemoveOldDumps(dump);
 					}

@@ -4,6 +4,7 @@ using SuperDump.Models;
 using System.Collections.Generic;
 using System.Linq;
 using SuperDump.ModelHelpers;
+using System;
 
 namespace SuperDump.Analyzers {
 	public class MemoryAnalyzer {
@@ -50,7 +51,7 @@ namespace SuperDump.Analyzers {
 
 		public void GetBlockingObjects() {
 			context.WriteLine(" --- Blocking objects in heap ---");
-
+			try {
 			if (this.context.Heap != null && this.context.Heap.CanWalkHeap) {
 				context.WriteLine("{0,-20} {1,-10} {2,-8} {3,-20} {4,-20}", "Address", "Type", "Locked", "Owners", "Pending");
 				foreach (BlockingObject obj in this.context.Heap.EnumerateBlockingObjects()) {
@@ -59,13 +60,17 @@ namespace SuperDump.Analyzers {
 			} else {
 				context.WriteWarning("no heap information avaliable!");
 			}
+			} catch (NullReferenceException e) {
+				context.WriteWarning("NullReferenceException in PrintChainForThread. Known CLRMD bug (https://github.com/Microsoft/clrmd/issues/85)");
+			}
 		}
 
 		public void PrintMemoryStat() {
 			context.WriteLine("{0,-20} {1,-10} {2,-10} {3}", "MT", "Count", "TotalSize", "Class Name");
 			foreach (var memObj in from e in memDict
 									orderby e.Value.Size
-									descending select e) {
+								   descending
+								   select e) {
 				context.WriteLine("{0,-20:x16} {1,-10} {2,-10} {3}",
 					memObj.Key, memObj.Value.Count, ByteSize.FromBytes(memObj.Value.Size), memObj.Value.Type);
 			}

@@ -7,14 +7,22 @@ namespace SuperDumpService.Helpers {
 
 		public DirectoryInfo Dir { get; internal set; }
 
+		private readonly bool delete;
+
 		/// <summary>
 		/// Deletes the directory given, when disposed.
 		/// </summary>
-		public TempDirectoryHandle(DirectoryInfo dir) {
+		public TempDirectoryHandle(DirectoryInfo dir, bool delete = true) {
 			this.Dir = dir;
+			this.delete = delete;
+			dir.Create();
 		}
 
+		public TempDirectoryHandle(string dir) : this(new DirectoryInfo(dir)) { }
+
 		public void Dispose() {
+			if (!delete) return;
+
 			// If deleting the directory fails, let's keep trying for another second because there might be some temporary process
 			// accessing the directory causing an IOException ('file is in use by another process ...')
 			for (int i = 0; i < 10; i++) {

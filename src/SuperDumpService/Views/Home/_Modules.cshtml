@@ -24,6 +24,7 @@
 					</tr>
 				</thead>
 				<tbody>
+					@if (Model.Result.SystemContext != null) {
 					@foreach (var module in Model.Result.SystemContext.Modules.OrderBy(x => x.FilePath)) {
 						<tr>
 							@if (module is SuperDump.Models.SDCDModule) {
@@ -40,6 +41,7 @@
 								<td class="text-nowrap">@module.Version</td>
 							}
 						</tr>
+						}
 					}
 				</tbody>
 			</table>

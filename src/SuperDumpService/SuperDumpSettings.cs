@@ -27,5 +27,6 @@ namespace SuperDumpService {
 		public string RepositoryUrl { get; set; }
 		public string InteractiveGdbHost { get; set; }
 		public string ElasticSearchHost { get; set; }
+		public string NodeJsPath { get; set; }
 	}
 }
