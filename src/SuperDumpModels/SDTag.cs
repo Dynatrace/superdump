@@ -57,5 +57,9 @@ namespace SuperDump.Models {
 		public static readonly SDTag ClrWaitForGc = new SDTag("clr-wait-for-gc", 0);
 		public static readonly SDTag ClrGcThread = new SDTag("clr-gc-thread", 0);
 		public static readonly SDTag BreakInstructionTag = new SDTag("break-instruction", 0);
+		public static readonly SDTag PureCallTag = new SDTag("purecall", 100);
+		public static readonly SDTag AbortTag = new SDTag("abort", 100);
+		public static readonly SDTag StackOverflowTag = new SDTag("stackoverflow", 100);
+
 	}
 }
