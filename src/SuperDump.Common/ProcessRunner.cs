@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SuperDump.Common {
 	public class ProcessRunner : IDisposable {
 		private readonly Process process;
 
-		public string StdOut { get; private set; }
-		public string StdErr { get; private set; }
+		private readonly StringBuilder stdOutSb = new StringBuilder();
+		private readonly StringBuilder stdErrSb = new StringBuilder();
+
+		public string StdOut { get { return stdOutSb.ToString(); } }
+		public string StdErr { get { return stdErrSb.ToString(); } }
 		public int ExitCode { get; private set; }
 
 		public ProcessRunner(string executable, DirectoryInfo workingDir, params string[] arguments)
@@ -26,24 +30,23 @@ namespace SuperDump.Common {
 			this.process.StartInfo.CreateNoWindow = true;
 		}
 
-		public async Task<ProcessRunner> Start() {
-			string info = $"starting process. exe: '{process.StartInfo.FileName}' {process.StartInfo.Arguments}, workdir: '{process.StartInfo.WorkingDirectory}'";
-			Console.WriteLine(info);
+		private async Task<ProcessRunner> Start() {
+			Console.WriteLine($"starting process. {this.ToString()}");
 			await Task.Run(() => {
 				try {
 					process.Start();
 					TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
 					if (process.StartInfo.RedirectStandardOutput) {
-						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { StdOut += e.Data + Environment.NewLine; };
+						process.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) { stdOutSb.AppendLine(e.Data); };
 						process.BeginOutputReadLine();
 					}
 					if (process.StartInfo.RedirectStandardError) {
-						StdErr = process.StandardError.ReadToEnd();
+						stdErrSb.Append(process.StandardError.ReadToEnd());
 					}
 					process.WaitForExit();
 					ExitCode = process.ExitCode;
 				} catch (Exception e) {
-					throw new ProcessRunnerException($"An exception occurred while starting a process: {info}", e);
+					throw new ProcessRunnerException($"An exception occurred while starting a process: {this.ToString()}", e);
 				}
 			});
 			return this;
@@ -67,6 +70,10 @@ namespace SuperDump.Common {
 
 		public void Dispose() {
 			this.process.Dispose();
+		}
+
+		public override string ToString() {
+			return $"exe: '{process.StartInfo.FileName}' {process.StartInfo.Arguments}, workdir: '{process.StartInfo.WorkingDirectory}'";
 		}
 	}
 }

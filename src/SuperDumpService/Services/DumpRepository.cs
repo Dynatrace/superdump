@@ -35,6 +35,10 @@ namespace SuperDumpService.Services {
 			lock (sync) {
 				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
 				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId)) {
+					if (dumpInfo == null) {
+						Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
+						continue;
+					}
 					dumps[bundleId][dumpInfo.DumpId] = dumpInfo;
 				}
 			}
@@ -130,9 +134,10 @@ namespace SuperDumpService.Services {
 			storage.Store(dumpInfo);
 		}
 
-		internal async Task AddFileCopy(string bundleId, string dumpId, FileInfo file, SDFileType type) {
-			await storage.AddFileCopy(bundleId, dumpId, file);
+		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo file, SDFileType type) {
+			var newFile = await storage.AddFileCopy(bundleId, dumpId, file);
 			AddSDFile(bundleId, dumpId, file.Name, type);
+			return newFile;
 		}
 
 		internal void AddFile(string bundleId, string dumpId, string filename, SDFileType type) {

@@ -10,6 +10,9 @@
 	</div>
 	<div id="system-info" class="panel-collapse in">
 		<div class="panel-body">
+			@if (Model.Result.SystemContext == null) {
+				<span>SystemContext is null</span>
+			} else {
 			<dl class="dl-horizontal">
 				@if (Model.Result.SystemContext is SuperDump.Models.SDCDSystemContext) {
 					// Linux Core Dump
@@ -82,6 +85,7 @@
 					</dd>
 							}
 			</dl>
+			}
 		</div>
 	</div>
 </div>

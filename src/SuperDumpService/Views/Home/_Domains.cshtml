@@ -1,6 +1,6 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 
-@if (Model.Result.SystemContext.AppDomains.Any()) {
+@if (Model.Result.SystemContext != null && Model.Result.SystemContext.AppDomains.Any()) {
 	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<h4 class="panel-title">
@@ -20,12 +20,14 @@
 						</tr>
 					</thead>
 					<tbody>
+						@if (Model.Result.SystemContext != null) {
 						@foreach (var domain in Model.Result.SystemContext.AppDomains) {
 							<tr>
 								<td>@domain.Id</td>
 								<td>@domain.Address.ToString("X")</td>
 								<td>@domain.Name</td>
 							</tr>
+							}
 						}
 					</tbody>
 				</table>

@@ -8,7 +8,6 @@ namespace SuperDumpService.Helpers {
 		private readonly string workingDir;
 		private readonly string uploadsDir;
 		private readonly string hangfireDbDir;
-		private readonly string superDumpSelectorExePath;
 		private static string confDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../conf/");
 		private static string confDirFallback = Directory.GetCurrentDirectory();
 
@@ -17,7 +16,6 @@ namespace SuperDumpService.Helpers {
 			this.workingDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.DumpsDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/");
 			this.uploadsDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/");
 			this.hangfireDbDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/");
-			this.superDumpSelectorExePath = configurationSection.GetValue<string>(nameof(SuperDumpSettings.SuperDumpSelectorExePath)) ?? GetDumpSelectorExePathFallback();
 		}
 
 		internal static string GetConfDirectory() {
@@ -71,19 +69,6 @@ namespace SuperDumpService.Helpers {
 
 		internal string GetJsonPathFallback(string bundleId, string dumpId) {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".json");
-		}
-
-		public string GetDumpSelectorExePath() {
-			return superDumpSelectorExePath;
-		}
-
-		private string GetDumpSelectorExePathFallback() {
-			string dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\bin\SuperDumpSelector.exe"));
-			if (!File.Exists(dumpselector)) {
-				// deployment case
-				dumpselector = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\SuperDumpSelector\SuperDumpSelector.exe"));
-			}
-			return dumpselector;
 		}
 
 		internal string GetBundleMetadataPath(string bundleId) {

@@ -41,10 +41,15 @@ namespace SuperDump.Analyzers {
 		private void GetBlockingObjects() {
 			if (this.context.Runtime != null && this.context.Heap != null && this.context.Heap.CanWalkHeap) {
 				foreach (ClrThread thread in context.Runtime.Threads) {
-					foreach (BlockingObject obj in thread.BlockingObjects) {
-						if (obj != null) {
-							this.threads[thread.OSThreadId].BlockingObjects.Add(obj.ToSDModel());
+					try {
+						foreach (BlockingObject obj in thread.BlockingObjects) {
+							if (obj != null) {
+								this.threads[thread.OSThreadId].BlockingObjects.Add(obj.ToSDModel());
+							}
 						}
+					} catch (NullReferenceException e) {
+						// There is a CLRMD bug causing a NRE in `thread.BlockingObjects`. see https://github.com/Microsoft/clrmd/issues/85
+						context.WriteWarning("NullReferenceException in GetBlockingObjects. Known CLRMD bug (https://github.com/Microsoft/clrmd/issues/85)");
 					}
 				}
 			} else {
@@ -306,7 +311,9 @@ namespace SuperDump.Analyzers {
 
 		public uint GetLastExecutedThreadOSId() {
 			uint engineId = GetLastExecutedThreadEngineId();
-			return this.threads.First(t => t.Value.EngineId == engineId).Key;
+			var threads = this.threads.Where(t => t.Value.EngineId == engineId);
+			if (threads.Count() == 0) return 0;
+			return threads.First().Key;
 		}
 
 		public void PrintCompleteStackTrace() {
@@ -353,7 +360,11 @@ namespace SuperDump.Analyzers {
 		}
 
 		public void PrintChainForThread(ClrThread thread) {
-			this.PrintChainForThreadHelper(thread, 0, 0, new HashSet<uint>());
+			try {
+				this.PrintChainForThreadHelper(thread, 0, 0, new HashSet<uint>());
+			} catch (NullReferenceException e) {
+				context.WriteWarning("NullReferenceException in PrintChainForThread. Known CLRMD bug (https://github.com/Microsoft/clrmd/issues/85)");
+			}
 		}
 
 		private void PrintChainForThreadHelper(ClrThread thread, int depth, uint lastVisitedThread, HashSet<uint> visitedThreads) {

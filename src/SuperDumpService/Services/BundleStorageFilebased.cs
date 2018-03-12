@@ -37,7 +37,12 @@ namespace SuperDumpService.Services {
 		}
 		
 		private static BundleMetainfo ReadMetainfoFile(string filename) {
+			try {
 			return JsonConvert.DeserializeObject<BundleMetainfo>(File.ReadAllText(filename));
+			} catch (Exception e) {
+				Console.Error.WriteLine($"Error reading bundle metadata '{filename}': {e.Message}");
+				return null;
+			}
 		}
 
 		internal void Store(BundleMetainfo bundleInfo) {
