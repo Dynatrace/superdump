@@ -406,6 +406,18 @@
 	background-color: #9900cc;
 	border-color: #9900cc;
 }
+.tag-purecall {
+	background-color: #9900cc;
+	border-color: #9900cc;
+}
+.tag-abort {
+	background-color: #9900cc;
+	border-color: #9900cc;
+}
+.tag-stackoverflow {
+	background-color: #E68550;
+	border-color: #D9723B;
+}
 
 ul.flat {
 	list-style-type: none;
