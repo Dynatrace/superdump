@@ -1,0 +1,12 @@
+diff -ur src/coredump/_UCD_create.c src/coredump/_UCD_create.c
+--- src/coredump/_UCD_create.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_create.c	2014-07-02 07:36:38.462988791 +0200
+@@ -67,7 +67,7 @@
+ #include "_UCD_internal.h"
+ 
+ #define NOTE_DATA(_hdr) STRUCT_MEMBER_P((_hdr), sizeof (Elf32_Nhdr) + UNW_ALIGN((_hdr)->n_namesz, 4))
+-#define NOTE_SIZE(_hdr) (sizeof (Elf32_Nhdr) + UNW_ALIGN((_hdr)->n_namesz, 4) + (_hdr)->n_descsz)
++#define NOTE_SIZE(_hdr) (sizeof (Elf32_Nhdr) + UNW_ALIGN((_hdr)->n_namesz, 4) + UNW_ALIGN((_hdr)->n_descsz, 4))
+ #define NOTE_NEXT(_hdr) STRUCT_MEMBER_P((_hdr), NOTE_SIZE(_hdr))
+ #define NOTE_FITS_IN(_hdr, _size) ((_size) >= sizeof (Elf32_Nhdr) && (_size) >= NOTE_SIZE (_hdr))
+ #define NOTE_FITS(_hdr, _end) NOTE_FITS_IN((_hdr), (unsigned long)((char *)(_end) - (char *)(_hdr)))

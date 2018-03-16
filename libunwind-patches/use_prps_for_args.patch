@@ -1,0 +1,65 @@
+--- src/coredump/_UCD_create.c	2017-06-02 10:07:48.478143400 +0200
++++ src/coredump/_UCD_create.c	2017-06-02 14:15:01.800890100 +0200
+@@ -61,7 +61,7 @@
+ #endif
+ 
+ #include <elf.h>
+-#include <sys/procfs.h> /* struct elf_prstatus */
++#include <sys/procfs.h> /* struct elf_prstatus and elf_prpsinfo */
+ 
+ #ifndef NT_FILE         /* older kernel versions do yet have this note */
+ #define NT_FILE         0x46494c45
+@@ -257,7 +257,9 @@
+                   ui->auxv = NOTE_DATA(note_hdr);
+                 if (note_hdr->n_type == NT_PRSTATUS)
+                   ui->threads[n_threads++] = NOTE_DATA (note_hdr);
+-               if (note_hdr->n_type == NT_SIGINFO)
++                if (note_hdr->n_type == NT_PRPSINFO)
++                  ui->prpsinfo = (struct elf_prpsinfo*) NOTE_DATA(note_hdr);
++                if (note_hdr->n_type == NT_SIGINFO)
+                   ui->siginfos[n_threads-1] = (siginfo_t*) NOTE_DATA(note_hdr);
+ 
+                 if (note_hdr->n_type == NT_FILE)
+@@ -339,6 +341,14 @@
+   return ui->prstatus->pr_cursig;
+ }
+ 
++int _UCD_get_prpsinfo(struct UCD_info *ui, struct elf_prpsinfo* prpsinfo)
++{
++  if(!ui->prpsinfo)
++    return -1;
++  *prpsinfo = *ui->prpsinfo;
++  return 0;
++}
++
+ int _UCD_get_auxv_value(struct UCD_info *ui, unw_word_t entry_type, unw_word_t *value)
+ {
+   if (!ui->auxv)
+--- src/coredump/_UCD_internal.h	2017-06-02 10:07:48.531624400 +0200
++++ src/coredump/_UCD_internal.h	2017-06-02 11:09:34.245196000 +0200
+@@ -98,6 +98,7 @@
+     struct PRSTATUS_STRUCT **threads;
+     unw_word_t *auxv;
+     siginfo_t **siginfos;
++    struct elf_prpsinfo *prpsinfo;
+ 
+     struct elf_dyn_info edi;
+   };
+--- include/libunwind-coredump.h	2017-06-02 10:07:48.585169300 +0200
++++ include/libunwind-coredump.h	2017-06-02 14:14:21.073293100 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include <libunwind.h>
+ #include <signal.h>
++#include <sys/procfs.h> /* struct elf_prpsinfo */
+ 
+ #if defined(__cplusplus) || defined(c_plusplus)
+ extern "C" {
+@@ -54,6 +55,7 @@
+ extern pid_t _UCD_get_pid(struct UCD_info *);
+ extern int _UCD_get_auxv_value(struct UCD_info *ui, unw_word_t entry_type, unw_word_t *value);
+ extern int _UCD_get_siginfo(struct UCD_info *ui, int thread_no, siginfo_t* siginfo);
++extern int _UCD_get_prpsinfo(struct UCD_info *ui, struct elf_prpsinfo* prpsinfo);
+ extern int _UCD_get_cursig(struct UCD_info *);
+ extern void _UCD_set_backing_files_sysroot(struct UCD_info *ui, const char *sysroot);
+ extern int _UCD_add_backing_file_at_segment(struct UCD_info *, int phdr_no, const char *filename);

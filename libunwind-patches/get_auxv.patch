@@ -1,0 +1,58 @@
+diff -ur include/libunwind-coredump.h include/libunwind-coredump.h
+--- include/libunwind-coredump.h	2012-10-06 06:54:38.000000000 +0200
++++ include/libunwind-coredump.h	2014-09-26 14:32:56.920879783 +0200
+@@ -43,6 +43,7 @@
+ extern int _UCD_get_num_threads(struct UCD_info *);
+ extern void _UCD_select_thread(struct UCD_info *, int);
+ extern pid_t _UCD_get_pid(struct UCD_info *);
++extern int _UCD_get_auxv_value(struct UCD_info *ui, unw_word_t entry_type, unw_word_t *value);
+ extern int _UCD_get_cursig(struct UCD_info *);
+ extern int _UCD_add_backing_file_at_segment(struct UCD_info *, int phdr_no, const char *filename);
+ extern int _UCD_add_backing_file_at_vaddr(struct UCD_info *,
+diff -ur src/coredump/_UCD_create.c src/coredump/_UCD_create.c
+--- src/coredump/_UCD_create.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_create.c	2014-09-26 14:39:41.491517458 +0200
+@@ -243,6 +243,8 @@
+             note_hdr = (Elf32_Nhdr *)ui->note_phdr;
+             while (NOTE_FITS (note_hdr, note_end))
+               {
++                if (note_hdr->n_type == NT_AUXV)
++                  ui->auxv = NOTE_DATA(note_hdr);
+                 if (note_hdr->n_type == NT_PRSTATUS)
+                   ui->threads[n_threads++] = NOTE_DATA (note_hdr);
+ 
+@@ -304,6 +306,23 @@
+   return ui->prstatus->pr_cursig;
+ }
+ 
++int _UCD_get_auxv_value(struct UCD_info *ui, unw_word_t entry_type, unw_word_t *value)
++{
++  if (!ui->auxv)
++    return 0;
++  unw_word_t *auxv = ui->auxv;
++  while (*auxv)
++    {
++      if (*auxv == entry_type)
++        {
++          if (value) *value = *(auxv+1);
++          return 1;
++        }
++      auxv += 2;
++    }
++    return 0;
++}
++
+ int _UCD_add_backing_file_at_segment(struct UCD_info *ui, int phdr_no, const char *filename)
+ {
+   if ((unsigned)phdr_no >= ui->phdrs_count)
+diff -ur src/coredump/_UCD_internal.h src/coredump/_UCD_internal.h
+--- src/coredump/_UCD_internal.h	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_internal.h	2014-09-26 14:26:57.710869397 +0200
+@@ -93,6 +93,7 @@
+     struct PRSTATUS_STRUCT *prstatus; /* points inside note_phdr */
+     int n_threads;
+     struct PRSTATUS_STRUCT **threads;
++    unw_word_t *auxv;
+ 
+     struct elf_dyn_info edi;
+   };
