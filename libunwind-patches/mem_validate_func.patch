@@ -1,0 +1,100 @@
+diff -Naur src/x86/Ginit.c src/x86/Ginit.c
+--- src/x86/Ginit.c	2012-10-06 06:54:38.000000000 +0200
++++ src/x86/Ginit.c	2015-10-19 11:16:39.771323714 +0200
+@@ -82,6 +82,8 @@
+ #define NLGA 4
+ static unw_word_t last_good_addr[NLGA];
+ static int lga_victim;
++static int dummyWriteFd = -1;
++static int dummyWriteFdInitialized = 0;
+ 
+ static int
+ validate_mem (unw_word_t addr)
+@@ -115,6 +117,19 @@
+ #endif
+     return -1;
+ 
++  if (!dummyWriteFdInitialized) {
++    dummyWriteFd = open("/dev/random", O_WRONLY);
++    if(dummyWriteFd == -1) {
++      dummyWriteFd = open("/tmp/unwindtmp", O_WRONLY | O_CREAT);
++      if(dummyWriteFd != -1) {
++        unlink("/tmp/unwindtmp");
++      }
++    }
++    dummyWriteFdInitialized = 1;
++  }
++  if (dummyWriteFd != -1 && write(dummyWriteFd, (void *)addr, sizeof(unw_word_t)) < 0)
++    return -1;
++
+   victim = lga_victim;
+   for (i = 0; i < NLGA; i++) {
+     if (!last_good_addr[victim]) {
+diff -Naur src/x86_64/Ginit.c src/x86_64/Ginit.c
+--- src/x86_64/Ginit.c	2012-10-06 06:54:38.000000000 +0200
++++ src/x86_64/Ginit.c	2015-10-19 13:56:22.863505287 +0200
+@@ -85,6 +85,48 @@
+ }
+ #endif
+ 
++static int dummyWriteFd = -1;
++static int dummyWriteFdInitialized = 0;
++#ifdef HAVE_MINCORE
++static int mincore_write_validate(void *addr, size_t len)
++{
++  if (mincore_validate(addr, len) != 0)
++    return -1;
++  if (!dummyWriteFdInitialized) {
++    dummyWriteFd = open("/dev/random", O_WRONLY);
++    if(dummyWriteFd == -1) {
++      dummyWriteFd = open("/tmp/unwindtmp", O_WRONLY | O_CREAT);
++      if(dummyWriteFd != -1) {
++        unlink("/tmp/unwindtmp");
++      }
++    }
++    dummyWriteFdInitialized = 1;
++  }
++  if (dummyWriteFd != -1)
++    return write(dummyWriteFd, (void *)addr, sizeof(unw_word_t)) < 0 ? -1 : 0;
++  return 0;
++}
++#endif
++
++static int msync_write_validate(void *addr, size_t len)
++{
++  if (msync_validate(addr, len) != 0)
++    return -1;
++  if (!dummyWriteFdInitialized) {
++    dummyWriteFd = open("/dev/random", O_WRONLY);
++    if(dummyWriteFd == -1) {
++      dummyWriteFd = open("/tmp/unwindtmp", O_WRONLY | O_CREAT);
++      if(dummyWriteFd != -1) {
++        unlink("/tmp/unwindtmp");
++      }
++    }
++    dummyWriteFdInitialized = 1;
++  }
++  if (dummyWriteFd != -1)
++    return write(dummyWriteFd, (void *)addr, sizeof(unw_word_t)) < 0 ? -1 : 0;
++  return 0;
++}
++
+ /* Initialise memory validation method. On linux kernels <2.6.21,
+    mincore() returns incorrect value for MAP_PRIVATE mappings,
+    such as stacks. If mincore() was available at compile time,
+@@ -97,13 +139,13 @@
+   if (mincore (&present, 1, &present) == 0)
+     {
+       Debug(1, "using mincore to validate memory\n");
+-      mem_validate_func = mincore_validate;
++      mem_validate_func = mincore_write_validate;
+     }
+   else
+ #endif
+     {
+       Debug(1, "using msync to validate memory\n");
+-      mem_validate_func = msync_validate;
++      mem_validate_func = msync_write_validate;
+     }
+ }
+ 

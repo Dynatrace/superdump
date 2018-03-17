@@ -1,0 +1,84 @@
+--- src/coredump/_UCD_create.c	2017-05-03 14:53:02.000000000 +0200
++++ src/coredump/_UCD_create.c	2017-05-30 14:38:57.323184900 +0200
+@@ -67,6 +67,10 @@
+ #define NT_FILE         0x46494c45
+ #endif
+ 
++#ifndef NT_SIGINFO
++#define NT_SIGINFO      0x53494749
++#endif
++
+ #include "_UCD_lib.h"
+ #include "_UCD_internal.h"
+ 
+@@ -242,6 +246,8 @@
+ 
+             ui->n_threads = n_threads;
+             ui->threads = malloc(sizeof (void *) * n_threads);
++            ui->siginfos = malloc(sizeof(siginfo_t*) * n_threads);
++            memset(ui->siginfos, 0, sizeof(siginfo_t*) * n_threads);
+ 
+             n_threads = 0;
+             note_hdr = (Elf32_Nhdr *)ui->note_phdr;
+@@ -251,6 +257,8 @@
+                   ui->auxv = NOTE_DATA(note_hdr);
+                 if (note_hdr->n_type == NT_PRSTATUS)
+                   ui->threads[n_threads++] = NOTE_DATA (note_hdr);
++               if (note_hdr->n_type == NT_SIGINFO)
++                  ui->siginfos[n_threads-1] = (siginfo_t*) NOTE_DATA(note_hdr);
+ 
+                 if (note_hdr->n_type == NT_FILE)
+                   {
+@@ -348,6 +356,14 @@
+     return 0;
+ }
+ 
++int _UCD_get_siginfo(struct UCD_info *ui, int thread_no, siginfo_t* siginfo)
++{
++  if(!ui->siginfos || !ui->siginfos[thread_no])
++    return -1;
++  *siginfo = *ui->siginfos[thread_no];
++  return 0;
++}
++
+ void _UCD_set_backing_files_sysroot(struct UCD_info *ui, const char *sysroot)
+ {
+   free(ui->sysroot);
+--- src/coredump/_UCD_internal.h	2017-05-03 14:53:02.000000000 +0200
++++ src/coredump/_UCD_internal.h	2017-05-29 11:55:12.846638400 +0200
+@@ -97,6 +97,7 @@
+     int n_threads;
+     struct PRSTATUS_STRUCT **threads;
+     unw_word_t *auxv;
++    siginfo_t **siginfos;
+ 
+     struct elf_dyn_info edi;
+   };
+--- src/coredump/_UCD_destroy.c	2017-05-03 14:53:02.000000000 +0200
++++ src/coredump/_UCD_destroy.c	2017-05-30 10:51:42.912079300 +0200
+@@ -47,6 +47,7 @@
+ 
+   free(ui->files);
+   free(ui->note_phdr);
++  free(ui->siginfos);
+   free(ui->phdrs);
+   free(ui->threads);
+ 
+--- include/libunwind-coredump.h	2017-05-03 14:53:02.000000000 +0200
++++ include/libunwind-coredump.h	2017-05-29 17:20:24.893514400 +0200
+@@ -25,6 +25,7 @@
+ #define libunwind_coredump_h
+ 
+ #include <libunwind.h>
++#include <signal.h>
+ 
+ #if defined(__cplusplus) || defined(c_plusplus)
+ extern "C" {
+@@ -52,6 +53,7 @@
+ extern void _UCD_select_thread(struct UCD_info *, int);
+ extern pid_t _UCD_get_pid(struct UCD_info *);
+ extern int _UCD_get_auxv_value(struct UCD_info *ui, unw_word_t entry_type, unw_word_t *value);
++extern int _UCD_get_siginfo(struct UCD_info *ui, int thread_no, siginfo_t* siginfo);
+ extern int _UCD_get_cursig(struct UCD_info *);
+ extern void _UCD_set_backing_files_sysroot(struct UCD_info *ui, const char *sysroot);
+ extern int _UCD_add_backing_file_at_segment(struct UCD_info *, int phdr_no, const char *filename);

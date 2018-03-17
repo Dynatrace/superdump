@@ -1,0 +1,12 @@
+diff -ur src/coredump/_UCD_destroy.c src/coredump/_UCD_destroy.c
+--- src/coredump/_UCD_destroy.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_destroy.c	2014-07-14 10:03:58.393291554 +0200
+@@ -45,6 +45,8 @@
+     }
+ 
+   free(ui->note_phdr);
++  free(ui->phdrs);
++  free(ui->threads);
+ 
+   free(ui);
+ }
