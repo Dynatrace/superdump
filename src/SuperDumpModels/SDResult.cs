@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SuperDump.Models {
 	// SDResult identifies the whole result of the dump analysis
@@ -60,6 +61,14 @@ namespace SuperDump.Models {
 				}
 			}
 			return tags;
+		}
+
+		/// <summary>
+		/// Returns the thread with the most severe error-tag on it. "most likely" the crashing thread. might also return null, if there is no thread with error tags.
+		/// </summary>
+		public SDThread GetErrorThread() {
+			// order threads by importance of their error-tags, then return first
+			return ThreadInformation.Values.OrderByDescending(t => t.ErrorTags.Any() ? t.ErrorTags.Max(x => x.Importance) : 0).FirstOrDefault();
 		}
 	}
 }
