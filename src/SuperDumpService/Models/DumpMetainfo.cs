@@ -8,6 +8,7 @@ namespace SuperDumpService.Models {
 	public class DumpMetainfo {
 		public string BundleId { get; set; }
 		public string DumpId { get; set; }
+		public DumpIdentifier Id => new DumpIdentifier(BundleId, DumpId);
 		public string DumpFileName { get; set; } // original filename. just informational.
 		public DumpType DumpType { get; set; } = DumpType.WindowsDump; // default to windows, for compatibility to existing repos (which will only contain windows dumps)
 		public DateTime Created { get; set; }

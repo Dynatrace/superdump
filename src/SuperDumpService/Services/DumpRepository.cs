@@ -54,6 +54,12 @@ namespace SuperDumpService.Services {
 			return dumps[bundleId].Values;
 		}
 
+		public IEnumerable<DumpMetainfo> GetAll() {
+			lock (sync) {
+				return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
+			}
+		}
+
 		/// <summary>
 		/// Adds the actual .dmp file from sourcePath to the repo+storage
 		/// Does NOT start analysis
