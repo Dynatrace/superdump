@@ -29,8 +29,9 @@ namespace SuperDumpService.Services {
 				elasticClient = null;
 				return;
 			}
-			ConnectionSettings connSettings = new ConnectionSettings(new Uri(settings.Value.ElasticSearchHost))
-				.MapDefaultTypeIndices(m => m.Add(typeof(ElasticSDResult), RESULT_IDX));
+			ConnectionSettings connSettings = new ConnectionSettings(new Uri(settings.Value.ElasticSearchHost));
+			((IConnectionSettingsValues)connSettings).DefaultIndices.Add(typeof(ElasticSDResult), RESULT_IDX);
+
 			elasticClient = new ElasticClient(connSettings);
 
 			if (!IndexExists()) {
@@ -79,8 +80,9 @@ namespace SuperDumpService.Services {
 
 		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
 			if (elasticClient != null) {
-				var response = await elasticClient.CreateAsync(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper));
-				if (!response.Created) {
+				new Nest.CreateRequest<ElasticSDResult>(RESULT_IDX);
+				var response = await elasticClient.CreateAsync(new CreateDescriptor<ElasticSDResult>(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper)));
+				if (response.Result != Result.Created) {
 					return false;
 				}
 			}

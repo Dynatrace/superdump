@@ -32,10 +32,6 @@ namespace SuperDumpService {
 				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), $"appsettings.{env.EnvironmentName}.json"), optional: true)
 				.AddEnvironmentVariables();
 
-			if (env.IsDevelopment()) {
-				//builder.AddApplicationInsightsSettings(developerMode: true);
-			}
-
 			Configuration = builder.Build();
 		}
 
@@ -105,9 +101,6 @@ namespace SuperDumpService {
 			services.AddBootstrapPagerGenerator(options => {
 				options.ConfigureDefault();
 			});
-
-			// App Insights
-			services.AddApplicationInsightsTelemetry(Configuration);
 
 			// register repository as singleton
 			services.AddSingleton<SuperDumpRepository>();
