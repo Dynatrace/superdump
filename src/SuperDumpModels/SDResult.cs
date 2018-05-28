@@ -68,7 +68,7 @@ namespace SuperDump.Models {
 		/// </summary>
 		public SDThread GetErrorThread() {
 			// order threads by importance of their error-tags, then return first
-			return ThreadInformation.Values.OrderByDescending(t => t.ErrorTags.Any() ? t.ErrorTags.Max(x => x.Importance) : 0).FirstOrDefault();
+			return ThreadInformation.Values.Where(x => x.ErrorTags.Any()).OrderByDescending(t => t.ErrorTags.Max(x => x.Importance)).FirstOrDefault();
 		}
 	}
 }

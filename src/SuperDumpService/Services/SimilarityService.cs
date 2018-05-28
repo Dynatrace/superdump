@@ -11,22 +11,10 @@ using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	public class SimilarityService {
-		private readonly DumpStorageFilebased dumpStorage;
 		private readonly DumpRepository dumpRepo;
-		private readonly BundleRepository bundleRepo;
-		private readonly PathHelper pathHelper;
-		private readonly IOptions<SuperDumpSettings> settings;
-		private readonly NotificationService notifications;
-		private readonly ElasticSearchService elasticSearch;
 
-		public SimilarityService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch) {
-			this.dumpStorage = dumpStorage;
+		public SimilarityService(DumpRepository dumpRepo) {
 			this.dumpRepo = dumpRepo;
-			this.bundleRepo = bundleRepo;
-			this.pathHelper = pathHelper;
-			this.settings = settings;
-			this.notifications = notifications;
-			this.elasticSearch = elasticSearch;
 		}
 
 		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo) {
@@ -48,7 +36,7 @@ namespace SuperDumpService.Services {
 					var otherResult = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string error);
 
 					if (otherResult == null) continue;
-					CrashSimilarity crashSimilarity = await CrashSimilarity.Calculate(result, otherResult);
+					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(result, otherResult);
 
 					similarities[dump.Id] = crashSimilarity;
 
