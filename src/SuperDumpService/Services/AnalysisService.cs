@@ -17,8 +17,9 @@ namespace SuperDumpService.Services {
 		private readonly IOptions<SuperDumpSettings> settings;
 		private readonly NotificationService notifications;
 		private readonly ElasticSearchService elasticSearch;
+		private readonly SimilarityService similarityService;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch) {
+		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch, SimilarityService similarityService) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -26,6 +27,7 @@ namespace SuperDumpService.Services {
 			this.settings = settings;
 			this.notifications = notifications;
 			this.elasticSearch = elasticSearch;
+			this.similarityService = similarityService;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -56,7 +58,7 @@ namespace SuperDumpService.Services {
 				// Re-fetch dump info as it was updated
 				dumpInfo = dumpRepo.Get(dumpInfo.BundleId, dumpInfo.DumpId);
 
-				SDResult result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string err);
+				SDResult result = await dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId);
 				if (result != null) {
 					var bundle = bundleRepo.Get(dumpInfo.BundleId);
 					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
@@ -69,6 +71,7 @@ namespace SuperDumpService.Services {
 					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
 				}
 				await notifications.NotifyDumpAnalysisFinished(dumpInfo);
+				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(90)); // last 90 days.
 			}
 		}
 

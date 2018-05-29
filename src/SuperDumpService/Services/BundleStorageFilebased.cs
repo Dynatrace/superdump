@@ -21,19 +21,21 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper;
 		}
 
-		public IEnumerable<BundleMetainfo> ReadBundleMetainfos() {
+		public async Task<IEnumerable<BundleMetainfo>> ReadBundleMetainfos() {
+			var list = new List<BundleMetainfo>();
 			pathHelper.PrepareDirectories();
 			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetWorkingDir())) {
 				var bundleId = new DirectoryInfo(dir).Name;
 				var metainfoFilename = pathHelper.GetBundleMetadataPath(bundleId);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist
-					CreateBundleMetainfoForCompat(bundleId);
+					await CreateBundleMetainfoForCompat(bundleId);
 
-					yield return new BundleMetainfo() { BundleId = bundleId };
+					list.Add(new BundleMetainfo() { BundleId = bundleId });
 				}
-				yield return ReadMetainfoFile(metainfoFilename);
+				list.Add(ReadMetainfoFile(metainfoFilename));
 			}
+			return list;
 		}
 		
 		private static BundleMetainfo ReadMetainfoFile(string filename) {
@@ -58,14 +60,14 @@ namespace SuperDumpService.Services {
 		/// Older storage did not have metainfo files. We need to read full results, create new metainfo file and store it.
 		/// </summary>
 		/// <param name="bundleId"></param>
-		private void CreateBundleMetainfoForCompat(string bundleId) {
+		private async Task CreateBundleMetainfoForCompat(string bundleId) {
 			var metainfo = new BundleMetainfo() {
 				BundleId = bundleId
 			};
 			// use storage directly, not repo. repo might not be initialized yet
 			// back then, every dump had the same information encoded. take the first dump and use it from there.
 
-			var dumps = dumpStorage.ReadDumpMetainfoForBundle(bundleId);
+			var dumps = await dumpStorage.ReadDumpMetainfoForBundle(bundleId);
 
 			// loop through all dumps and hope to find a good one.
 			foreach (var dump in dumps) {
@@ -73,7 +75,7 @@ namespace SuperDumpService.Services {
 					metainfo.Created = dump.Created;
 					metainfo.Finished = dump.Created; // can't do better.
 					metainfo.Status = BundleStatus.Finished;
-					var fullresult = dumpStorage.ReadResults(bundleId, dump.DumpId, out string error);
+					var fullresult = await dumpStorage.ReadResults(bundleId, dump.DumpId);
 					if (fullresult != null) {
 						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["ref"] = fullresult.AnalysisInfo.JiraIssue;
 						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["note"] = fullresult.AnalysisInfo.FriendlyName;

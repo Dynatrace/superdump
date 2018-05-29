@@ -24,16 +24,18 @@ namespace SuperDumpService.Services {
 			this.settings = settings;
 		}
 
-		public IEnumerable<DumpMetainfo> ReadDumpMetainfoForBundle(string bundleId) {
+		public async Task<IEnumerable<DumpMetainfo>> ReadDumpMetainfoForBundle(string bundleId) {
+			var list = new List<DumpMetainfo>();
 			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetBundleDirectory(bundleId))) {
 				var dumpId = new DirectoryInfo(dir).Name;
 				var metainfoFilename = pathHelper.GetDumpMetadataPath(bundleId, dumpId);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist. read full json, then store metadata file
-					CreateMetainfoForCompat(bundleId, dumpId);
+					await CreateMetainfoForCompat(bundleId, dumpId);
 				}
-				yield return ReadMetainfoFile(metainfoFilename);
+				list.Add(ReadMetainfoFile(metainfoFilename));
 			}
+			return list;
 		}
 
 		private DumpMetainfo ReadMetainfoFile(string filename) {
@@ -48,12 +50,12 @@ namespace SuperDumpService.Services {
 			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
-		private void CreateMetainfoForCompat(string bundleId, string dumpId) {
+		private async Task CreateMetainfoForCompat(string bundleId, string dumpId) {
 			var metainfo = new DumpMetainfo() {
 				BundleId = bundleId,
 				DumpId = dumpId
 			};
-			var result = ReadResults(bundleId, dumpId, out string error);
+			var result = await ReadResults(bundleId, dumpId);
 			if (result != null) {
 				metainfo.Status = DumpStatus.Finished;
 				metainfo.DumpFileName = result.AnalysisInfo.Path?.Replace(pathHelper.GetUploadsDir(), ""); // AnalysisInfo.FileName used to store full file names. e.g. "C:\superdump\uploads\myzipfilename\subdir\dump.dmp". lets only keep "myzipfilename\subdir\dump.dmp"
@@ -65,8 +67,7 @@ namespace SuperDumpService.Services {
 			WriteMetainfoFile(metainfo, pathHelper.GetDumpMetadataPath(bundleId, dumpId));
 		}
 
-		public SDResult ReadResults(string bundleId, string dumpId, out string error) {
-			error = string.Empty;
+		public async Task<SDResult> ReadResults(string bundleId, string dumpId) {
 			var filename = pathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) {
 				// fallback for older dumps
@@ -74,10 +75,11 @@ namespace SuperDumpService.Services {
 				if (!File.Exists(filename)) return null;
 			}
 			try {
-				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename), 
+				string text = await File.ReadAllTextAsync(filename);
+				return JsonConvert.DeserializeObject<SDResult>(text, 
 					new SDSystemContextConverter(), new SDModuleConverter(), new SDCombinedStackFrameConverter(), new SDTagConverter());
 			} catch (Exception e) {
-				error = $"could not deserialize {filename}: {e.Message}";
+				string error = $"could not deserialize {filename}: {e.Message}";
 				Console.WriteLine(error);
 				return null;
 			}

@@ -77,20 +77,20 @@ namespace SuperDump.Models {
 		/// This could be done in a nicer way (dictionary).
 		/// </summary>
 		public static SDTag FixUpTagType(SDTag tag) {
-			if (tag == AbortTag) return AbortTag;
-			if (tag == PureCallTag) return PureCallTag;
-			if (tag == StackOverflowTag) return StackOverflowTag;
-			if (tag == DeadlockedTag) return DeadlockedTag;
-			if (tag == NativeExceptionTag) return NativeExceptionTag;
-			if (tag == ManagedExceptionTag) return ManagedExceptionTag;
-			if (tag == AssertionErrorTag) return AssertionErrorTag;
-			if (tag == BufferOverrunTag) return BufferOverrunTag;
-			if (tag == ExceptionCatchTag) return ExceptionCatchTag;
-			if (tag == ExceptionInStackTag) return ExceptionInStackTag;
-			if (tag.Name == "exception-in-stack") return ExceptionInStackTag; // changed name
+			if (tag == null) return null;
+			if (tag.Equals(AbortTag)) return AbortTag;
+			if (tag.Equals(PureCallTag)) return PureCallTag;
+			if (tag.Equals(StackOverflowTag)) return StackOverflowTag;
+			if (tag.Equals(DeadlockedTag)) return DeadlockedTag;
+			if (tag.Equals(NativeExceptionTag)) return NativeExceptionTag;
+			if (tag.Equals(ManagedExceptionTag)) return ManagedExceptionTag;
+			if (tag.Equals(AssertionErrorTag)) return AssertionErrorTag;
+			if (tag.Equals(BufferOverrunTag)) return BufferOverrunTag;
+			if (tag.Equals(ExceptionCatchTag)) return ExceptionCatchTag;
+			if (tag.Equals(ExceptionInStackTag)) return ExceptionInStackTag;
+			if (tag.Name.Equals("exception-in-stack")) return ExceptionInStackTag; // changed name
 
 			return new SDTag(tag.Name, tag.Importance, TagType.Info);
-
 		}
 	}
 

@@ -9,6 +9,7 @@ using SuperDumpService.Models;
 using System.Diagnostics;
 using System.Linq;
 using SuperDump.Models;
+using System.Threading;
 
 namespace SuperDumpService.Services {
 	public class Relationship {
@@ -31,55 +32,88 @@ namespace SuperDumpService.Services {
 			this.relationShipRepo = relationShipRepository;
 		}
 
-		public IEnumerable<CrashSimilarity> GetSimilarities(DumpIdentifier dumpId) {
-			return relationShipRepo.GetRelationShips(dumpId).Select(x => x.CrashSimilarity);
+		public async Task<IDictionary<DumpIdentifier, double>> GetSimilarities(DumpIdentifier dumpId) {
+			return await relationShipRepo.GetRelationShips(dumpId);
 		}
 
 		/// <summary>
 		/// if force==true, analysis is run again, even if it's already there.
 		/// if force==false, only relationships that have not been analyzed yet are run again.
 		/// </summary>
-		public void TriggerSimilarityAnalysisForAllDumps(bool force) {
-			foreach (var dumpInfo in dumpRepo.GetAll()) {
-				ScheduleSimilarityAnalysis(dumpInfo, force);
+		public void TriggerSimilarityAnalysisForAllDumps(bool force, DateTime timeFrom) {
+			Console.WriteLine($"Triggering similarity analysis for all dumps new thatn {timeFrom}. force={force}");
+			// start analysis with newest dump
+			// for every dump, only analyze newer ones.
+			// that way, at first, only newset dumps are compared with newest ones.
+			foreach (var dumpInfo in dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderBy(x => x.Created)) {
+				ScheduleSimilarityAnalysis(dumpInfo, force, dumpInfo.Created);
 			}
 		}
 
-		public void ScheduleSimilarityAnalysis(DumpIdentifier dumpId, bool force) {
-			ScheduleSimilarityAnalysis(dumpRepo.Get(dumpId), force);
+		public void ScheduleSimilarityAnalysis(DumpIdentifier dumpId, bool force, DateTime timeFrom) {
+			ScheduleSimilarityAnalysis(dumpRepo.Get(dumpId), force, timeFrom);
 		}
 		
-		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo, bool force) {
-			var result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string error);
-
-			if (result == null) return; // no results found. do nothing.
-
+		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo, bool force, DateTime timeFrom) {
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, result, force));
+			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, force, timeFrom));
 		}
 
+		public async Task WipeAll() {
+			await relationShipRepo.WipeAll();
+		}
 
-		[Hangfire.Queue("analysis", Order = 2)]
-		public async Task CalculateSimilarity(DumpMetainfo dumpA, SDResult resultA, bool force) {
+		[Hangfire.Queue("similarityanalysis", Order = 2)]
+		public async Task CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
 			try {
-				var allDumps = dumpRepo.GetAll();
+				var swTotal = new Stopwatch();
+				swTotal.Start();
+				var resultA = await dumpRepo.GetResult(dumpA.BundleId, dumpA.DumpId);
 
+				if (resultA == null) return; // no results found. do nothing.
+
+				var allDumps = dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderBy(x => x.Created);
+				Console.WriteLine($"starting CalculateSimilarity for {allDumps.Count()} dumps; {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
+
+				int i = allDumps.Count();
+				var sw = new Stopwatch();
 				foreach (var dumpB in allDumps) {
+					i--;
+					sw.Start();
 					if (!force) {
-						if (relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id) != null) continue; // relationship already exists. skip!
+						if (await relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id) != 0) continue; // relationship already exists. skip!
 					}
 
-					var resultB = dumpRepo.GetResult(dumpB.BundleId, dumpB.DumpId, out string error);
-
+					if (!PreSelectOnMetadata(dumpA, dumpB)) continue;
+					var resultB = await dumpRepo.GetResult(dumpB.BundleId, dumpB.DumpId);
 					if (resultB == null) continue;
+					if (!PreSelectOnResults(resultA, resultB)) continue;
+
 					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(resultA, resultB);
 
-					// CN: maybe only store if above a certain threshold?
-					relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity);
+					// only store value if above a certain threshold to avoid unnecessary disk writes
+					if (crashSimilarity.OverallSimilarity > 0.2) {
+						await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity);
+					}
+					sw.Stop();
+					//Console.WriteLine($"CalculateSimilarity.Finished for {dumpA}/{dumpB} ({i} to go...); (elapsed: {sw.Elapsed}) (TID:{Thread.CurrentThread.ManagedThreadId})");
+					sw.Reset();
 				}
+				swTotal.Stop();
+				Console.WriteLine($"CalculateSimilarity.Finished for all {allDumps.Count()} dumps (total elapsed: {swTotal.Elapsed}); {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 			}
+		}
+
+		private bool PreSelectOnMetadata(DumpMetainfo dumpA, DumpMetainfo dumpB) {
+			return !dumpA.Id.Equals(dumpB.Id) // don't compare the dump to itself
+				&& dumpA.Status == DumpStatus.Finished && dumpB.Status == DumpStatus.Finished // both analysis must be finished
+				&& dumpA.DumpType == dumpB.DumpType; // don't compare windows and linux dumps
+		}
+
+		private bool PreSelectOnResults(SDResult resultA, SDResult resultB) {
+			return true; // no ideas on how to pre-select here yet.
 		}
 
 	}

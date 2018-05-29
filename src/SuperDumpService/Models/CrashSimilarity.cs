@@ -93,8 +93,8 @@ namespace SuperDumpService.Models {
 		}
 
 		private static bool FrameEquals(SDCombinedStackFrame frameA, SDCombinedStackFrame frameB) {
-			return frameA.ModuleName.Equals(frameB.ModuleName, StringComparison.OrdinalIgnoreCase)
-				&& frameA.MethodName.Equals(frameB.MethodName, StringComparison.OrdinalIgnoreCase);
+			return EqualsIgnoreNonAscii(frameA.ModuleName, frameB.ModuleName)
+				&& EqualsIgnoreNonAscii(frameA.MethodName, frameB.MethodName);
 		}
 
 		/// <summary>
@@ -112,8 +112,8 @@ namespace SuperDumpService.Models {
 			var modulesA = errorThreadA.StackTrace.Select(x => x.ModuleName).Distinct();
 			var modulesB = errorThreadB.StackTrace.Select(x => x.ModuleName).Distinct();
 
-			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => a.Equals(b, StringComparison.OrdinalIgnoreCase));
-			int BinACount = CountAinB(modulesB, modulesA, (a, b) => a.Equals(b, StringComparison.OrdinalIgnoreCase));
+			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => EqualsIgnoreNonAscii(a, b));
+			int BinACount = CountAinB(modulesB, modulesA, (a, b) => EqualsIgnoreNonAscii(a, b));
 
 			double ainb = AinBCount / (double)modulesA.Count();
 			double bina = BinACount / (double)modulesB.Count();
@@ -126,13 +126,13 @@ namespace SuperDumpService.Models {
 			var lastEventB = resultB.LastEvent;
 
 			// "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
-			if (lastEventA.Description.StartsWith("Break instruction exception")) lastEventA = null;
-			if (lastEventB.Description.StartsWith("Break instruction exception")) lastEventB = null;
+			if (lastEventA != null && lastEventA.Description.StartsWith("Break instruction exception")) lastEventA = null;
+			if (lastEventB != null && lastEventB.Description.StartsWith("Break instruction exception")) lastEventB = null;
 
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
-			return lastEventA.Type == lastEventB.Type
-				&& lastEventA.Description == lastEventB.Description
+			return EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)
+				&& EqualsIgnoreNonAscii(lastEventA.Description, lastEventB.Description)
 					? 1.0
 					: 0.0;
 		}
@@ -144,11 +144,24 @@ namespace SuperDumpService.Models {
 			if (exceptionA == null && exceptionB == null) return null; // no value in comparing if there are none
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
-			return exceptionA.Type == exceptionB.Type
-			       && exceptionA.Message == exceptionB.Message
+			return EqualsIgnoreNonAscii(exceptionA.Type, exceptionB.Type)
+				&& EqualsIgnoreNonAscii(exceptionA.Message, exceptionB.Message)
 				? 1.0
 				: 0.0;
 			// omit comparison of StackTrace for now. maybe implement at later point if it makes sense.
+		}
+
+		/// <summary>
+		/// frames sometimes contain addresses. let's just strip out all non-ascii characters. comparison should still be valid enough.
+		/// even modules contain addresses in some cases. also lastevent or exception text.
+		/// </summary>
+		private static bool EqualsIgnoreNonAscii(string s1, string s2) {
+			if (s1 == null || s2 == null) return false;
+			return StripNonAscii(s1).Equals(StripNonAscii(s2), StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static string StripNonAscii(string str) {
+			return new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
 		}
 	}
 }

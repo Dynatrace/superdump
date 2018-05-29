@@ -22,6 +22,7 @@ using System.Linq;
 using SuperDump.Webterm;
 using WebSocketManager;
 using Sakura.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -119,6 +120,7 @@ namespace SuperDumpService {
 			services.AddSingleton<DumpRetentionService>();
 			services.AddSingleton<SimilarityService>();
 			services.AddSingleton<RelationshipRepository>();
+			services.AddSingleton<RelationshipStorageFilebased>();
 			services.AddWebSocketManager();
 		}
 
@@ -126,6 +128,7 @@ namespace SuperDumpService {
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns) {
 			app.ApplicationServices.GetService<BundleRepository>().Populate();
 			app.ApplicationServices.GetService<DumpRepository>().Populate();
+			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 
 			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
 			loggerFactory.AddDebug();
@@ -149,6 +152,10 @@ namespace SuperDumpService {
 			app.UseHangfireServer(new BackgroundJobServerOptions {
 				Queues = new[] { "retention" },
 				WorkerCount = 1
+			});
+			app.UseHangfireServer(new BackgroundJobServerOptions {
+				Queues = new[] { "similarityanalysis" },
+				WorkerCount = 8
 			});
 
 			app.ApplicationServices.GetService<DumpRetentionService>().StartService();

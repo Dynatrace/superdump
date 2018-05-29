@@ -66,7 +66,7 @@ namespace SuperDumpService.Services {
 					if (documentIds.Contains(bundle.BundleId + "/" + dump.DumpId)) {
 						continue;
 					}
-					SDResult result = dumpRepo.GetResult(bundle.BundleId, dump.DumpId, out string error);
+					SDResult result = await dumpRepo.GetResult(bundle.BundleId, dump.DumpId);
 					if (result != null) {
 						bool success = await PushResultAsync(result, bundle, dump);
 						if (!success && nErrorsLogged < 20) {
