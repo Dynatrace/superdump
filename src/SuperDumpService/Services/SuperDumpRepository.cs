@@ -79,7 +79,8 @@ namespace SuperDumpService.Services {
 						|| match.FileEntry.Type == SDFileType.SuperDumpLogfile
 						|| match.FileEntry.Type == SDFileType.DebugDiagResult
 						|| match.FileEntry.Type == SDFileType.CustomTextResult
-						|| match.FileEntry.Type == SDFileType.WinDbg;
+						|| match.FileEntry.Type == SDFileType.WinDbg
+						|| match.FileEntry.Type == SDFileType.SuperDumpMetaData;
 				}
 				if (shallDelete) {
 					File.Delete(file);

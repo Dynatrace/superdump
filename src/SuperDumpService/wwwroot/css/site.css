@@ -381,9 +381,9 @@
 	background-color: #5bc0de;
 	border-color: #5bc0de;
 }
-.tag-exception-in-stack {
-	background-color: #E6BD87;
-	border-color: #DEAE6F;
+.tag-exception-in-stack .tag-exception-in-text {
+	background-color: #e0d3c2;
+	border-color: #e0d3c2;
 }
 .tag-managed-exception {
 	background-color: #f0ad4e;
@@ -414,7 +414,16 @@
 	background-color: #9900cc;
 	border-color: #9900cc;
 }
+.tag-buffer-overrun {
+	background-color: #9900cc;
+	border-color: #9900cc;
+}
+
 .tag-stackoverflow {
+	background-color: #E68550;
+	border-color: #D9723B;
+}
+.tag-exception-catch {
 	background-color: #E68550;
 	border-color: #D9723B;
 }

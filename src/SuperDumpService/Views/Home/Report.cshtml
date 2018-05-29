@@ -25,6 +25,18 @@
 			<input type="hidden" name="dumpId" value="@Model.DumpId" />
 			<input type="submit" value="Rerun Analysis" />
 		}
+		@using (Html.BeginForm("TriggerSimilarityAnalysis", "Similarity")) {
+			<input type="hidden" name="bundleId" value="@Model.BundleId" />
+			<input type="hidden" name="dumpId" value="@Model.DumpId" />
+			<input type="submit" value="Trigger Duplicate Detection" />
+		}
+		<ul>
+			@foreach (var rel in Model.Relationships.OrderByDescending(x => x.CrashSimilarity.OverallSimilarity)) {
+			<li>
+				<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.DumpB.BundleId" asp-route-dumpId="@rel.DumpB.DumpId">@rel.DumpB</a> @Math.Round(rel.CrashSimilarity.OverallSimilarity * 100.0, 0) &#37;
+			</li>
+			}
+		</ul>
 	</div>
 
 		<dl class="dl-horizontal smaller">

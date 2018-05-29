@@ -25,8 +25,8 @@ namespace SuperDumpService.Models {
 		public double? ExceptionSimilarity => similarities[ExceptionMessageKey];
 
 		// there's an overall similartiy of 0.0-1.0, which is a weighted average of dimensions
-		public double OverallSimilarity() => ValidSimilarities().Average();
-		private IEnumerable<double> ValidSimilarities() => similarities.Values.Where(x => x.HasValue).Select(x => x.Value);
+		public double OverallSimilarity => ValidSimilarities.Any() ? ValidSimilarities.Average() : 0;
+		private IEnumerable<double> ValidSimilarities => similarities.Values.Where(x => x.HasValue).Select(x => x.Value);
 
 		// in the UI, we could even show a table, where each dimension is shown separately (?)
 
@@ -125,6 +125,10 @@ namespace SuperDumpService.Models {
 			var lastEventA = resultA.LastEvent;
 			var lastEventB = resultB.LastEvent;
 
+			// "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
+			if (lastEventA.Description.StartsWith("Break instruction exception")) lastEventA = null;
+			if (lastEventB.Description.StartsWith("Break instruction exception")) lastEventB = null;
+
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
 			return lastEventA.Type == lastEventB.Type
@@ -141,7 +145,7 @@ namespace SuperDumpService.Models {
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
 			return exceptionA.Type == exceptionB.Type
-			       && exceptionA.Message == exceptionB.Type
+			       && exceptionA.Message == exceptionB.Message
 				? 1.0
 				: 0.0;
 			// omit comparison of StackTrace for now. maybe implement at later point if it makes sense.

@@ -46,7 +46,7 @@ namespace SuperDump.Models {
 		public static readonly SDTag AssertionErrorTag = new SDTag("assertion-error", 80, TagType.Error);
 		public static readonly SDTag BufferOverrunTag = new SDTag("buffer-overrun", 80, TagType.Error);
 		public static readonly SDTag ExceptionCatchTag = new SDTag("exception-catch", 71, TagType.Error);
-		public static readonly SDTag ExceptionInStackTag = new SDTag("exception-in-stack", 70, TagType.Error);
+		public static readonly SDTag ExceptionInStackTag = new SDTag("exception-in-text", 70, TagType.Error);
 
 		// type: info
 		public static readonly SDTag LastExecutingTag = new SDTag("last-executing", 100, TagType.Info);
@@ -70,10 +70,32 @@ namespace SuperDump.Models {
 		public static readonly SDTag ClrGcThread = new SDTag("clr-gc-thread", 0, TagType.Info);
 		public static readonly SDTag BreakInstructionTag = new SDTag("break-instruction", 0, TagType.Info);
 		
+		/// <summary>
+		/// When properties of tags change (TagType or Priority), this method helps to fix already persisted tags.
+		/// E.g. when TagType was introduced, all existing tags were type==Undefined. Since, based on the tag-name it's now clear
+		/// if it's an Error tag or not, we introduced this method to return the correct type.
+		/// This could be done in a nicer way (dictionary).
+		/// </summary>
+		public static SDTag FixUpTagType(SDTag tag) {
+			if (tag == AbortTag) return AbortTag;
+			if (tag == PureCallTag) return PureCallTag;
+			if (tag == StackOverflowTag) return StackOverflowTag;
+			if (tag == DeadlockedTag) return DeadlockedTag;
+			if (tag == NativeExceptionTag) return NativeExceptionTag;
+			if (tag == ManagedExceptionTag) return ManagedExceptionTag;
+			if (tag == AssertionErrorTag) return AssertionErrorTag;
+			if (tag == BufferOverrunTag) return BufferOverrunTag;
+			if (tag == ExceptionCatchTag) return ExceptionCatchTag;
+			if (tag == ExceptionInStackTag) return ExceptionInStackTag;
+			if (tag.Name == "exception-in-stack") return ExceptionInStackTag; // changed name
 
+			return new SDTag(tag.Name, tag.Importance, TagType.Info);
+
+		}
 	}
 
 	public enum TagType {
+		Undefined,
 		Info,
 		Error
 	}

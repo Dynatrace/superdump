@@ -7,48 +7,78 @@ using SuperDump.Common;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System.Diagnostics;
+using System.Linq;
 using SuperDump.Models;
 
 namespace SuperDumpService.Services {
+	public class Relationship {
+		public DumpIdentifier DumpA { get; private set; }
+		public DumpIdentifier DumpB { get; private set; }
+		public CrashSimilarity CrashSimilarity { get; set; }
+
+		public Relationship(DumpIdentifier dumpA, DumpIdentifier dumpB) {
+			this.DumpA = dumpA;
+			this.DumpB = dumpB;
+		}
+	}
+
 	public class SimilarityService {
 		private readonly DumpRepository dumpRepo;
+		private readonly RelationshipRepository relationShipRepo;
 
-		public SimilarityService(DumpRepository dumpRepo) {
+		public SimilarityService(DumpRepository dumpRepo, RelationshipRepository relationShipRepository) {
 			this.dumpRepo = dumpRepo;
+			this.relationShipRepo = relationShipRepository;
 		}
 
-		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo) {
+		public IEnumerable<CrashSimilarity> GetSimilarities(DumpIdentifier dumpId) {
+			return relationShipRepo.GetRelationShips(dumpId).Select(x => x.CrashSimilarity);
+		}
+
+		/// <summary>
+		/// if force==true, analysis is run again, even if it's already there.
+		/// if force==false, only relationships that have not been analyzed yet are run again.
+		/// </summary>
+		public void TriggerSimilarityAnalysisForAllDumps(bool force) {
+			foreach (var dumpInfo in dumpRepo.GetAll()) {
+				ScheduleSimilarityAnalysis(dumpInfo, force);
+			}
+		}
+
+		public void ScheduleSimilarityAnalysis(DumpIdentifier dumpId, bool force) {
+			ScheduleSimilarityAnalysis(dumpRepo.Get(dumpId), force);
+		}
+		
+		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo, bool force) {
 			var result = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string error);
 
-			if (result == null) throw new DumpNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, no results available");
+			if (result == null) return; // no results found. do nothing.
 
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => CalculateSimilarity(dumpInfo, result));
+			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, result, force));
 		}
 
+
 		[Hangfire.Queue("analysis", Order = 2)]
-		public async Task CalculateSimilarity(DumpMetainfo dumpInfo, SDResult result) {
+		public async Task CalculateSimilarity(DumpMetainfo dumpA, SDResult resultA, bool force) {
 			try {
 				var allDumps = dumpRepo.GetAll();
-				var similarities = new Dictionary<DumpIdentifier, CrashSimilarity>();
-				
-				foreach (var dump in allDumps) {
-					var otherResult = dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId, out string error);
 
-					if (otherResult == null) continue;
-					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(result, otherResult);
+				foreach (var dumpB in allDumps) {
+					if (!force) {
+						if (relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id) != null) continue; // relationship already exists. skip!
+					}
 
-					similarities[dump.Id] = crashSimilarity;
+					var resultB = dumpRepo.GetResult(dumpB.BundleId, dumpB.DumpId, out string error);
 
-					// for every available dump, calculate CrashSimilarity
-					// if "OverallSimilarity" is above a certain threshold, store the similarity in a separate datastore into BOTH dumps.
-					// the datastore could be just a separate json file within the dump dir. "crashsimilarities.json"
+					if (resultB == null) continue;
+					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(resultA, resultB);
 
+					// CN: maybe only store if above a certain threshold?
+					relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity);
 				}
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
-			} finally {
-
 			}
 		}
 

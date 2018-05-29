@@ -1,0 +1,12 @@
+﻿@{
+	ViewData["Title"] = "Similarity";
+}
+
+@using (Html.BeginForm("TriggerSimilarityAnalysisForAllDumps", "Similarity")) {
+	<input type="hidden" name="force" value="false" />
+	<input type="submit" value="Trigger Duplicate Detection for all dumps (!)" />
+}
+@using (Html.BeginForm("TriggerSimilarityAnalysisForAllDumps", "Similarity")) {
+	<input type="hidden" name="force" value="true" />
+	<input type="submit" value="Trigger Duplicate Detection for all dumps (force all, even if analysis is already done) (!!!)" />
+}

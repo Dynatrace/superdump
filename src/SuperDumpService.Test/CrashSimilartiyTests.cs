@@ -44,12 +44,12 @@ namespace SuperDumpService.Test {
 			Assert.Equal(1.0, similarity.ModulesSimilarity);
 			Assert.Null(similarity.LastEventSimilarity);
 			Assert.Null(similarity.ExceptionSimilarity);
-			Assert.Equal(0.9375, similarity.OverallSimilarity());
+			Assert.Equal(0.9375, similarity.OverallSimilarity);
 		}
 
-		private static void AddTagToFrameAndThread(SDResult res1, SDTag TAG) {
-			res1.ThreadInformation[1].Tags.Add(TAG);
-			res1.ThreadInformation[1].StackTrace[0].Tags.Add(TAG);
+		private static void AddTagToFrameAndThread(SDResult result, SDTag tag) {
+			result.ThreadInformation[1].Tags.Add(tag);
+			result.ThreadInformation[1].StackTrace[0].Tags.Add(tag);
 		}
 	}
 }

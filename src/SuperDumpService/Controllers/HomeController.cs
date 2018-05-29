@@ -25,8 +25,10 @@ namespace SuperDumpService.Controllers {
 		public DumpStorageFilebased dumpStorage;
 		public SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
+		private readonly RelationshipRepository relationshipRepo;
+		private readonly SimilarityService similarityService;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper, RelationshipRepository relationshipRepo, SimilarityService similarityService) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -34,6 +36,8 @@ namespace SuperDumpService.Controllers {
 			this.dumpStorage = dumpStorage;
 			this.settings = settings.Value;
 			this.pathHelper = pathHelper;
+			this.relationshipRepo = relationshipRepo;
+			this.similarityService = similarityService;
 		}
 
 		public IActionResult Index() {
@@ -188,7 +192,8 @@ namespace SuperDumpService.Controllers {
 				SDResultReadError = error,
 				DumpType = dumpInfo.DumpType,
 				RepositoryUrl = settings.RepositoryUrl,
-				InteractiveGdbHost = settings.InteractiveGdbHost
+				InteractiveGdbHost = settings.InteractiveGdbHost,
+				Relationships = relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId))
 			});
 		}
 

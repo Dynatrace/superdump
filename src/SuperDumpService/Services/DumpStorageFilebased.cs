@@ -75,7 +75,7 @@ namespace SuperDumpService.Services {
 			}
 			try {
 				return JsonConvert.DeserializeObject<SDResult>(File.ReadAllText(filename), 
-					new SDSystemContextConverter(), new SDModuleConverter(), new SDCombinedStackFrameConverter());
+					new SDSystemContextConverter(), new SDModuleConverter(), new SDCombinedStackFrameConverter(), new SDTagConverter());
 			} catch (Exception e) {
 				error = $"could not deserialize {filename}: {e.Message}";
 				Console.WriteLine(error);
@@ -143,7 +143,7 @@ namespace SuperDumpService.Services {
 				return fileEntry;
 			}
 			if (Path.GetFileName(pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.SuperDumpMetaData;
+				fileEntry.Type = SDFileType.SuperDumpData;
 				return fileEntry;
 			}
 			if ("windbg.log" == fileInfo.Name) {

@@ -29,5 +29,9 @@ namespace SuperDumpService.Models {
 			bundleId = this.BundleId;
 			dumpId = this.DumpId;
 		}
+
+		public override string ToString() {
+			return $"{BundleId}:{DumpId}";
+		}
 	}
 }

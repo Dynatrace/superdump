@@ -54,6 +54,10 @@ namespace SuperDumpService.Services {
 			return dumps[bundleId].Values;
 		}
 
+		public DumpMetainfo Get(DumpIdentifier dumpId) {
+			return Get(dumpId.BundleId, dumpId.DumpId);
+		}
+
 		public IEnumerable<DumpMetainfo> GetAll() {
 			lock (sync) {
 				return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
