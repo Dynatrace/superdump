@@ -193,7 +193,8 @@ namespace SuperDumpService.Controllers {
 				DumpType = dumpInfo.DumpType,
 				RepositoryUrl = settings.RepositoryUrl,
 				InteractiveGdbHost = settings.InteractiveGdbHost,
-				Similarities = await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId))
+				Similarities = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
+					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value))
 			});
 		}
 

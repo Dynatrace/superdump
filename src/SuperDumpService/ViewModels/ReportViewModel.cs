@@ -24,7 +24,7 @@ namespace SuperDumpService.ViewModels {
 		public DumpType DumpType { get; set; }
 		public string RepositoryUrl { get; set; }
 		public string InteractiveGdbHost { get; set; }
-		public IDictionary<DumpIdentifier, double> Similarities { get; set; } = new Dictionary<DumpIdentifier, double>();
+		public IEnumerable<KeyValuePair<DumpMetainfo, double>> Similarities { get; set; } = Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>();
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;
