@@ -13,66 +13,66 @@
 			@if (Model.Result.SystemContext == null) {
 				<span>SystemContext is null</span>
 			} else {
-			<dl class="dl-horizontal">
+			<dl class="row courier-small compact">
 				@if (Model.Result.SystemContext is SuperDump.Models.SDCDSystemContext) {
 					// Linux Core Dump
-					<dt>Platform</dt>
-					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).SystemArchitecture)</dd>
+					<dt class="col-sm-3 text-right">Platform</dt>
+					<dd class="col-sm-9">@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).SystemArchitecture)</dd>
 
-					<dt>User ID</dt>
-					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Uid)</dd>
+					<dt class="col-sm-3 text-right">User ID</dt>
+					<dd class="col-sm-9">@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Uid)</dd>
 
-					<dt>Group ID</dt>
-					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Gid)</dd>
+					<dt class="col-sm-3 text-right">Group ID</dt>
+					<dd class="col-sm-9">@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).Gid)</dd>
 
-					<dt>Entry Point</dt>
-					<dd>@String.Format("0x{0:x}", ((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).EntryPoint)</dd>
+					<dt class="col-sm-3 text-right">Entry Point</dt>
+					<dd class="col-sm-9">@String.Format("0x{0:x}", ((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).EntryPoint)</dd>
 
-					<dt>Page Size</dt>
-					<dd>@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).PageSize) bytes</dd>
+					<dt class="col-sm-3 text-right">Page Size</dt>
+					<dd class="col-sm-9">@(((SuperDump.Models.SDCDSystemContext)Model.Result.SystemContext).PageSize) bytes</dd>
 				} else {
 					// Windows Crash Dump
-					<dt>OS version:</dt>
-					<dd>@Model.Result.SystemContext.OSVersion</dd>
+					<dt class="col-sm-3 text-right">OS version:</dt>
+					<dd class="col-sm-9">@Model.Result.SystemContext.OSVersion</dd>
 
-					<dt>Architecture:</dt>
-					<dd>@Model.Result.SystemContext.ProcessArchitecture</dd>
+					<dt class="col-sm-3 text-right">Architecture:</dt>
+					<dd class="col-sm-9">@Model.Result.SystemContext.ProcessArchitecture</dd>
 
-					<dt>Process up-time:</dt>
-					<dd>@Model.Result.SystemContext.ProcessUpTime</dd>
+					<dt class="col-sm-3 text-right">Process up-time:</dt>
+					<dd class="col-sm-9">@Model.Result.SystemContext.ProcessUpTime</dd>
 
-					<dt>System up-time:</dt>
-					<dd>@Model.Result.SystemContext.SystemUpTime</dd>
+					<dt class="col-sm-3 text-right">System up-time:</dt>
+					<dd class="col-sm-9">@Model.Result.SystemContext.SystemUpTime</dd>
 
-					<dt># of logical processors:</dt>
-					<dd>@Model.Result.SystemContext.NumberOfProcessors</dd>
+					<dt class="col-sm-3 text-right"># of logical processors:</dt>
+					<dd class="col-sm-9">@Model.Result.SystemContext.NumberOfProcessors</dd>
 				}
 
 				@foreach (var clr in Model.Result.SystemContext.ClrVersions) {
-					<dt>.NET CLR:</dt>
-					<dd>@clr.Version (@clr.ClrFlavor)</dd>
+					<dt class="col-sm-3 text-right">.NET CLR:</dt>
+					<dd class="col-sm-9">@clr.Version (@clr.ClrFlavor)</dd>
 				}
 			</dl>
-			<dl class="dl-horizontal">
-				<dt># of modules:</dt>
-				<dd>@Model.Result.SystemContext.DistinctModules().Count()</dd>
+			<dl class="row courier-small compact">
+				<dt class="col-sm-3 text-right"># of modules:</dt>
+				<dd class="col-sm-9">@Model.Result.SystemContext.DistinctModules().Count()</dd>
 				@{
 					var moduleTags = Model.Result.SystemContext.DistinctModules().SelectMany(x => x.Tags).Distinct();
 					@foreach (var moduleTag in moduleTags.OrderByDescending(x => x.Importance)) {
-						<dt><span class="tag tag-@moduleTag">@moduleTag</span>-modules:</dt>
+						<dt class="col-sm-3 text-right"><span class="tag tag-@moduleTag">@moduleTag</span>-modules:</dt>
 						var matchingModules = Model.Result.SystemContext.DistinctModules().Where(x => x.Tags.Contains(moduleTag));
-						<dd>@matchingModules.Select(x => $"{x.FileName} ({x.Version})").Aggregate((i, j) => i + ", " + j)</dd>
+						<dd class="col-sm-9">@matchingModules.Select(x => $"{x.FileName} ({x.Version})").Aggregate((i, j) => i + ", " + j)</dd>
 					}
 				}
 			</dl>
-			<dl class="dl-horizontal">
+			<dl class="row courier-small compact">
 
-				<dt># of threads:</dt>
-				<dd>@Model.Result.ThreadInformation.Count</dd>
+				<dt class="col-sm-3 text-right"># of threads:</dt>
+				<dd class="col-sm-9">@Model.Result.ThreadInformation.Count</dd>
 
 				@foreach (var moduleTag in Model.Result.ThreadInformation.Values.SelectMany(x => x.Tags).Distinct().OrderByDescending(x => x.Importance)) {
-					<dt><span class="tag tag-@moduleTag">@moduleTag</span>-threads:</dt>
-					<dd>
+					<dt class="col-sm-3 text-right"><span class="tag tag-@moduleTag">@moduleTag</span>-threads:</dt>
+					<dd class="col-sm-9">
 						@{
 							var threads = Model.Result.ThreadInformation.Values.Where(x => x.Tags.Contains(moduleTag));
 							<span>

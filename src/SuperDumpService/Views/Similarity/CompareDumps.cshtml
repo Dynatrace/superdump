@@ -1,0 +1,27 @@
+﻿@model SuperDumpService.ViewModels.SimilarityModel
+@{
+	ViewData["Title"] = "Similarity";
+}
+
+@if (!string.IsNullOrEmpty(Model.Error) || Model.CrashSimilarity == null) {
+	<stong>Error: @Model.Error</stong>
+} else {
+
+	<dl>
+		<dt>Overall</dt>
+		<dd>@Model.CrashSimilarity.OverallSimilarity</dd>
+
+		<dt>Stacktrace</dt>
+		<dd>@Model.CrashSimilarity.StackTraceSimilarity</dd>
+
+		<dt>Modules</dt>
+		<dd>@Model.CrashSimilarity.ModulesSimilarity</dd>
+
+		<dt>LastEvent</dt>
+		<dd>@Model.CrashSimilarity.LastEventSimilarity</dd>
+
+		<dt>Exception</dt>
+		<dd>@Model.CrashSimilarity.ExceptionSimilarity</dd>
+	</dl>
+
+}

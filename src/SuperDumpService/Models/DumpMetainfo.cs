@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace SuperDumpService.Models {
 	public class DumpMetainfo {
 		public string BundleId { get; set; }
 		public string DumpId { get; set; }
+		[JsonIgnore]
+		public DumpIdentifier Id => new DumpIdentifier(BundleId, DumpId);
 		public string DumpFileName { get; set; } // original filename. just informational.
 		public DumpType DumpType { get; set; } = DumpType.WindowsDump; // default to windows, for compatibility to existing repos (which will only contain windows dumps)
 		public DateTime Created { get; set; }
@@ -16,6 +19,10 @@ namespace SuperDumpService.Models {
 		public DumpStatus Status { get; set; }
 		public string ErrorMessage { get; set; }
 		public List<SDFileEntry> Files { get; set; } = new List<SDFileEntry>();
+
+		public override string ToString() {
+			return Id.ToString();
+		}
 	}
 
 	public enum DumpStatus {

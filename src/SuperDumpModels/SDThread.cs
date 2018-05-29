@@ -73,6 +73,7 @@ namespace SuperDump.Models {
 		public IList<SDBlockingObject> BlockingObjects { get; set; } = new List<SDBlockingObject>();
 
 		public ISet<SDTag> Tags { get; } = new HashSet<SDTag>();
+		public IEnumerable<SDTag> ErrorTags => Tags.Where(x => x.Type == TagType.Error);
 
 		public ulong CreationTime { get; set; }
 		public ulong ExitTime { get; set; }

@@ -16,13 +16,15 @@ namespace SuperDump.Models {
 		}
 
 		public override int GetHashCode() {
-			return base.GetHashCode();
+			return (int)(
+				17 * Type.GetHashCode() + 
+				31 * Description.GetHashCode() + 
+				31 * ThreadId);
 		}
 
 		public override bool Equals(object obj) {
-			if (obj is SDClrVersion) {
-				var version = obj as SDClrVersion;
-				return this.Equals(version);
+			if (obj is SDLastEvent lastEvent) {
+				return this.Equals(lastEvent);
 			}
 			return false;
 		}

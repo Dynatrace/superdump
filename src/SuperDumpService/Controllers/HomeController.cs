@@ -25,8 +25,10 @@ namespace SuperDumpService.Controllers {
 		public DumpStorageFilebased dumpStorage;
 		public SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
+		private readonly RelationshipRepository relationshipRepo;
+		private readonly SimilarityService similarityService;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper, RelationshipRepository relationshipRepo, SimilarityService similarityService) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -34,6 +36,8 @@ namespace SuperDumpService.Controllers {
 			this.dumpStorage = dumpStorage;
 			this.settings = settings.Value;
 			this.pathHelper = pathHelper;
+			this.relationshipRepo = relationshipRepo;
+			this.similarityService = similarityService;
 		}
 
 		public IActionResult Index() {
@@ -158,7 +162,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpGet(Name = "Report")]
-		public IActionResult Report(string bundleId, string dumpId) {
+		public async Task<IActionResult> Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
 
 			var bundleInfo = superDumpRepo.GetBundle(bundleId);
@@ -171,7 +175,7 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 
-			SDResult res = superDumpRepo.GetResult(bundleId, dumpId, out string error);
+			SDResult res = await superDumpRepo.GetResult(bundleId, dumpId);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -184,20 +188,22 @@ namespace SuperDumpService.Controllers {
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
 				PointerSize = res == null ? 8 : (res.SystemContext?.ProcessArchitecture == "X86" ? 8 : 12),
-				CustomTextResult = ReadCustomTextResult(dumpInfo),
-				SDResultReadError = error,
+				CustomTextResult = await ReadCustomTextResult(dumpInfo),
+				SDResultReadError = string.Empty,
 				DumpType = dumpInfo.DumpType,
 				RepositoryUrl = settings.RepositoryUrl,
-				InteractiveGdbHost = settings.InteractiveGdbHost
+				InteractiveGdbHost = settings.InteractiveGdbHost,
+				Similarities = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
+					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value))
 			});
 		}
 
-		private string ReadCustomTextResult(DumpMetainfo dumpInfo) {
+		private async Task<string> ReadCustomTextResult(DumpMetainfo dumpInfo) {
 			SDFileEntry customResultFile = dumpInfo.Files.FirstOrDefault(x => x.Type == SDFileType.CustomTextResult);
 			if (customResultFile == null) return null;
 			FileInfo file = dumpStorage.GetFile(dumpInfo.BundleId, dumpInfo.DumpId, customResultFile.FileName);
 			if (file == null || !file.Exists) return null;
-			return System.IO.File.ReadAllText(file.FullName);
+			return await System.IO.File.ReadAllTextAsync(file.FullName);
 		}
 
 		public IActionResult UploadError() {

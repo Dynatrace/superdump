@@ -2,6 +2,8 @@
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using SuperDumpService.Services;
 
 namespace SuperDumpService.ViewModels {
 	public class ReportViewModel {
@@ -22,6 +24,7 @@ namespace SuperDumpService.ViewModels {
 		public DumpType DumpType { get; set; }
 		public string RepositoryUrl { get; set; }
 		public string InteractiveGdbHost { get; set; }
+		public IEnumerable<KeyValuePair<DumpMetainfo, double>> Similarities { get; set; } = Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>();
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;

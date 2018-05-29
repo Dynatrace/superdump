@@ -78,5 +78,10 @@ namespace SuperDumpService.Helpers {
 		internal string GetDumpMetadataPath(string bundleId, string dumpId) {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "dumpinfo.json");
 		}
+
+		internal string GetRelationshipsPath(string bundleId, string dumpId) {
+			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "relationships.json");
+		}
+
 	}
 }

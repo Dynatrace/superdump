@@ -59,48 +59,48 @@
 						<table style="width: 100%;">
 							<tr>
 								<td>
-									<dl class="dl-horizontal">
-										<dt>Engine thread ID:</dt>
-										<dd>@thread.EngineId (0x<span>@thread.EngineId.ToString("X")</span>)</dd>
+									<dl class="row courier-small compact">
+										<dt class="col-sm-3 text-right">Engine thread ID:</dt>
+										<dd class="col-sm-9">@thread.EngineId (0x<span>@thread.EngineId.ToString("X")</span>)</dd>
 
-										<dt>OS thread ID:</dt>
-										<dd>@thread.OsId (0x<span>@thread.OsId.ToString("X")</span>)</dd>
+										<dt class="col-sm-3 text-right">OS thread ID:</dt>
+										<dd class="col-sm-9">@thread.OsId (0x<span>@thread.OsId.ToString("X")</span>)</dd>
 
 										@if (@thread.IsManagedThread) {
-											<dt>Managed thread ID:</dt>
-											<dd>@thread.ManagedThreadId (0x<span>@thread.ManagedThreadId.ToString("X")</span>)</dd>
+											<dt class="col-sm-3 text-right">Managed thread ID:</dt>
+											<dd class="col-sm-9">@thread.ManagedThreadId (0x<span>@thread.ManagedThreadId.ToString("X")</span>)</dd>
 
-											<dt>Thread name:</dt>
-											<dd>@thread.ThreadName</dd>
+											<dt class="col-sm-3 text-right">Thread name:</dt>
+											<dd class="col-sm-9">@thread.ThreadName</dd>
 										}
 
 										@if (!string.IsNullOrEmpty(thread.State)) {
-											<dt>State(s):</dt>
-											<dd>@thread.State</dd>
+											<dt class="col-sm-3 text-right">State(s):</dt>
+											<dd class="col-sm-9">@thread.State</dd>
 										}
 
 										@if (thread.CreationTime > 0) {
-											<dt>Creation time:</dt>
-											<dd>@Utility.ConvertWindowsTimeStamp(thread.CreationTime)</dd>
+											<dt class="col-sm-3 text-right">Creation time:</dt>
+											<dd class="col-sm-9">@Utility.ConvertWindowsTimeStamp(thread.CreationTime)</dd>
 										}
 
 										@if (thread.KernelTime > 0) {
-											<dt>Kernel mode time:</dt>
-											<dd>@Utility.ConvertWindowsTimeSpan(thread.KernelTime)</dd>
+											<dt class="col-sm-3 text-right">Kernel mode time:</dt>
+											<dd class="col-sm-9">@Utility.ConvertWindowsTimeSpan(thread.KernelTime)</dd>
 										}
 
 										@if (thread.UserTime > 0) {
-											<dt>User mode time:</dt>
-											<dd>@Utility.ConvertWindowsTimeSpan(thread.UserTime)</dd>
+											<dt class="col-sm-3 text-right">User mode time:</dt>
+											<dd class="col-sm-9">@Utility.ConvertWindowsTimeSpan(thread.UserTime)</dd>
 										}
 
 										@if (thread.LastException != null) {
-											<dt>Exception Type:</dt>
-											<dd>@thread.LastException.Type</dd>
-											<dt>Exception Message:</dt>
-											<dd>@thread.LastException.Message</dd>
-											<dt>Exception Stack:</dt>
-											<dd>@Html.Partial("_StacktracePlain", @thread.LastException.StackTrace)</dd>
+											<dt class="col-sm-3 text-right">Exception Type:</dt>
+											<dd class="col-sm-9">@thread.LastException.Type</dd>
+											<dt class="col-sm-3 text-right">Exception Message:</dt>
+											<dd class="col-sm-9">@thread.LastException.Message</dd>
+											<dt class="col-sm-3 text-right">Exception Stack:</dt>
+											<dd class="col-sm-9">@Html.Partial("_StacktracePlain", @thread.LastException.StackTrace)</dd>
 										}
 									</dl>
 								</td>

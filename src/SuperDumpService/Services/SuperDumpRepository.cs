@@ -48,8 +48,8 @@ namespace SuperDumpService.Services {
 			pathHelper.PrepareDirectories();
 		}
 
-		public SDResult GetResult(string bundleId, string dumpId, out string error) {
-			return dumpRepo.GetResult(bundleId, dumpId, out error);
+		public async Task<SDResult> GetResult(string bundleId, string dumpId) {
+			return await dumpRepo.GetResult(bundleId, dumpId);
 		}
 
 		public bool ContainsBundle(string bundleId) {
@@ -79,7 +79,8 @@ namespace SuperDumpService.Services {
 						|| match.FileEntry.Type == SDFileType.SuperDumpLogfile
 						|| match.FileEntry.Type == SDFileType.DebugDiagResult
 						|| match.FileEntry.Type == SDFileType.CustomTextResult
-						|| match.FileEntry.Type == SDFileType.WinDbg;
+						|| match.FileEntry.Type == SDFileType.WinDbg
+						|| match.FileEntry.Type == SDFileType.SuperDumpMetaData;
 				}
 				if (shallDelete) {
 					File.Delete(file);

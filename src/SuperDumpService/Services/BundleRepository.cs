@@ -4,6 +4,7 @@ using SuperDumpService.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,10 +23,14 @@ namespace SuperDumpService.Services {
 		}
 
 		public void Populate() {
-			foreach(var info in storage.ReadBundleMetainfos()) {
+			var sw = new Stopwatch();
+			sw.Start();
+			foreach(var info in storage.ReadBundleMetainfos().Result) {
 				if (info == null) continue;
 				bundles[info.BundleId] = info;
 			}
+			sw.Stop();
+			Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
 		}
 
 		public BundleMetainfo Get(string bundleId) {

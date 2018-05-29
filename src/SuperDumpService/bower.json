@@ -2,10 +2,10 @@
 	"name": "asp.net",
 	"private": true,
 	"dependencies": {
-		"bootstrap": "3.3.6",
-		"jquery": "2.2.0",
-		"jquery-validation": "1.14.0",
-		"jquery-validation-unobtrusive": "3.2.6",
+		"bootstrap": "4.0.0",
+		"jquery": "3.3.1",
+		"jquery-validation": "1.17.0",
+		"jquery-validation-unobtrusive": "3.2.10",
 		"Chart.js": "2.0.2",
 		"clipboard": "1.5.10",
 		"notifyjs": "0.4.2"

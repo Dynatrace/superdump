@@ -20,6 +20,11 @@ namespace SuperDump.Analyzers {
 		public override void AnalyzeFrame(SDThread thread, SDCombinedStackFrame frame) {
 			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "_purecall", SDTag.PureCallTag);
 			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "abort", SDTag.AbortTag);
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__CxxCallCatchBlock", SDTag.ExceptionCatchTag);
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "RcCosolidateFrames", SDTag.ExceptionCatchTag);
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "RtlRaiseException", SDTag.NativeExceptionTag);
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "RtlReportException", SDTag.NativeExceptionTag); 
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__report_gsfailure", SDTag.BufferOverrunTag);
 		}
 
 		/// <summary>

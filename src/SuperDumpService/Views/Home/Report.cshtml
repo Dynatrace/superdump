@@ -2,7 +2,6 @@
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
 @using SuperDumpService.ViewModels
-
 @{
 	ViewData["Title"] = "Report";
 }
@@ -17,108 +16,141 @@
 	</script>
 
 } else {
-	<h2>Dump Id: @Model.DumpId</h2>
+	<div class="wrapper">
+		<h2>Dump Id: @Model.DumpId</h2>
 
-	<div style="display: block; float: right;">
-		@using (Html.BeginForm("Rerun", "Home")) {
-			<input type="hidden" name="bundleId" value="@Model.BundleId" />
-			<input type="hidden" name="dumpId" value="@Model.DumpId" />
-			<input type="submit" value="Rerun Analysis" />
-		}
-	</div>
+		<!-- Page Content -->
+		<div id="content">
+			<div style="display: block; float: right; position: absolute; right: 15px; width: 350px; ">
+				@using (Html.BeginForm("Rerun", "Home")) {
+					<div class="form-group text-right">
+						<input type="hidden" name="bundleId" value="@Model.BundleId" />
+						<input type="hidden" name="dumpId" value="@Model.DumpId" />
+						<input type="submit" value="Rerun Analysis" class="btn btn-danger" />
+					</div>
+				}
+				<div class="card">
+					<div class="card-body">
+						<h5 class="card-title">Duplicates</h5>
+						@if (!Model.Similarities.Any()) {
+							<h6 class="card-subtitle mb-2 text-muted">No duplicates found.</h6>
+						} else {
+							var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
+							<p class="card-text">@dupls.Count() possible duplicates found.</p>
+							<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
+								Hide/Show
+							</button>
+							<div class="collapse show" id="collapseDuplicates">
+								<ul class="list-group list-group-flush">
+									@foreach (var rel in dupls.OrderByDescending(x => x.Value)) {
+										<li class="list-group-item">
+											<p>
+												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+											<p>
+											<p>(@rel.Key.Created)</p>
+										</li>
+									}
+								</ul>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
 
-		<dl class="dl-horizontal smaller">
-			@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
-				<dt>BundleFileName:</dt>
-				<dd>@Model.BundleFileName</dd>
-			}
-			@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
-				<dt>DumpFileName:</dt>
-				<dd>@Model.DumpFileName (
-				<interactive-link  model="@(Model)">
-					Start interactive session
-				</interactive-link>
-				)</dd>
-			}
-
-			<dt>Time:</dt>
-			<dd>@Model.TimeStamp</dd>
-
-			@foreach (var customProp in Model.CustomProperties) {
-				<dt>
-					@customProp.Key:
-				</dt>
-				<dd>
-					<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
-				</dd>
-			}
-
-			<dt>Files:</dt>
-			<dd>
-				<div class="filegroups">
-					@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
-					@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-					.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-						<dl class="dl-horizontal filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-						<dt class="filesize">@filetype.ToString()</dt>
-						<dd class="">
+			<dl class="row courier-small compact">
+				@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
+					<dt class="col-sm-2 text-right">BundleFileName:</dt>
+					<dd class="col-sm-10">@Model.BundleFileName</dd>
+				}
+				@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
+					<dt class="col-sm-2 text-right">DumpFileName:</dt>
+					<dd class="col-sm-10">
+						@Model.DumpFileName (
+						<interactive-link model="@(Model)">
+							Start interactive session
+						</interactive-link>
+						)
+					</dd>
+				}
+				<dt class="col-sm-2 text-right">Time:</dt>
+				<dd class="col-sm-10">@Model.TimeStamp</dd>
+				@foreach (var customProp in Model.CustomProperties) {
+					<dt class="col-sm-2 text-right">
+						@customProp.Key:
+					</dt>
+					<dd class="col-sm-10">
+						<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
+					</dd>
+				}
+				<dt class="col-sm-2 text-right">Files:</dt>
+				<dd class="col-sm-10">
+					<div class="filegroups">
+						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
+						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
+				.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+						<dd class="col-sm-10">
 							<ul class="flat">
 								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
 									<li>
 										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
 									</li>
-											}
+								}
 							</ul>
 						</dd>
-				</dl>
-					}
-				</div>
-			</dd>
-		</dl>
-
-		<div class="container-fluid">
-			@if (Model.HasAnalysisFailed) {
-				<h2>Analysis failed with errors, no report avaliable.</h2>
-				<pre>Error: @Model.AnalysisError</pre>
-			} else if (Model.Result == null) {
-				if (Model.CustomTextResult != null) {
-					@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
-						<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>
-					} else {
-						<p>SuperDump Model is null, because of error:</p>
-						<pre>@Model.SDResultReadError</pre>
-						<p>Falling back to CustomTextResult.</p>
-					}
-					<section>
-						<pre>@Model.CustomTextResult</pre>
-					</section>
-				} else {
-					<h2>hang tight, still processing</h2>
-					<script>
-						setTimeout(function () {
-							window.location.reload(1);
-						}, 5000);
-					</script>
+					</dl>
 				}
-			} else {
-				<section>
-					@{Html.RenderPartial("_Summary");}
-				</section>
-				<section>
-					@{Html.RenderPartial("_System");}
-				</section>
-				<section>
-					@{Html.RenderPartial("_Threads");}
-				</section>
-				<section>
-					@{Html.RenderPartial("_Modules");}
-				</section>
-				<section>
-					@{ Html.RenderPartial("_Domains");}
-				</section>
-				<section>
-					@{Html.RenderPartial("_Memory");}
-				</section>
+					</div>
+				</dd>
+			</dl>
+
+			<div class="container-fluid">
+				@if (Model.HasAnalysisFailed) {
+					<h2>Analysis failed with errors, no report avaliable.</h2>
+					<pre>Error: @Model.AnalysisError</pre>
+				} else if (Model.Result == null) {
+					if (Model.CustomTextResult != null) {
+						@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
+							<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>
+						} else {
+							<p>SuperDump Model is null, because of error:</p>
+							<pre>@Model.SDResultReadError</pre>
+							<p>Falling back to CustomTextResult.</p>
 						}
+						<section>
+							<pre>@Model.CustomTextResult</pre>
+						</section>
+					} else {
+						<h2>hang tight, still processing</h2>
+						<script>
+							setTimeout(function () {
+								window.location.reload(1);
+							}, 5000);
+						</script>
+					}
+				} else {
+					<section>
+						@{Html.RenderPartial("_Summary");}
+					</section>
+					<section>
+						@{Html.RenderPartial("_System");}
+					</section>
+					<section>
+						@{Html.RenderPartial("_Threads");}
+					</section>
+					<section>
+						@{Html.RenderPartial("_Modules");}
+					</section>
+					<section>
+						@{ Html.RenderPartial("_Domains");}
+					</section>
+					<section>
+						@{Html.RenderPartial("_Memory");}
+					</section>
+				}
+			</div>
 		</div>
-						}
+
+	</div>
+}

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SuperDump.Models;
 using System.IO;
+using System.Diagnostics;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -26,15 +27,19 @@ namespace SuperDumpService.Services {
 		}
 
 		public void Populate() {
+			var sw = new Stopwatch();
+			sw.Start();
 			foreach(var bundle in bundleRepo.GetAll()) {
 				PopulateForBundle(bundle.BundleId);
 			}
+			sw.Stop();
+			Console.WriteLine($"Finished populating DumpRepository in {sw.Elapsed}");
 		}
 
 		public void PopulateForBundle(string bundleId) {
 			lock (sync) {
 				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
-				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId)) {
+				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId).Result) {
 					if (dumpInfo == null) {
 						Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
 						continue;
@@ -52,6 +57,16 @@ namespace SuperDumpService.Services {
 		public IEnumerable<DumpMetainfo> Get(string bundleId) {
 			if (!dumps.ContainsKey(bundleId)) return null;
 			return dumps[bundleId].Values;
+		}
+
+		public DumpMetainfo Get(DumpIdentifier dumpId) {
+			return Get(dumpId.BundleId, dumpId.DumpId);
+		}
+
+		public IEnumerable<DumpMetainfo> GetAll() {
+			lock (sync) {
+				return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
+			}
 		}
 
 		/// <summary>
@@ -112,8 +127,8 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		internal SDResult GetResult(string bundleId, string dumpId, out string error) {
-			return storage.ReadResults(bundleId, dumpId, out error);
+		internal async Task<SDResult> GetResult(string bundleId, string dumpId) {
+			return await storage.ReadResults(bundleId, dumpId);
 		}
 
 		internal IEnumerable<SDFileInfo> GetFileNames(string bundleId, string dumpId) {
