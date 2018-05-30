@@ -42,8 +42,8 @@ namespace SuperDumpService.Models {
 		}
 
 		private static double? CalculateStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorThread();
-			var errorThreadB = resultB.GetErrorThread();
+			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
+			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
@@ -103,8 +103,8 @@ namespace SuperDumpService.Models {
 		/// returns a number between 0.0 and 1.0, where 1.0 is full similarity, and 0.0 is no similarity
 		/// </summary>
 		private static double? CalculateModulesInStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorThread();
-			var errorThreadB = resultB.GetErrorThread();
+			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
+			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
@@ -138,8 +138,8 @@ namespace SuperDumpService.Models {
 		}
 
 		private static double? CalculateExceptionMessageSimilarity(SDResult resultA, SDResult resultB) {
-			var exceptionA = resultA.GetErrorThread()?.LastException;
-			var exceptionB = resultB.GetErrorThread()?.LastException;
+			var exceptionA = resultA.GetErrorOrLastExecutingThread()?.LastException;
+			var exceptionB = resultB.GetErrorOrLastExecutingThread()?.LastException;
 
 			if (exceptionA == null && exceptionB == null) return null; // no value in comparing if there are none
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.

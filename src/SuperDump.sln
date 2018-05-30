@@ -36,7 +36,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDump.Analyzer.Linux.Te
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SuperDump.Analyzer.Common", "SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.shproj", "{EA333D99-767A-472B-A272-B44C659023C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpService.Test", "SuperDumpService.Test\SuperDumpService.Test.csproj", "{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test", "SuperDumpService.Test\SuperDumpService.Test.csproj", "{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

@@ -15,6 +15,10 @@
 		<input type="submit" value="Trigger Duplicate Detection for all dumps (force all, even if analysis is already done) (!!!)" />
 	}
 	<br />
+	@using (Html.BeginForm("CleanSimilarityAnalysisQueue", "Similarity")) {
+		<input type="submit" value="Clean queue for similarity analysis" />
+	}
+	<br />
 	@using (Html.BeginForm("WipeAll", "Similarity")) {
 		<input type="submit" value="Delete All similarity files (!!!!)" />
 	}
