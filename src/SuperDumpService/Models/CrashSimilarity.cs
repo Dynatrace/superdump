@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nest;
 using SuperDump.Models;
+using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Models {
 	public class CrashSimilarity {
@@ -131,10 +132,13 @@ namespace SuperDumpService.Models {
 
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
-			return EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)
-				&& EqualsIgnoreNonAscii(lastEventA.Description, lastEventB.Description)
-					? 1.0
-					: 0.0;
+			if (!EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)) return 0.0;
+			return StringSimilarity(lastEventA.Description, lastEventB.Description);
+		}
+
+		// relative similarity between two strings
+		private static double StringSimilarity(string description1, string description2) {
+			return Utility.LevenshteinSimilarity(StripNonAscii(description1), StripNonAscii(description2));
 		}
 
 		private static double? CalculateExceptionMessageSimilarity(SDResult resultA, SDResult resultB) {

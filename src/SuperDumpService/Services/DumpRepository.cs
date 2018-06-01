@@ -55,7 +55,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<DumpMetainfo> Get(string bundleId) {
-			if (!dumps.ContainsKey(bundleId)) return null;
+			if (!dumps.ContainsKey(bundleId)) return Enumerable.Empty<DumpMetainfo>();
 			return dumps[bundleId].Values;
 		}
 

@@ -83,9 +83,13 @@ namespace SuperDumpService.Controllers {
 
 		public IActionResult BundleCreated(string bundleId) {
 			if (bundleRepo.ContainsBundle(bundleId)) {
-				return View(new BundleViewModel(bundleRepo.Get(bundleId), dumpRepo.Get(bundleId)));
+				return View(new BundleViewModel(bundleRepo.Get(bundleId), GetDumpListViewModels(bundleId)));
 			}
 			throw new NotImplementedException($"bundleid '{bundleId}' does not exist in repository");
+		}
+
+		private IEnumerable<DumpListViewModel> GetDumpListViewModels(string bundleId) {
+			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x, new Similarities(similarityService.GetSimilarities(x.Id).Result)));
 		}
 
 		[HttpPost]
@@ -109,7 +113,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false) {
-			IEnumerable<BundleViewModel> bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, dumpRepo.Get(r.BundleId))).OrderByDescending(b => b.Created);
+			var bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, GetDumpListViewModels(r.BundleId))).OrderByDescending(b => b.Created);
 
 			var filtered = Search(searchFilter, bundles);
 			filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
@@ -145,10 +149,9 @@ namespace SuperDumpService.Controllers {
 				b.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
 				|| b.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
 				|| b.DumpInfos.Any(d =>
-					d.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-					|| (d.DumpFileName != null && d.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+					d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+					|| (d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
 				));
-			
 		}
 
 		public IActionResult GetReport() {

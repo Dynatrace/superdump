@@ -70,7 +70,7 @@ namespace SuperDumpService.Services {
 			await relationShipRepo.WipeAll();
 		}
 
-		[Hangfire.Queue("similarityanalysis", Order = 2)]
+		[Hangfire.Queue("similarityanalysis", Order = 3)]
 		public async Task CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
 			try {
 				var swTotal = new Stopwatch();
