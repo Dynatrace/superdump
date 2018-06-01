@@ -47,6 +47,7 @@ Features
  * Slack Notifications for finished analysis (see `SlackNotificationUrls` config setting)
  * Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps.
  * Link to source (see `RepositoryUrl` setting)
+ * Duplication detection
  
  
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
