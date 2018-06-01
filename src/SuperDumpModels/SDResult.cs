@@ -66,9 +66,22 @@ namespace SuperDump.Models {
 		/// <summary>
 		/// Returns the thread with the most severe error-tag on it. "most likely" the crashing thread. might also return null, if there is no thread with error tags.
 		/// </summary>
-		public SDThread GetErrorThread() {
+		/// 		public SDThread GetErrorOrLastExecutingThread() {
+		// order threads by importance of their error-tags, then return first
+		public SDThread GetFaultingThread() {
 			// order threads by importance of their error-tags, then return first
 			return ThreadInformation.Values.Where(x => x.ErrorTags.Any()).OrderByDescending(t => t.ErrorTags.Max(x => x.Importance)).FirstOrDefault();
+		}
+
+		public SDThread GetLastExecutingThread() {
+			return ThreadInformation.Values.SingleOrDefault(x => x.Tags.Any(t => SDTag.LastExecutingTag.Equals(t)));
+		}
+
+		public SDThread GetErrorOrLastExecutingThread() {
+			// order threads by importance of their error-tags, then return first
+			var faultingThread = GetFaultingThread();
+			if (faultingThread != null) return faultingThread;
+			return GetLastExecutingThread();
 		}
 	}
 }

@@ -141,11 +141,11 @@ namespace SuperDumpService.Services {
 				FileName = fileInfo.Name
 			};
 			if (Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.SuperDumpMetaData;
+				fileEntry.Type = SDFileType.SuperDumpData;
 				return fileEntry;
 			}
 			if (Path.GetFileName(pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.SuperDumpData;
+				fileEntry.Type = SDFileType.SuperDumpMetaData;
 				return fileEntry;
 			}
 			if ("windbg.log" == fileInfo.Name) {

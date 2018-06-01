@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nest;
 using SuperDump.Models;
+using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Models {
 	public class CrashSimilarity {
@@ -42,8 +43,8 @@ namespace SuperDumpService.Models {
 		}
 
 		private static double? CalculateStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorThread();
-			var errorThreadB = resultB.GetErrorThread();
+			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
+			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
@@ -103,8 +104,8 @@ namespace SuperDumpService.Models {
 		/// returns a number between 0.0 and 1.0, where 1.0 is full similarity, and 0.0 is no similarity
 		/// </summary>
 		private static double? CalculateModulesInStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorThread();
-			var errorThreadB = resultB.GetErrorThread();
+			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
+			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
@@ -131,15 +132,18 @@ namespace SuperDumpService.Models {
 
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
-			return EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)
-				&& EqualsIgnoreNonAscii(lastEventA.Description, lastEventB.Description)
-					? 1.0
-					: 0.0;
+			if (!EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)) return 0.0;
+			return StringSimilarity(lastEventA.Description, lastEventB.Description);
+		}
+
+		// relative similarity between two strings
+		private static double StringSimilarity(string description1, string description2) {
+			return Utility.LevenshteinSimilarity(StripNonAscii(description1), StripNonAscii(description2));
 		}
 
 		private static double? CalculateExceptionMessageSimilarity(SDResult resultA, SDResult resultB) {
-			var exceptionA = resultA.GetErrorThread()?.LastException;
-			var exceptionB = resultB.GetErrorThread()?.LastException;
+			var exceptionA = resultA.GetErrorOrLastExecutingThread()?.LastException;
+			var exceptionB = resultB.GetErrorOrLastExecutingThread()?.LastException;
 
 			if (exceptionA == null && exceptionB == null) return null; // no value in comparing if there are none
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.

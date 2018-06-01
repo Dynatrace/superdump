@@ -58,5 +58,11 @@ namespace SuperDumpService.Controllers {
 			await similarityService.WipeAll();
 			return View("Overview");
 		}
+
+		[HttpPost]
+		public IActionResult CleanSimilarityAnalysisQueue() {
+			similarityService.CleanQueue();
+			return View("Overview");
+		}
 	}
 }

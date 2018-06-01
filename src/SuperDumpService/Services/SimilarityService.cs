@@ -10,6 +10,9 @@ using System.Diagnostics;
 using System.Linq;
 using SuperDump.Models;
 using System.Threading;
+using Hangfire.Storage.Monitoring;
+using Hangfire.Storage;
+using Hangfire;
 
 namespace SuperDumpService.Services {
 	public class Relationship {
@@ -45,7 +48,7 @@ namespace SuperDumpService.Services {
 			// start analysis with newest dump
 			// for every dump, only analyze newer ones.
 			// that way, at first, only newset dumps are compared with newest ones.
-			foreach (var dumpInfo in dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderBy(x => x.Created)) {
+			foreach (var dumpInfo in dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderByDescending(x => x.Created)) {
 				ScheduleSimilarityAnalysis(dumpInfo, force, dumpInfo.Created);
 			}
 		}
@@ -59,11 +62,15 @@ namespace SuperDumpService.Services {
 			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, force, timeFrom));
 		}
 
+		public void CleanQueue() {
+			throw new NotImplementedException();
+		}
+
 		public async Task WipeAll() {
 			await relationShipRepo.WipeAll();
 		}
 
-		[Hangfire.Queue("similarityanalysis", Order = 2)]
+		[Hangfire.Queue("similarityanalysis", Order = 3)]
 		public async Task CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
 			try {
 				var swTotal = new Stopwatch();
@@ -116,5 +123,22 @@ namespace SuperDumpService.Services {
 			return true; // no ideas on how to pre-select here yet.
 		}
 
+	}
+
+	public static class HangfireExtensions {
+		public static void PurgeJobs(this IMonitoringApi monitor) {
+			var toDelete = new List<string>();
+
+			foreach (QueueWithTopEnqueuedJobsDto queue in monitor.Queues()) {
+				for (var i = 0; i < Math.Ceiling(queue.Length / 1000d); i++) {
+					monitor.EnqueuedJobs(queue.Name, 1000 * i, 1000)
+						.ForEach(x => toDelete.Add(x.Key));
+				}
+			}
+
+			foreach (var jobId in toDelete) {
+				BackgroundJob.Delete(jobId);
+			}
+		}
 	}
 }
