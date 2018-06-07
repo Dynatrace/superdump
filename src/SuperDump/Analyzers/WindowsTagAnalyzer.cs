@@ -25,7 +25,8 @@ namespace SuperDump.Analyzers {
 			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "RtlRaiseException", SDTag.NativeExceptionTag);
 			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "RtlReportException", SDTag.NativeExceptionTag);
 			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__report_gsfailure", SDTag.BufferOverrunTag);
-			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__chkstk", SDTag.StackOverflowTag); 
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__chkstk", SDTag.StackOverflowTag);
+			AddFrameAndThreadTagIf(thread, frame, () => frame.MethodName == "__scrt_throw_std_bad_alloc", SDTag.BadAllocTag);
 		}
 
 		/// <summary>

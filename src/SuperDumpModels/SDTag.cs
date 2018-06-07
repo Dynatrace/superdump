@@ -40,6 +40,7 @@ namespace SuperDump.Models {
 		public static readonly SDTag AbortTag = new SDTag("abort", 100, TagType.Error);
 		public static readonly SDTag PureCallTag = new SDTag("purecall", 100, TagType.Error);
 		public static readonly SDTag StackOverflowTag = new SDTag("stackoverflow", 100, TagType.Error);
+		public static readonly SDTag BadAllocTag = new SDTag("bad_alloc", 100, TagType.Error);
 		public static readonly SDTag DeadlockedTag = new SDTag("deadlocked", 90, TagType.Error);
 		public static readonly SDTag NativeExceptionTag = new SDTag("native-exception", 81, TagType.Error);
 		public static readonly SDTag ManagedExceptionTag = new SDTag("managed-exception", 80, TagType.Error);
