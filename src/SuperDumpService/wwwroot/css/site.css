@@ -428,6 +428,11 @@
 	border-color: #D9723B;
 }
 
+.tag-bad_alloc {
+	background-color: #FF0000;
+	border-color: #D9723B;
+}
+
 ul.flat {
 	list-style-type: none;
 	margin: 0px;
