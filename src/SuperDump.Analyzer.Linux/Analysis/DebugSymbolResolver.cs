@@ -114,7 +114,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		}
 
 		public static string DebugFileName(string path) {
-			return $"{Path.GetFileNameWithoutExtension(path)}.dbg";
+			return $"{(Path.GetExtension(path).Equals(".node") ? "lib" : "")}{Path.GetFileNameWithoutExtension(path)}.dbg";
 		}
 	}
 }
