@@ -48,8 +48,15 @@ Features
  * Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps.
  * Link to source (see `RepositoryUrl` setting)
  * Duplication detection
- 
- 
+ * Optional Ldap Authentication with three user groups:
+   * Admin: Has access to the Hangfire Server webinterface and can clean the Elastic Search.
+   * User: Can download the dump files, view the stack variables, use the interactive mode and rerun the dump analysis.
+   * Viewer: Can upload dumps, view the basic report and download certain log files.
+ * Token Authentication for Api
+ * Logging of security relevant events.
+ * Logging of all webrequests.
+
+
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
@@ -106,7 +113,6 @@ Though it currently works great for us at Dynatrace, there are areas that need t
 
  * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
  * Some stuff is tailored for our needs at Dynatrace. E.g. we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
- * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
 
 Future
 ======

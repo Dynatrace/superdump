@@ -34,7 +34,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public BundleMetainfo Get(string bundleId) {
-			return bundles[bundleId];
+			return bundles.GetValueOrDefault(bundleId);
 		}
 
 		public IEnumerable<BundleMetainfo> GetAll() {

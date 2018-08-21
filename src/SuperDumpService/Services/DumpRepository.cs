@@ -50,8 +50,11 @@ namespace SuperDumpService.Services {
 		}
 
 		public DumpMetainfo Get(string bundleId, string dumpId) {
-			if (!dumps.ContainsKey(bundleId)) return null;
-			return dumps[bundleId][dumpId];
+			ConcurrentDictionary<string, DumpMetainfo> bundleInfo = dumps.GetValueOrDefault(bundleId);
+			if (bundleInfo != null) {
+				return bundleInfo.GetValueOrDefault(dumpId);
+			}
+			return null;
 		}
 
 		public IEnumerable<DumpMetainfo> Get(string bundleId) {
@@ -91,7 +94,7 @@ namespace SuperDumpService.Services {
 				dumps[bundleId][dumpId] = dumpInfo;
 			}
 			storage.Create(bundleId, dumpId);
-			
+
 			FileInfo destFile = await storage.AddFileCopy(bundleId, dumpId, sourcePath);
 			AddSDFile(bundleId, dumpId, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
@@ -139,7 +142,7 @@ namespace SuperDumpService.Services {
 			var dumpInfo = Get(bundleId, dumpId);
 			dumpInfo.Status = status;
 			dumpInfo.ErrorMessage = errorMessage;
-			if(status == DumpStatus.Analyzing) {
+			if (status == DumpStatus.Analyzing) {
 				dumpInfo.Started = DateTime.Now;
 				dumpInfo.Finished = DateTime.MinValue;
 			}
@@ -157,6 +160,10 @@ namespace SuperDumpService.Services {
 
 		internal void AddFile(string bundleId, string dumpId, string filename, SDFileType type) {
 			AddSDFile(bundleId, dumpId, filename, type);
+		}
+
+		public bool IsPrimaryDumpAvailable(string bundleId, string dumpId) {
+			return File.Exists(GetDumpFilePath(bundleId, dumpId));
 		}
 	}
 }

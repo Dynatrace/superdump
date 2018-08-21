@@ -196,6 +196,11 @@ namespace SuperDumpService.Services {
 		}
 
 		public void RerunAnalysis(string bundleId, string dumpId) {
+			var dumpFilePath = dumpRepo.GetDumpFilePath(bundleId, dumpId);
+			if (!File.Exists(dumpFilePath)) {
+				throw new DumpNotFoundException($"bundleid: {bundleId}, dumpid: {dumpId}, path: {dumpFilePath}");
+			}
+
 			WipeAllExceptDump(bundleId, dumpId);
 			var dumpInfo = dumpRepo.Get(bundleId, dumpId);
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
