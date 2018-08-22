@@ -105,6 +105,21 @@ Build
  * Build via `building/build.cmd`
  * Run via `build/runsuperdump.cmd` (defaults to port 5000)
 
+ Authentication
+ ==============
+ For authentication it is necessary to add a few settings to either the appconfig.json file, environment variables or using the user secrets file of asp .net.
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapDomain"
+ * "SuperDumpSettings:LdapAuthenticationSettings:TokenSigningKey"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:Admin"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:User"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:Viewer"
+
+ When "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserMode" is set to "ServiceUser" it is also necessary to specify
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserName"
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserPwd"
+
+ The user secrets file can be created by right-clicking the "SuperDumpService" Project in Visual Studio and selecting "Manage User Secrets"
+
 State of the project
 ====================
 SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it.
