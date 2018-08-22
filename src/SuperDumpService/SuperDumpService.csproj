@@ -10,6 +10,7 @@
     <DocumentationFile>$(Configuration)\$(TargetFramework)\SuperDumpService.xml</DocumentationFile>
     <RestorePackages>true</RestorePackages>
 	<MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish> <!-- needed for RazorLight. see https://github.com/toddams/RazorLight/issues/118 -->
+	<UserSecretsId>B58C48DC-CC1B-4647-8E53-36B41078F1B8</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <Content Remove="Views\SlackMessage.cshtml" />
