@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SuperDumpService.Models
-{
+namespace SuperDumpService.Models {
 	public class ApiLoginModel {
 		public string Username { get; set; }
 

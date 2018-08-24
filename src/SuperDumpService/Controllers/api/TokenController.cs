@@ -32,14 +32,14 @@ namespace SuperDumpService.Controllers.api {
 				logger.LogLoginEvent("Api token requested", HttpContext, loginModel.Username);
 
 				return Ok(new {
-					token = new JwtSecurityTokenHandler().WriteToken(
-				new JwtSecurityToken(
-					issuer: settings.TokenIssuer,
-					audience: settings.TokenAudience,
-					claims: userPrincipal.Claims,
-					expires: DateTime.UtcNow.AddDays(settings.TokenExpireTimeInDays),
-					signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Convert.FromBase64String(settings.TokenSigningKey)), SecurityAlgorithms.HmacSha256)
-				))
+					token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+						issuer: settings.TokenIssuer,
+						audience: settings.TokenAudience,
+						claims: userPrincipal.Claims,
+						expires: DateTime.UtcNow.AddDays(settings.TokenExpireTimeInDays),
+						signingCredentials: new SigningCredentials(new SymmetricSecurityKey(
+							Convert.FromBase64String(settings.TokenSigningKey)), SecurityAlgorithms.HmacSha256)
+					))
 				});
 			} catch (InvalidCredentialException) {
 				logger.LogFailedLogin("Api token request with invalid credentials", HttpContext, loginModel.Username);

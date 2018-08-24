@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 
 namespace SuperDumpService {
-	public class LdapAuthenticationSettings
-    {
+	public class LdapAuthenticationSettings {
 		public enum ServiceUserMode {
 			Integrated,
 			UserCredentials,

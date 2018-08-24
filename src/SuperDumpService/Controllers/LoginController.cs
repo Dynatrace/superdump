@@ -12,7 +12,7 @@ using SuperDumpService.ViewModels;
 
 namespace SuperDumpService.Controllers {
 	public class LoginController : Controller {
-		private LdapAuthentcationService authentificationHelper;
+		private readonly LdapAuthentcationService authentificationHelper;
 		private readonly ILogger logger;
 
 		public LoginController(LdapAuthentcationService authentificationHelper, ILoggerFactory loggerFactory) {

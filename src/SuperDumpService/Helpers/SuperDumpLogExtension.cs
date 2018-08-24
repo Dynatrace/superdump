@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -81,12 +82,7 @@ namespace SuperDumpService.Helpers {
 		}
 
 		private static string GetCustomPropertyString(Dictionary<string, string> customProperties) {
-			StringBuilder sb = new StringBuilder();
-			foreach (var customProperty in customProperties) {
-				sb.AppendFormat("{0}: {1}, ", customProperty.Key, customProperty.Value);
-			}
-			sb.Remove(sb.Length - 2, 2);
-			return sb.ToString();
+			return string.Join(", ", customProperties.Select(entry => $"{entry.Key}: {entry.Value}"));
 		}
 	}
 }

@@ -8,6 +8,7 @@ namespace SuperDumpService.Helpers {
 		public AuthorizationHelper(LdapAuthentcationService authenticationService) {
 			this.authenticationService = authenticationService;
 		}
+
 		public bool CheckPolicy(ClaimsPrincipal user, string policy) {
 			if (!user.Identity.IsAuthenticated) {
 				return false;

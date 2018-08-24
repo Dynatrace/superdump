@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SuperDumpService.ViewModels
-{
+namespace SuperDumpService.ViewModels {
 	public class LoginViewModel {
 		[DataType(DataType.Url)]
 		public string ReturnUrl { get; set; }
