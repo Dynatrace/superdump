@@ -1,5 +1,6 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 @using SuperDumpService.Helpers;
+@inject IAuthorizationHelper AuthorizationHelper
 
 <script>
 	var modalWin = new CreateModalPopUpObject();
@@ -111,7 +112,9 @@
 										<li class="text-nowrap"><label><input type="checkbox" class="showaddresses" name="@thread.OsId" checked />show addresses</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showsourceinfo" name="@thread.OsId" checked />show sourceinfo</label></li>
 										<li class="text-nowrap"><label><input type="checkbox" class="showstackptroffset" name="@thread.OsId" />show stackptr offsets</label></li>
-										<li class="text-nowrap"><label><input type="checkbox" class="showstackvars" name="@thread.OsId" />show stack variables</label></li>
+										@if (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+											<li class="text-nowrap"><label><input type="checkbox" class="showstackvars" name="@thread.OsId" />show stack variables</label></li>
+										}
 									</ul>
 								</td>
 							</tr>
@@ -151,8 +154,8 @@
 										}
 
 										string disassemblyCmd = Model.DumpType == SuperDumpService.Models.DumpType.WindowsDump ?
-											(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
-											"disas 0x" + (frame.InstructionPointer).ToString("x");
+																										(frame.Type == SuperDump.Models.StackFrameType.Native ? "u " : "!u ") + (frame.InstructionPointer).ToString("x") + "-8" :
+																										"disas 0x" + (frame.InstructionPointer).ToString("x");
 										<tr class="@rowClass">
 											@if (Model.DumpType != SuperDumpService.Models.DumpType.LinuxCoreDump) {
 												<td class="nobreak stacktype">@frame.Type.ToString()</td>
@@ -180,40 +183,42 @@
 													</span>
 												</td>
 											}
-											<td class="nobreak stackvariables">
-												@if (frame is SuperDumpModels.SDCDCombinedStackFrame) {
-													<table>
-														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).ArgsWithLinks) {
-															<tr>
-																<td style="width:120px"><b>@(entry.Key)</b></td>
-																<td>
-																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
-																		@(entry.Value.ElementAt(i))
-																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
-																			@(entry.Value.ElementAt(i + 1))
-																		</interactive-link>
-																	}
-																	@(entry.Value.Last())
-																</td>
-															</tr>
-														}
-														@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).LocalsWithLinks) {
-															<tr>
-																<td style="width:120px"><b>@(entry.Key)</b></td>
-																<td>
-																	@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
-																		@(entry.Value.ElementAt(i))
-																		<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
-																			@(entry.Value.ElementAt(i + 1))
-																		</interactive-link>
-																	}
-																	@(entry.Value.Last())
-																</td>
-															</tr>
-														}
-													</table>
-												}
-											</td>
+											@if (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+												<td class="nobreak stackvariables">
+													@if (frame is SuperDumpModels.SDCDCombinedStackFrame) {
+														<table>
+															@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).ArgsWithLinks) {
+																<tr>
+																	<td style="width:120px"><b>@(entry.Key)</b></td>
+																	<td>
+																		@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																			@(entry.Value.ElementAt(i))
+																			<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																				@(entry.Value.ElementAt(i + 1))
+																			</interactive-link>
+																		}
+																		@(entry.Value.Last())
+																	</td>
+																</tr>
+															}
+															@foreach (var entry in (frame as SuperDumpModels.SDCDCombinedStackFrame).LocalsWithLinks) {
+																<tr>
+																	<td style="width:120px"><b>@(entry.Key)</b></td>
+																	<td>
+																		@for (int i = 0; i + 1 < entry.Value.Count(); i += 2) {
+																			@(entry.Value.ElementAt(i))
+																			<interactive-link Model="@Model" Command="x/32xw @(entry.Value.ElementAt(i + 1))">
+																				@(entry.Value.ElementAt(i + 1))
+																			</interactive-link>
+																		}
+																		@(entry.Value.Last())
+																	</td>
+																</tr>
+															}
+														</table>
+													}
+												</td>
+											}
 										</tr>
 									}
 								</tbody>
@@ -221,7 +226,7 @@
 							<div class="hidden-stacktrace-hack">{noformat}</div>
 						</div>
 					</div>
-										}
+				}
 			</div>
 		</div>
 	</div>

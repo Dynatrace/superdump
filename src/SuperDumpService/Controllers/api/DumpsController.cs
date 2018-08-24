@@ -8,6 +8,9 @@ using SuperDumpService.Services;
 using SuperDumpService.Helpers;
 using SuperDump.Models;
 using System.IO;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -17,11 +20,13 @@ namespace SuperDumpService.Controllers.Api {
 		public SuperDumpRepository superDumpRepo;
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
+		private readonly ILogger<DumpsController> logger;
 
-		public DumpsController(SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo) {
+		public DumpsController(SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, ILoggerFactory loggerFactory) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
+			logger = loggerFactory.CreateLogger<DumpsController>();
 		}
 
 		/// <summary>
@@ -31,14 +36,18 @@ namespace SuperDumpService.Controllers.Api {
 		/// <returns>JSON array, if id was a bundle id, or a single JSON entry for a dump id</returns>
 		/// <response code="200">Returned JSON data for all dumps in bundle</response>
 		/// <response code="404">If result is not ready, or dump does not exist</response>
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
 		[HttpGet("{bundleId}", Name = "dumps")]
 		[ProducesResponseType(typeof(List<SDResult>), 200)]
 		[ProducesResponseType(typeof(string), 404)]
 		public async Task<IActionResult> Get(string bundleId) {
 			// check if it is a bundle 
 			var bundleInfo = superDumpRepo.GetBundle(bundleId);
-			if (bundleInfo == null) return NotFound("Resource not found");
-
+			if (bundleInfo == null) {
+				logger.LogNotFound("Api: Bundle not found", HttpContext, "BundleId", bundleId);
+				return NotFound("Resource not found");
+			}
+			logger.LogBundleAccess("Api get Bundle", HttpContext, bundleInfo);
 			var resultList = new List<SDResult>();
 			foreach (var dumpInfo in dumpRepo.Get(bundleId)) {
 				resultList.Add(await superDumpRepo.GetResult(bundleId, dumpInfo.DumpId));
@@ -69,6 +78,7 @@ namespace SuperDumpService.Controllers.Api {
 					}
 					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
 					if (bundleId != null) {
+						logger.LogFileUpload("Api Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
 						return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
 					} else {
 						// in case the input was just symbol files, we don't get a bundleid.
@@ -76,6 +86,7 @@ namespace SuperDumpService.Controllers.Api {
 						throw new NotImplementedException();
 					}
 				} else {
+					logger.LogNotFound("Api Upload: File not found", HttpContext, "Url", input.Url);
 					return BadRequest("Invalid request, resource identifier is not valid or cannot be reached.");
 				}
 			} else {

@@ -1,22 +1,25 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using SuperDumpService.Models;
-using System.IO;
-using SuperDumpService.Helpers;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Hosting;
-using System.Text;
-using System.Linq;
-using SuperDumpService.Services;
-using SuperDump.Models;
-using SuperDumpService.ViewModels;
 using System.Collections.Generic;
-using Sakura.AspNetCore;
-using Microsoft.Extensions.Options;
+using System.IO;
+using System.Linq;
 using System.Net.Mime;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Sakura.AspNetCore;
+using SuperDump.Models;
+using SuperDumpService.Helpers;
+using SuperDumpService.Models;
+using SuperDumpService.Services;
+using SuperDumpService.ViewModels;
 
 namespace SuperDumpService.Controllers {
+	[Authorize(Policy = LdapCookieAuthenticationExtension.ViewerPolicy)]
 	public class HomeController : Controller {
 		private IHostingEnvironment environment;
 		public SuperDumpRepository superDumpRepo;
@@ -27,8 +30,10 @@ namespace SuperDumpService.Controllers {
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
 		private readonly SimilarityService similarityService;
+		private readonly ILogger<HomeController> logger;
+		private readonly IAuthorizationHelper authorizationHelper;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper, RelationshipRepository relationshipRepo, SimilarityService similarityService) {
+		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper, RelationshipRepository relationshipRepo, SimilarityService similarityService, ILoggerFactory loggerFactory, IAuthorizationHelper authorizationHelper) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -38,6 +43,8 @@ namespace SuperDumpService.Controllers {
 			this.pathHelper = pathHelper;
 			this.relationshipRepo = relationshipRepo;
 			this.similarityService = similarityService;
+			logger = loggerFactory.CreateLogger<HomeController>();
+			this.authorizationHelper = authorizationHelper;
 		}
 
 		public IActionResult Index() {
@@ -70,10 +77,11 @@ namespace SuperDumpService.Controllers {
 						filename = Path.GetFileName(input.Url);
 					}
 					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
-
+					logger.LogFileUpload("Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
 					// return list of file paths from zip
 					return RedirectToAction("BundleCreated", "Home", new { bundleId = bundleId });
 				} else {
+					logger.LogNotFound("Upload", HttpContext, "Url", input.Url);
 					return BadRequest("Provided URI is invalid or cannot be reached.");
 				}
 			} else {
@@ -119,6 +127,7 @@ namespace SuperDumpService.Controllers {
 			filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
 
 			ViewData["searchFilter"] = searchFilter;
+			logger.LogDefault("Overview", HttpContext);
 			return View(new OverviewViewModel {
 				All = bundles,
 				Filtered = filtered,
@@ -133,6 +142,7 @@ namespace SuperDumpService.Controllers {
 				int colon = portlessUrl.LastIndexOf(':');
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
+			logger.LogDefault("ElasticSearch", HttpContext);
 			return Redirect(portlessUrl + ":5601");
 		}
 
@@ -145,6 +155,7 @@ namespace SuperDumpService.Controllers {
 		private IEnumerable<BundleViewModel> Search(string searchFilter, IEnumerable<BundleViewModel> bundles) {
 			if (searchFilter == null) return bundles;
 
+			logger.LogSearch("Search", HttpContext, searchFilter);
 			return bundles.Where(b =>
 				b.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
 				|| b.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
@@ -159,8 +170,16 @@ namespace SuperDumpService.Controllers {
 			return View();
 		}
 
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
 		[HttpGet(Name = "Interactive")]
 		public IActionResult Interactive(string bundleId, string dumpId, string cmd) {
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
+				logger.LogNotFound("Interactive Mode: Bundle not found", HttpContext, "BundleId", bundleId);
+				return View(null);
+			}
+
+			logger.LogDumpAccess("Start Interactive Mode", HttpContext, bundleInfo, dumpId);
 			return View(new InteractiveViewModel() { BundleId = bundleId, DumpId = dumpId, DumpInfo = dumpRepo.Get(bundleId, dumpId), Command = cmd });
 		}
 
@@ -170,15 +189,19 @@ namespace SuperDumpService.Controllers {
 
 			var bundleInfo = superDumpRepo.GetBundle(bundleId);
 			if (bundleInfo == null) {
+				logger.LogNotFound("Report: Bundle not found", HttpContext, "BundleId", bundleId);
 				return View(null);
 			}
 
 			var dumpInfo = superDumpRepo.GetDump(bundleId, dumpId);
 			if (dumpInfo == null) {
+				logger.LogNotFound("Report: Dump not found", HttpContext, "DumpId", dumpId);
 				return View(null);
 			}
 
 			SDResult res = await superDumpRepo.GetResult(bundleId, dumpId);
+
+			logger.LogDumpAccess("Report", HttpContext, bundleInfo, dumpId);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -197,7 +220,8 @@ namespace SuperDumpService.Controllers {
 				RepositoryUrl = settings.RepositoryUrl,
 				InteractiveGdbHost = settings.InteractiveGdbHost,
 				Similarities = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
-					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value))
+					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)),
+				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId)
 			});
 		}
 
@@ -218,8 +242,23 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public IActionResult DownloadFile(string bundleId, string dumpId, string filename) {
+			if (!(authorizationHelper.CheckPolicy(HttpContext.User, LdapCookieAuthenticationExtension.UserPolicy) ||
+				settings.LdapAuthenticationSettings.ViewerDownloadableFiles.Any(f => f == filename) &&
+				authorizationHelper.CheckPolicy(HttpContext.User, LdapCookieAuthenticationExtension.ViewerPolicy))) {
+				return Forbid();
+			}
+
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
+				logger.LogNotFound("DownloadFile: Bundle not found", HttpContext, "BundleId", bundleId);
+				return View(null);
+			}
 			var file = dumpStorage.GetFile(bundleId, dumpId, filename);
-			if (file == null) throw new ArgumentException("could not find file");
+			if (file == null) {
+				logger.LogNotFound("DownloadFile: File not found", HttpContext, "Filename", filename);
+				throw new ArgumentException("could not find file");
+			}
+			logger.LogFileAccess("DownloadFile", HttpContext, bundleInfo, dumpId, filename);
 			if (file.Extension == ".txt"
 				|| file.Extension == ".log"
 				|| file.Extension == ".json") {
@@ -242,8 +281,15 @@ namespace SuperDumpService.Controllers {
 			return Content(content);
 		}
 
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
 		[HttpPost]
 		public IActionResult Rerun(string bundleId, string dumpId) {
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
+				logger.LogNotFound("Rerun: Bundle not found", HttpContext, "BundleId", bundleId);
+				return View(null);
+			}
+			logger.LogDumpAccess("Rerun", HttpContext, bundleInfo, dumpId);
 			superDumpRepo.RerunAnalysis(bundleId, dumpId);
 			return View(new ReportViewModel(bundleId, dumpId));
 		}
