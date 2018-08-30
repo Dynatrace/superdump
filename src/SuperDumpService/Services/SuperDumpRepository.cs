@@ -27,6 +27,7 @@ namespace SuperDumpService.Services {
 		private readonly SymStoreService symStoreService;
 		private readonly UnpackService unpackService;
 		private readonly PathHelper pathHelper;
+		private readonly IdenticalDumpRepository identicalRepository;
 
 		public SuperDumpRepository(
 				IOptions<SuperDumpSettings> settings,
@@ -36,7 +37,8 @@ namespace SuperDumpService.Services {
 				DownloadService downloadService,
 				SymStoreService symStoreService,
 				UnpackService unpackService,
-				PathHelper pathHelper) {
+				PathHelper pathHelper,
+				IdenticalDumpRepository identicalRepository) {
 			this.settings = settings;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -45,6 +47,7 @@ namespace SuperDumpService.Services {
 			this.symStoreService = symStoreService;
 			this.unpackService = unpackService;
 			this.pathHelper = pathHelper;
+			this.identicalRepository = identicalRepository;
 			pathHelper.PrepareDirectories();
 		}
 
@@ -186,6 +189,7 @@ namespace SuperDumpService.Services {
 			var duplicates = bundleRepo.GetAll().Where(b => b.Status != BundleStatus.Duplication && b.FileHash == md5);
 			if (duplicates.Any()) {
 				string originalBundleId = duplicates.First().BundleId;
+				Task.Run(() => identicalRepository.AddIdenticalRelationship(originalBundleId, bundleId));//TODO Task necessary?
 				Console.WriteLine($"This bundle has already been analyzed. See bundle id {originalBundleId}.");
 				bundleRepo.Get(bundleId).OriginalBundleId = originalBundleId;
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Duplication);

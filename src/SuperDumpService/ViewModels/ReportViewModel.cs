@@ -26,6 +26,8 @@ namespace SuperDumpService.ViewModels {
 		public string InteractiveGdbHost { get; set; }
 		public IEnumerable<KeyValuePair<DumpMetainfo, double>> Similarities { get; set; } = Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>();
 		public bool IsDumpAvailable { get; set; }
+		public IEnumerable<BundleMetainfo> IdenticalDumps { get; internal set; }
+		public IDictionary<string, IEnumerable<JiraIssueModel>> JiraIssues { get; set; }
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;

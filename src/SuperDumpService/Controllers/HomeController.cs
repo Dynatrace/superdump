@@ -33,8 +33,22 @@ namespace SuperDumpService.Controllers {
 		private readonly SimilarityService similarityService;
 		private readonly ILogger<HomeController> logger;
 		private readonly IAuthorizationHelper authorizationHelper;
+		private readonly IdenticalDumpRepository identicalDumpRepository;
+		private readonly JiraIssueRepository jiraIssueRepository;
 
-		public HomeController(IHostingEnvironment environment, SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, DumpStorageFilebased dumpStorage, IOptions<SuperDumpSettings> settings, PathHelper pathHelper, RelationshipRepository relationshipRepo, SimilarityService similarityService, ILoggerFactory loggerFactory, IAuthorizationHelper authorizationHelper) {
+		public HomeController(IHostingEnvironment environment, 
+				SuperDumpRepository superDumpRepo, 
+				BundleRepository bundleRepo, 
+				DumpRepository dumpRepo,
+				DumpStorageFilebased dumpStorage, 
+				IOptions<SuperDumpSettings> settings, 
+				PathHelper pathHelper, 
+				RelationshipRepository relationshipRepo, 
+				SimilarityService similarityService, 
+				ILoggerFactory loggerFactory, 
+				IAuthorizationHelper authorizationHelper, 
+				IdenticalDumpRepository identicalDumpRepository,
+				JiraIssueRepository jiraIssueRepository) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -46,6 +60,8 @@ namespace SuperDumpService.Controllers {
 			this.similarityService = similarityService;
 			logger = loggerFactory.CreateLogger<HomeController>();
 			this.authorizationHelper = authorizationHelper;
+			this.identicalDumpRepository = identicalDumpRepository;
+			this.jiraIssueRepository = jiraIssueRepository;
 		}
 
 		public IActionResult Index() {
@@ -200,9 +216,13 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 
+			logger.LogDumpAccess("Report", HttpContext, bundleInfo, dumpId);
+
 			SDResult res = await superDumpRepo.GetResult(bundleId, dumpId);
 
-			logger.LogDumpAccess("Report", HttpContext, bundleInfo, dumpId);
+			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
+					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
+			IEnumerable<BundleMetainfo> identicalDumps = (await identicalDumpRepository.GetIdenticalRelationships(bundleId)).Select(x => bundleRepo.Get(x));
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -220,10 +240,21 @@ namespace SuperDumpService.Controllers {
 				DumpType = dumpInfo.DumpType,
 				RepositoryUrl = settings.RepositoryUrl,
 				InteractiveGdbHost = settings.InteractiveGdbHost,
-				Similarities = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
-					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)),
-				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId)
+				Similarities = similarDumps,
+				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
+				IdenticalDumps = identicalDumps,
+				JiraIssues = jiraIssueRepository.GetIssuesByBundleIdsWithoutWait( new List<string>() { bundleId }
+					.Union(similarDumps.Select(dump => dump.Key.BundleId))
+					.Union(identicalDumps.Select(bundle => bundle.BundleId)))
 			});
+		}
+
+		[HttpGet]
+		public async Task<ActionResult> JiraIssuesPartial([FromQuery(Name = "bundleId")]string bundleId) {
+			if (!settings.UseJiraIntegration) {
+				return NotFound();
+			}
+			return PartialView("_JiraIssues", await jiraIssueRepository.GetIssuesByBundle(bundleId));
 		}
 
 		private async Task<string> ReadCustomTextResult(DumpMetainfo dumpInfo) {

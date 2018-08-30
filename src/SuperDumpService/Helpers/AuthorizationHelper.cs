@@ -2,7 +2,7 @@
 using SuperDumpService.Services;
 
 namespace SuperDumpService.Helpers {
-	public class AuthorizationHelper : IAuthorizationHelper{
+	public class AuthorizationHelper : IAuthorizationHelper {
 		private readonly LdapAuthentcationService authenticationService;
 
 		public AuthorizationHelper(LdapAuthentcationService authenticationService) {
@@ -14,7 +14,7 @@ namespace SuperDumpService.Helpers {
 				return false;
 			}
 
-			return InGroup(user, LdapCookieAuthenticationExtension.AdminPolicy) || 
+			return InGroup(user, LdapCookieAuthenticationExtension.AdminPolicy) ||
 				policy != LdapCookieAuthenticationExtension.AdminPolicy && InGroup(user, LdapCookieAuthenticationExtension.UserPolicy) ||
 				policy == LdapCookieAuthenticationExtension.ViewerPolicy && InGroup(user, LdapCookieAuthenticationExtension.ViewerPolicy);
 		}

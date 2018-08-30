@@ -1,0 +1,12 @@
+﻿@using Microsoft.Extensions.Options
+@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
+@inject IOptions<SuperDumpSettings> settings
+
+@if (Model != null) {
+	foreach (var jiraIssue in Model) {
+	<dl class="row" style="margin-bottom:auto">
+		<dt class="col-sm-6"><a href="@string.Concat(settings.Value.JiraIssueUrl, jiraIssue.Key)">@jiraIssue.Key</a></dt>
+		<dd class="col-sm-6">@jiraIssue.StatusName</dd>
+	</dl>
+	}
+}

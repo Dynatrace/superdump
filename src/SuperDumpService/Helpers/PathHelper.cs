@@ -83,5 +83,12 @@ namespace SuperDumpService.Helpers {
 			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "relationships.json");
 		}
 
+		internal string GetIdenticRelationshipsPath(string bundleId) {
+			return Path.Combine(GetBundleDirectory(bundleId), "identic-relationships.json");
+		}
+
+		internal string GetJiraIssuePath(string bundleId) {
+			return Path.Combine(GetBundleDirectory(bundleId), "jira-issues.json");
+		}
 	}
 }

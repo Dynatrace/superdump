@@ -7,6 +7,7 @@ using SuperDumpService.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using SuperDumpService.Helpers;
+using Hangfire;
 
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
@@ -16,12 +17,16 @@ namespace SuperDumpService.Controllers {
 		private readonly SimilarityService similarityService;
 		private readonly DumpRepository dumpRepository;
 		private readonly BundleRepository bundleRepository;
+		private readonly IdenticalDumpRepository identicalDumpRepository;
+		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly ILogger<SimilarityController> logger;
 
-		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory) {
+		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
+			this.identicalDumpRepository = identicalDumpRepository;
+			this.jiraIssueRepository = jiraIssueRepository;
 			logger = loggerFactory.CreateLogger<SimilarityController>();
 		}
 
@@ -81,6 +86,36 @@ namespace SuperDumpService.Controllers {
 		public IActionResult CleanSimilarityAnalysisQueue() {
 			logger.LogSimilarityEvent("CleanSimilarityAnalysisQueue", HttpContext);
 			similarityService.CleanQueue();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> CreateAllIdenticalDumpRelationships() {
+			await identicalDumpRepository.CreateAllIdenticalRelationships();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> WipeAllIdenticalDumpRelationships() {
+			await identicalDumpRepository.WipeAll();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public IActionResult ForceRefreshAllJiraIssues() {
+			BackgroundJob.Enqueue(() => jiraIssueRepository.RefreshAllIssuesAsync(true));
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> WipeJiraIssueCache() {
+			await jiraIssueRepository.WipeJiraIssueCache();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public IActionResult ForceSearchBundleIssues() {
+			BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(true));
 			return View("Overview");
 		}
 	}
