@@ -19,6 +19,7 @@ using SuperDumpService.Services;
 using SuperDumpService.ViewModels;
 
 namespace SuperDumpService.Controllers {
+	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.ViewerPolicy)]
 	public class HomeController : Controller {
 		private IHostingEnvironment environment;

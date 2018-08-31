@@ -150,6 +150,7 @@ function uploadFile(file) {
 	xhr.open('POST', '/Home/Upload');    // Angeben der URL und des Requesttyps
 
 	var formdata = new FormData();    // Anlegen eines FormData Objekts zum Versenden unserer Datei
+	formdata.append('__RequestVerificationToken', $(".af-token input").val());
 	formdata.append('file', file);  // Anhängen der Datei an das Objekt
 	formdata.append('refurl', $('#refurl').val());
 	formdata.append('note', $('#note').val());

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Controllers {
+	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.AdminPolicy)]
 	public class SimilarityController : Controller {
 
