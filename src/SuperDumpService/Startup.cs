@@ -179,9 +179,9 @@ namespace SuperDumpService {
 			}
 			if (settings.Value.UseLdapAuthentication) {
 				app.UseAuthentication();
-				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);//TODO remove?
+				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
 			} else {
-				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),//TODO find other way to make the Login controller inaccessible
+				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
 					appBuilder => appBuilder.Run(async context => {
 						context.Response.StatusCode = 404;
 						await context.Response.WriteAsync("");

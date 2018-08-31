@@ -87,7 +87,7 @@ namespace SuperDumpService.Services {
 
 					foreach (string bundleId in bundleIssues.Keys) {
 						IEnumerable<JiraIssueModel> issues = bundleIssues[bundleId].Select(issue => refreshedIssues.GetValueOrDefault(issue.Key));
-						await jiraIssueStorage.Store(bundleId, bundleIssues[bundleId] = issues); //TODO await necessary?
+						await jiraIssueStorage.Store(bundleId, bundleIssues[bundleId] = issues);
 					}
 				}
 			} finally {
@@ -132,30 +132,5 @@ namespace SuperDumpService.Services {
 			}
 			await jiraIssueStorage.Store(bundle.BundleId, bundleIssues[bundle.BundleId] = jiraIssues);
 		}
-
-		//private async Task<IEnumerable<JiraIssueModel>> RefreshIssues(IEnumerable<JiraIssueModel> issues, bool force = false) {
-		//	ILookup<bool, JiraIssueModel> issuesToRefresh = issues.ToLookup(issue => force || issue.StatusName != "Resolved");
-
-		//	if (issuesToRefresh[true].Any()) {
-		//		return issuesToRefresh[false].Union(await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)));
-		//	}
-		//	return issues;
-		//}
-
-		//private async Task<IEnumerable<JiraIssueModel>> GetBundleIssues(string bundleId, bool refresh) {
-		//	if (bundleIssues.TryGetValue(bundleId, out IEnumerable<JiraIssueModel> issues)) {
-		//		if (refresh) {
-		//			IEnumerable<JiraIssueModel> refreshedBundles = await RefreshIssues(issues);
-		//			await jiraIssueStorage.Store(bundleId, refreshedBundles);
-		//			return bundleIssues[bundleId] = refreshedBundles;
-		//		}
-		//		return issues;
-		//	} else {
-		//		issues = await apiService.GetJiraIssues(bundleId);
-		//		await jiraIssueStorage.Store(bundleId, issues); //TODO await necessary?
-
-		//		return bundleIssues[bundleId] = issues;
-		//	}
-		//}
 	}
 }
