@@ -76,6 +76,8 @@ namespace SuperDumpService {
 				services.AddSingleton(typeof(IAuthorizationHelper), typeof(NoAuthorizationHelper));
 			}
 
+			services.AddAntiforgery();
+
 			//configure DB
 			if (Configuration.GetValue<bool>("UseInMemoryHangfireStorage")) {
 				services.AddHangfire(x => x.UseStorage(new Hangfire.MemoryStorage.MemoryStorage()));

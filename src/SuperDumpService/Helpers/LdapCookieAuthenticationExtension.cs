@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SuperDumpService.Models;
@@ -31,6 +32,7 @@ namespace SuperDumpService.Helpers {
 					options.SlidingExpiration = true;
 					options.ExpireTimeSpan = TimeSpan.FromDays(configuration.CookieExpireTimeSpanInDays);
 					options.Cookie.HttpOnly = true;
+					options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
 					options.LoginPath = pathOptions.LoginPath;
 					options.LogoutPath = pathOptions.LogoutPath;

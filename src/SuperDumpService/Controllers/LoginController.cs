@@ -11,6 +11,7 @@ using SuperDumpService.Services;
 using SuperDumpService.ViewModels;
 
 namespace SuperDumpService.Controllers {
+	[AutoValidateAntiforgeryToken]
 	public class LoginController : Controller {
 		private readonly LdapAuthentcationService authentificationHelper;
 		private readonly ILogger logger;
