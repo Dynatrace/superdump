@@ -103,7 +103,7 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public IActionResult ForceRefreshAllJiraIssues() {
-			BackgroundJob.Enqueue(() => jiraIssueRepository.RefreshAllIssuesAsync(true));
+			BackgroundJob.Enqueue(() => jiraIssueRepository.ForceRefreshAllIssuesAsync());
 			return View("Overview");
 		}
 

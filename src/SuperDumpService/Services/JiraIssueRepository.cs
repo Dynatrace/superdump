@@ -71,25 +71,40 @@ namespace SuperDumpService.Services {
 		}
 
 		public void StartRefreshHangfireJob() {
-			RecurringJob.AddOrUpdate(() => RefreshAllIssuesAsync(false), settings.JiraIssueRefreshCron, null, "jirastatus");
+			RecurringJob.AddOrUpdate(() => RefreshAllIssuesAsync(), settings.JiraIssueRefreshCron, null, "jirastatus");
 		}
 
 		[Queue("jirastatus")]
-		public async Task RefreshAllIssuesAsync(bool force = false) {
+		public async Task RefreshAllIssuesAsync() {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
-				ILookup<bool, JiraIssueModel> issuesToRefresh = bundleIssues.SelectMany(issue => issue.Value).
-					ToLookup(issue => force || issue.StatusName != "Resolved");
-				if (issuesToRefresh[true].Any()) {
-					var refreshedIssues = issuesToRefresh[false]
-						.Union(await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)))
-						.ToDictionary(issue => issue.Key, issue => issue);
+				//Only update bundles with unresolved issues
+				IEnumerable<KeyValuePair<string, IEnumerable<JiraIssueModel>>> bundlesToRefresh =
+					bundleIssues.Where(bundle => bundle.Value.Any(issue => issue.GetStatusName() != "Resolved"));
 
-					foreach (string bundleId in bundleIssues.Keys) {
-						IEnumerable<JiraIssueModel> issues = bundleIssues[bundleId].Select(issue => refreshedIssues.GetValueOrDefault(issue.Key));
-						await jiraIssueStorage.Store(bundleId, bundleIssues[bundleId] = issues);
-					}
-				}
+				//Split issues into one group with all resolved issues and one with all others
+				ILookup<bool, JiraIssueModel> issuesToRefresh = bundlesToRefresh.SelectMany(issue => issue.Value).
+					ToLookup(issue => issue.GetStatusName() != "Resolved");
+
+				//Get the current status of not resolved issues from the jira api and combine them with the resolved issues
+				IEnumerable<JiraIssueModel> refreshedIssues = issuesToRefresh[false]
+						.Union(await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)));
+
+				await SetBundleIssues(bundlesToRefresh, refreshedIssues);
+			} finally {
+				semaphoreSlim.Release();
+			}
+		}
+
+		[Queue("jirastatus")]
+		public async Task ForceRefreshAllIssuesAsync() {
+			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
+			try {
+				//Get the status of each issue 
+				IEnumerable<JiraIssueModel> refreshedIssues =
+					await apiService.GetBulkIssues(bundleIssues.SelectMany(issue => issue.Value).Select(issue => issue.Key));
+
+				await SetBundleIssues(bundleIssues, refreshedIssues);
 			} finally {
 				semaphoreSlim.Release();
 			}
@@ -101,11 +116,12 @@ namespace SuperDumpService.Services {
 
 		[Queue("jirastatus")]
 		public void SearchAllBundleIssues(bool force = false) {
-			IEnumerable<BundleMetainfo> bundles = bundleRepo.GetAll().Where(bundle => DateTime.Now - bundle.Created <= settings.JiraBundleSearchTimeSpan);
+			IEnumerable<BundleMetainfo> bundles = force ? bundleRepo.GetAll() :
+				bundleRepo.GetAll().Where(bundle => DateTime.Now - bundle.Created <= settings.JiraBundleSearchTimeSpan);
 			int idx = 0;
 
 			while (bundles.Skip(idx).Any()) {
-				BackgroundJob.Schedule(() => SearchBundleIssuesAsync(bundles.Skip(idx).Take(settings.JiraBundleSearchLimit), false),
+				BackgroundJob.Schedule(() => SearchBundleIssuesAsync(bundles.Skip(idx).Take(settings.JiraBundleSearchLimit), force),
 					TimeSpan.FromMinutes(settings.JiraBundleSearchDelay * idx / settings.JiraBundleSearchLimit));
 				idx += settings.JiraBundleSearchLimit;
 			}
@@ -115,9 +131,10 @@ namespace SuperDumpService.Services {
 		public async Task SearchBundleIssuesAsync(IEnumerable<BundleMetainfo> bundles, bool force = false) {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
-				await Task.WhenAll(bundles
-					.Where(bundle => force || !bundleIssues.TryGetValue(bundle.BundleId, out IEnumerable<JiraIssueModel> issues) || !issues.Any()) //All bundles where no jira issue is known
-					.Select(bundle => SearchBundleAsync(bundle, force)));
+				IEnumerable<BundleMetainfo> bundlesToSearch = force ? bundles : 
+					bundles.Where(bundle => !bundleIssues.TryGetValue(bundle.BundleId, out IEnumerable<JiraIssueModel> issues) || !issues.Any()); //All bundles without issues
+
+				await Task.WhenAll(bundlesToSearch.Select(bundle => SearchBundleAsync(bundle, force)));
 			} finally {
 				semaphoreSlim.Release();
 			}
@@ -130,7 +147,23 @@ namespace SuperDumpService.Services {
 			} else {
 				jiraIssues = await apiService.GetJiraIssues(bundle.BundleId);
 			}
-			await jiraIssueStorage.Store(bundle.BundleId, bundleIssues[bundle.BundleId] = jiraIssues);
+			if (jiraIssues.Any()) {
+				await jiraIssueStorage.Store(bundle.BundleId, bundleIssues[bundle.BundleId] = jiraIssues);
+			}
+		}
+
+		private async Task SetBundleIssues(IEnumerable<KeyValuePair<string, IEnumerable<JiraIssueModel>>> bundlesToUpdate, IEnumerable<JiraIssueModel> refreshedIssues) {
+			var issueDictionary = refreshedIssues.ToDictionary(issue => issue.Key, issue => issue);
+
+			//Select the issues for each bundle and store them in the bundleIssues Dictionary
+			//I am not sure if this is the best way to do this
+			var fileStorageTasks = new List<Task>();
+			foreach (KeyValuePair<string, IEnumerable<JiraIssueModel>> bundle in bundleIssues) {
+				IEnumerable<JiraIssueModel> issues = bundleIssues[bundle.Key].Select(issue => issueDictionary.GetValueOrDefault(issue.Key));
+				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
+			}
+
+			await Task.WhenAll(fileStorageTasks);
 		}
 	}
 }

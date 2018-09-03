@@ -6,10 +6,8 @@ namespace SuperDumpService.Models {
 		public string Key { get; set; }
 		public JiraIssueFieldModel Fields { get; set; }
 
-		public string StatusName {
-			get {
-				return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
-			}
+		public string GetStatusName() {
+			return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
 		}
 
 		public class JiraIssueFieldModel {

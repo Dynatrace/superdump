@@ -6,7 +6,7 @@
 	foreach (var jiraIssue in Model) {
 	<dl class="row" style="margin-bottom:auto">
 		<dt class="col-sm-6"><a href="@string.Concat(settings.Value.JiraIssueUrl, jiraIssue.Key)">@jiraIssue.Key</a></dt>
-		<dd class="col-sm-6">@jiraIssue.StatusName</dd>
+		<dd class="col-sm-6">@jiraIssue.GetStatusName()</dd>
 	</dl>
 	}
 }
