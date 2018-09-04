@@ -13,6 +13,6 @@ namespace SuperDumpService.ViewModels {
 
 		public bool RememberMe { get; set; }
 
-		public bool WrongCredentials { get; set; }
+		public string AlertMessage { get; set; }
 	}
 }

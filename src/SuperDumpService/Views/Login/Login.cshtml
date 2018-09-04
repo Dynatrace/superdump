@@ -6,8 +6,8 @@
 <body>
 	@using (Html.BeginForm("Login", "Login", FormMethod.Post)) {
 		<br />
-		if (Model.WrongCredentials) {
-			<div class=" alert alert-danger">The Login Has Failed!</div>
+		if (!string.IsNullOrEmpty(Model.AlertMessage)) {
+			<div class=" alert alert-danger">@Model.AlertMessage</div>
 		}
 		<input type="hidden" asp-for="ReturnUrl" value="@Model.ReturnUrl" />
 

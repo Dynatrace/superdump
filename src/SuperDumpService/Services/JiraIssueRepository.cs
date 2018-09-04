@@ -82,6 +82,10 @@ namespace SuperDumpService.Services {
 				IEnumerable<KeyValuePair<string, IEnumerable<JiraIssueModel>>> bundlesToRefresh =
 					bundleIssues.Where(bundle => bundle.Value.Any(issue => issue.GetStatusName() != "Resolved"));
 
+				if (!bundlesToRefresh.Any()) {
+					return;
+				}
+
 				//Split issues into one group with all resolved issues and one with all others
 				ILookup<bool, JiraIssueModel> issuesToRefresh = bundlesToRefresh.SelectMany(issue => issue.Value).
 					ToLookup(issue => issue.GetStatusName() != "Resolved");
@@ -100,6 +104,10 @@ namespace SuperDumpService.Services {
 		public async Task ForceRefreshAllIssuesAsync() {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
+				if (!bundleIssues.Any()) {
+					return;
+				}
+
 				//Get the status of each issue 
 				IEnumerable<JiraIssueModel> refreshedIssues =
 					await apiService.GetBulkIssues(bundleIssues.SelectMany(issue => issue.Value).Select(issue => issue.Key));

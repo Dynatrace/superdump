@@ -35,6 +35,9 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetBulkIssues(IEnumerable<string> issueKeys) {
+			if (!issueKeys.Any()) {
+				throw new ArgumentException("The issue key enumerable must contain at least one element");
+			}
 			return await JiraPostSearch($"key in ({string.Join(",", issueKeys)})");
 		}
 
@@ -46,8 +49,14 @@ namespace SuperDumpService.Services {
 			query["fields"] = JiraIssueFields;
 			uriBuilder.Query = query.ToString();
 
-			string resultString = await client.GetStringAsync(uriBuilder.ToString());
-			return JsonConvert.DeserializeObject<JiraSearchResultModel>(resultString).Issues;
+			HttpResponseMessage response = await client.GetAsync(uriBuilder.ToString());
+			try {
+				response.EnsureSuccessStatusCode();
+			} catch (HttpRequestException) {
+				throw new HttpRequestException($"Jira api call returned status code {response.StatusCode}");
+			}
+
+			return (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
 		}
 
 		private async Task<IEnumerable<JiraIssueModel>> JiraPostSearch(string queryString) {
@@ -55,7 +64,11 @@ namespace SuperDumpService.Services {
 				jql = queryString,
 				fields = JiraIssueFieldsArray
 			});
-			response.EnsureSuccessStatusCode();
+			try {
+				response.EnsureSuccessStatusCode();
+			} catch (HttpRequestException) {
+				throw new HttpRequestException($"Jira api call returned status code {settings.JiraApiSearchUrl} {queryString} {response.StatusCode}");
+			}
 			
 			return (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
 		}

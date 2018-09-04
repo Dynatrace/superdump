@@ -30,17 +30,17 @@ namespace SuperDumpService.Controllers {
 			try {
 				await HttpContext.SignInAsync(
 					authentificationHelper.ValidateAndGetUser(loginModel.Username, loginModel.Password),
-					new AuthenticationProperties { IsPersistent = loginModel.RememberMe });
+						new AuthenticationProperties { IsPersistent = loginModel.RememberMe });
 				logger.LogLoginEvent("Successful Login", HttpContext, loginModel.Username);
 				return Redirect(loginModel.ReturnUrl);
 			} catch (InvalidCredentialException) {
 				logger.LogFailedLogin("Failed Login", HttpContext, loginModel.Username);
-				loginModel.WrongCredentials = true;
+				loginModel.AlertMessage = "The username or password is incorrect";
 				loginModel.Password = string.Empty;
 				return View(loginModel);
 			} catch (UnauthorizedAccessException) {
 				logger.LogFailedLogin("Login with missing Permissions", HttpContext, loginModel.Username);
-				loginModel.WrongCredentials = true;
+				loginModel.AlertMessage = "You do not have permission to access SuperDump";
 				loginModel.Username = string.Empty;
 				loginModel.Password = string.Empty;
 				return View(loginModel);
