@@ -120,6 +120,8 @@ Build
 
  The user secrets file can be created by right-clicking the "SuperDumpService" Project in Visual Studio and selecting "Manage User Secrets"
 
+ For the https redirection it is necessary to add urls for https and http to the ASPNETCORE_URLS environment variable.
+
 State of the project
 ====================
 SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it.
