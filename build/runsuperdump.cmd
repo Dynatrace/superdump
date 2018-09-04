@@ -1,7 +1,7 @@
 cd /d %~dp0
 
 REM adapt port
-SET ASPNETCORE_URLS=https://*5001;http://*:5000
+SET ASPNETCORE_URLS=https://*:5001;http://*:5000
 
 REM adapt asp.netcore environment. "Development" yields better error pages, "Production" is recommended otherwise.
 SET ASPNETCORE_ENVIRONMENT=Development
