@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.DirectoryServices.AccountManagement;
+using System.Linq;
 using System.Security.Authentication;
 using System.Security.Claims;
 
@@ -23,30 +24,34 @@ namespace SuperDumpService.Services {
 		}
 
 		public ClaimsPrincipal ValidateAndGetUser(string username, string password) {
+			if (username == null || password == null) {
+				throw new InvalidCredentialException();
+			}
 			using (PrincipalContext context = CreatePrincipalContext(username, password)) {
 				if (!context.ValidateCredentials(username, password, ContextOptions.SecureSocketLayer | ContextOptions.SimpleBind)) {
 					throw new InvalidCredentialException();
 				}
 
-				var userPrincipal = UserPrincipal.FindByIdentity(context,
-					!username.Contains('@') ? IdentityType.SamAccountName : IdentityType.UserPrincipalName, username);
-				if (userPrincipal == null) {
-					throw new InvalidCredentialException();
-				}
-
-				var claims = new List<Claim> { new Claim(ClaimTypes.Name, username) };
-				bool inGroup = false;
-				foreach (var group in Groups) {
-					if (userPrincipal.IsMemberOf(context, IdentityType.Name, group.Value)) {
-						claims.Add(new Claim(ClaimTypes.GroupSid, group.Value));
-						inGroup = true;
+				using (var userPrincipal = UserPrincipal.FindByIdentity(context,
+					!username.Contains('@') ? IdentityType.SamAccountName : IdentityType.UserPrincipalName, username)) {
+					if (userPrincipal == null) {
+						throw new InvalidCredentialException();
 					}
-				}
-				if (!inGroup) {
-					throw new UnauthorizedAccessException("Your user account does not have access to SuperDump");
-				}
 
-				return new ClaimsPrincipal(new List<ClaimsIdentity> { new ClaimsIdentity(claims, LdapAuthenticationType) });
+					var claims = new List<Claim> { new Claim(ClaimTypes.Name, username) };
+
+					using (PrincipalSearchResult<Principal> userGroups = userPrincipal.GetAuthorizationGroups()) { //Get all groups where the user is a member recursively
+						claims.AddRange(userGroups
+							.Where(userGroup => Groups.Any(group => userGroup.Name == group.Value))
+							.Select(group => new Claim(ClaimTypes.GroupSid, group.Name)));
+					}
+
+					if (claims.Count() <= 1) {
+						throw new UnauthorizedAccessException("Your user account does not have access to SuperDump");
+					}
+
+					return new ClaimsPrincipal(new List<ClaimsIdentity> { new ClaimsIdentity(claims, LdapAuthenticationType) });
+				}
 			}
 		}
 
