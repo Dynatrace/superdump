@@ -39,12 +39,7 @@ namespace SuperDumpService.Services {
 					}
 
 					var claims = new List<Claim> { new Claim(ClaimTypes.Name, username) };
-
-					using (PrincipalSearchResult<Principal> userGroups = userPrincipal.GetAuthorizationGroups()) { //Get all groups where the user is a member recursively
-						claims.AddRange(userGroups
-							.Where(userGroup => Groups.Any(group => userGroup.Name == group.Value))
-							.Select(group => new Claim(ClaimTypes.GroupSid, group.Name)));
-					}
+					GetUserSuperdumpGroups(userPrincipal, claims);
 
 					if (claims.Count() <= 1) {
 						throw new UnauthorizedAccessException("Your user account does not have access to SuperDump");
@@ -66,6 +61,16 @@ namespace SuperDumpService.Services {
 					return new PrincipalContext(ContextType.Domain, configuration.LdapDomain, null, PrincipalContextOptions);
 				default:
 					throw new NotImplementedException();
+			}
+		}
+
+		private void GetUserSuperdumpGroups(Principal principal, List<Claim> claims) {
+			if (Groups.Any(group => principal.Name == group.Value)) {
+				claims.Add(new Claim(ClaimTypes.GroupSid, principal.Name));
+			}
+
+			foreach (Principal parent in principal.GetGroups()) {
+				GetUserSuperdumpGroups(parent, claims);
 			}
 		}
 	}
