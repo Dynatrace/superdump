@@ -68,7 +68,7 @@ namespace SuperDumpService.Services {
 			if (Groups.Any(group => principal.Name == group.Value)) {
 				claims.Add(new Claim(ClaimTypes.GroupSid, principal.Name));
 			}
-			
+
 			foreach (Principal parent in principal.GetGroups(context)) {
 				GetUserSuperdumpGroups(context, parent, claims);
 			}
