@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using SuperDumpService.Helpers;
 using Hangfire;
+using Microsoft.Extensions.Options;
 
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
@@ -20,14 +21,16 @@ namespace SuperDumpService.Controllers {
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly ILogger<SimilarityController> logger;
+		private readonly SuperDumpSettings settings;
 
-		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository) {
+		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
 			this.identicalDumpRepository = identicalDumpRepository;
 			this.jiraIssueRepository = jiraIssueRepository;
 			logger = loggerFactory.CreateLogger<SimilarityController>();
+			this.settings = settings.Value;
 		}
 
 		[HttpGet]
@@ -103,20 +106,29 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public IActionResult ForceRefreshAllJiraIssues() {
-			BackgroundJob.Enqueue(() => jiraIssueRepository.ForceRefreshAllIssuesAsync());
-			return View("Overview");
+			if (settings.UseJiraIntegration) {
+				BackgroundJob.Enqueue(() => jiraIssueRepository.ForceRefreshAllIssuesAsync());
+				return View("Overview");
+			}
+			return NotFound();
 		}
 
 		[HttpPost]
 		public async Task<IActionResult> WipeJiraIssueCache() {
-			await jiraIssueRepository.WipeJiraIssueCache();
-			return View("Overview");
+			if (settings.UseJiraIntegration) {
+				await jiraIssueRepository.WipeJiraIssueCache();
+				return View("Overview");
+			}
+			return NotFound();
 		}
 
 		[HttpPost]
 		public IActionResult ForceSearchBundleIssues() {
-			BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(true));
-			return View("Overview");
+			if (settings.UseJiraIntegration) {
+				BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(true));
+				return View("Overview");
+			}
+			return NotFound();
 		}
 	}
 }

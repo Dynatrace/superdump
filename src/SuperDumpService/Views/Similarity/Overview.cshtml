@@ -1,6 +1,8 @@
 ﻿@{
 	ViewData["Title"] = "Similarity";
 }
+@using Microsoft.Extensions.Options;
+@inject IOptions<SuperDumpSettings> settings;
 <div class="container">
 	<br /><br /><br />
 	@using (Html.BeginForm("TriggerSimilarityAnalysisForAllDumps", "Similarity")) {
@@ -30,16 +32,18 @@
 	@using (Html.BeginForm("WipeAllIdenticalDumpRelationships", "Similarity")) {
 		<input type="submit" value="Wipe All Identical Dump Relationships" />
 	}
-	<br />
-	@using (Html.BeginForm("ForceRefreshAllJiraIssues", "Similarity")) {
-		<input type="submit" value="Force Refresh All Jira Issues" />
-	}
-	<br />
-	@using (Html.BeginForm("WipeJiraIssueCache", "Similarity")) {
-		<input type="submit" value="Wipe JiraIssueCache" />
-	}
-	<br />
-	@using (Html.BeginForm("ForceSearchBundleIssues", "Similarity")) {
-		<input type="submit" value="Force Search For Bundle Issues" />
+	@if (settings.Value.UseJiraIntegration) {
+		<br />
+		@using (Html.BeginForm("ForceRefreshAllJiraIssues", "Similarity")) {
+			<input type="submit" value="Force Refresh All Jira Issues" />
+		}
+		<br />
+		@using (Html.BeginForm("WipeJiraIssueCache", "Similarity")) {
+			<input type="submit" value="Wipe JiraIssueCache" />
+		}
+		<br />
+		@using (Html.BeginForm("ForceSearchBundleIssues", "Similarity")) {
+			<input type="submit" value="Force Search For Bundle Issues" />
+		}
 	}
 </div>

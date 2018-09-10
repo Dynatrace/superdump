@@ -54,12 +54,9 @@
 											<p>
 												@if (settings.Value.UseJiraIntegration) {
 													<dl>
-
 														<dt class="col-sm-5 text-right">JiraIssues:</dt>
 														<dd class="col-sm-7">
-															<div class="asyncPartial" data-url="/Home/JiraIssuesPartial?bundleId=@rel.Key.BundleId">
-																<partial name="_JiraIssues" model="Model.JiraIssues[rel.Key.BundleId]" />
-															</div>
+															<partial name="_JiraIssues" model="Model.JiraIssues[rel.Key.BundleId]" />
 														</dd>
 													</dl>
 												}
@@ -109,9 +106,9 @@
 				@if (settings.Value.UseJiraIntegration) {
 					<dt class="col-sm-2 text-right">JiraIssues:</dt>
 					<dd class="col-sm-4">
-						<div class="asyncPartial" data-url="/Home/JiraIssuesPartial?bundleId=@Model.BundleId">
+						@*<div class="asyncPartial" data-url="/Home/JiraIssuesPartial?bundleId=@Model.BundleId">*@
 							<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
-						</div>
+						@*</div>*@
 					</dd>
 					<dd class="col-sm-6" />
 				}

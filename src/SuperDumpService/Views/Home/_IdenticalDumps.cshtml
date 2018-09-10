@@ -26,9 +26,7 @@
 								@if (settings.Value.UseJiraIntegration) {
 									<dt class="col-sm-5 text-right">JiraIssues:</dt>
 									<dd class="col-sm-7">
-										<div class="asyncPartial" data-url="/Home/JiraIssuesPartial?bundleId=@rel.BundleId">
-											<partial name="_JiraIssues" model="@Model.JiraIssues[rel.BundleId]" />
-										</div>
+										<partial name="_JiraIssues" model="@Model.JiraIssues[rel.BundleId]" />
 									</dd>
 								}
 							</dl>
