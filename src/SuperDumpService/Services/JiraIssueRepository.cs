@@ -45,15 +45,6 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public async Task<IEnumerable<JiraIssueModel>> GetIssuesByBundle(string bundleId) {
-			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
-			try {
-				return bundleIssues.GetValueOrDefault(bundleId);
-			} finally {
-				semaphoreSlim.Release();
-			}
-		}
-
 		public IDictionary<string, IEnumerable<JiraIssueModel>> GetIssuesByBundleIdsWithoutWait(IEnumerable<string> bundleIds) {
 			return bundleIds.ToDictionary(bundleId => bundleId, bundleId => bundleIssues.GetValueOrDefault(bundleId));
 		}

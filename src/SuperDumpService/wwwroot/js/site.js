@@ -79,10 +79,6 @@ $(document).ready(function () {
 		var tablename = "#thread-" + $(this).attr("name") + "-stacktrace";
 		$(tablename + " .sourceinfo").toggle();
 	});
-
-	$(".asyncPartial").each(function (index, item) {
-		$(item).load($(item).data("url"));
-	});
 });
 
 function openTabs(tabclass) {

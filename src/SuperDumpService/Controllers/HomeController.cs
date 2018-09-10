@@ -249,14 +249,6 @@ namespace SuperDumpService.Controllers {
 			});
 		}
 
-		[HttpGet]
-		public async Task<ActionResult> JiraIssuesPartial([FromQuery(Name = "bundleId")]string bundleId) {
-			if (!settings.UseJiraIntegration) {
-				return NotFound();
-			}
-			return PartialView("_JiraIssues", await jiraIssueRepository.GetIssuesByBundle(bundleId));
-		}
-
 		private async Task<string> ReadCustomTextResult(DumpMetainfo dumpInfo) {
 			SDFileEntry customResultFile = dumpInfo.Files.FirstOrDefault(x => x.Type == SDFileType.CustomTextResult);
 			if (customResultFile == null) return null;

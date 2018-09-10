@@ -106,9 +106,7 @@
 				@if (settings.Value.UseJiraIntegration) {
 					<dt class="col-sm-2 text-right">JiraIssues:</dt>
 					<dd class="col-sm-4">
-						@*<div class="asyncPartial" data-url="/Home/JiraIssuesPartial?bundleId=@Model.BundleId">*@
-							<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
-						@*</div>*@
+						<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
 					</dd>
 					<dd class="col-sm-6" />
 				}
