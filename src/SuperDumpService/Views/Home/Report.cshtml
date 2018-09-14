@@ -2,7 +2,9 @@
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
 @using SuperDumpService.ViewModels
+@using Microsoft.Extensions.Options
 @inject IAuthorizationHelper AuthorizationHelper
+@inject IOptions<SuperDumpSettings> settings
 @{
 	ViewData["Title"] = "Report";
 }
@@ -22,7 +24,7 @@
 
 		<!-- Page Content -->
 		<div id="content">
-			<div style="display: block; float: right; position: absolute; right: 15px; width: 350px; ">
+			<div style="display: block; float: right; position: absolute; right: 15px; width: 450px; ">
 				@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
 					@using (Html.BeginForm("Rerun", "Home")) {
 						<div class="form-group text-right">
@@ -50,6 +52,14 @@
 											<p>
 												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
 											<p>
+												@if (settings.Value.UseJiraIntegration) {
+													<dl>
+														<dt class="col-sm-5 text-right">JiraIssues:</dt>
+														<dd class="col-sm-7">
+															<partial name="_JiraIssues" model="Model.JiraIssues[rel.Key.BundleId]" />
+														</dd>
+													</dl>
+												}
 											<p>(@rel.Key.Created)</p>
 										</li>
 									}
@@ -58,6 +68,8 @@
 						}
 					</div>
 				</div>
+				<br />
+				<partial name="_IdenticalDumps"/>
 			</div>
 
 			<dl class="row courier-small compact">
@@ -90,25 +102,34 @@
 						<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
 					</dd>
 				}
+
+				@if (settings.Value.UseJiraIntegration) {
+					<dt class="col-sm-2 text-right">JiraIssues:</dt>
+					<dd class="col-sm-4">
+						<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
+					</dd>
+					<dd class="col-sm-6" />
+				}
+
 				<dt class="col-sm-2 text-right">Files:</dt>
 				<dd class="col-sm-10">
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-			   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-				<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-					<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
-					<dd class="col-sm-10">
-						<ul class="flat">
-							@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-								<li>
-									@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-								</li>
-							}
-						</ul>
-					</dd>
-				</dl>
-			}
+				   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+						<dd class="col-sm-10">
+							<ul class="flat">
+								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+									<li>
+										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+									</li>
+								}
+							</ul>
+						</dd>
+					</dl>
+				}
 					</div>
 				</dd>
 			</dl>

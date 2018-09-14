@@ -7,6 +7,8 @@ using SuperDumpService.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using SuperDumpService.Helpers;
+using Hangfire;
+using Microsoft.Extensions.Options;
 
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
@@ -16,13 +18,19 @@ namespace SuperDumpService.Controllers {
 		private readonly SimilarityService similarityService;
 		private readonly DumpRepository dumpRepository;
 		private readonly BundleRepository bundleRepository;
+		private readonly IdenticalDumpRepository identicalDumpRepository;
+		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly ILogger<SimilarityController> logger;
+		private readonly SuperDumpSettings settings;
 
-		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory) {
+		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
+			this.identicalDumpRepository = identicalDumpRepository;
+			this.jiraIssueRepository = jiraIssueRepository;
 			logger = loggerFactory.CreateLogger<SimilarityController>();
+			this.settings = settings.Value;
 		}
 
 		[HttpGet]
@@ -54,7 +62,7 @@ namespace SuperDumpService.Controllers {
 				logger.LogNotFound("TriggerSimilarityAnalysis: Bundle not found", HttpContext, "BundleId", bundleId);
 				return View(null);
 			}
-			logger.LogDumpAccess("TriggerSimilarityAnalysis", HttpContext, bundleInfo, dumpId); //TODO check if bundle exists
+			logger.LogDumpAccess("TriggerSimilarityAnalysis", HttpContext, bundleInfo, dumpId);
 			similarityService.ScheduleSimilarityAnalysis(new DumpIdentifier(bundleId, dumpId), true, DateTime.MinValue);
 			return RedirectToAction("Report", "Home", new { bundleId = bundleId, dumpId = dumpId }); // View("/Home/Report", new ReportViewModel(bundleId, dumpId));
 		}
@@ -82,6 +90,45 @@ namespace SuperDumpService.Controllers {
 			logger.LogSimilarityEvent("CleanSimilarityAnalysisQueue", HttpContext);
 			similarityService.CleanQueue();
 			return View("Overview");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> CreateAllIdenticalDumpRelationships() {
+			await identicalDumpRepository.CreateAllIdenticalRelationships();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> WipeAllIdenticalDumpRelationships() {
+			await identicalDumpRepository.WipeAll();
+			return View("Overview");
+		}
+
+		[HttpPost]
+		public IActionResult ForceRefreshAllJiraIssues() {
+			if (settings.UseJiraIntegration) {
+				BackgroundJob.Enqueue(() => jiraIssueRepository.ForceRefreshAllIssuesAsync());
+				return View("Overview");
+			}
+			return NotFound();
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> WipeJiraIssueCache() {
+			if (settings.UseJiraIntegration) {
+				await jiraIssueRepository.WipeJiraIssueCache();
+				return View("Overview");
+			}
+			return NotFound();
+		}
+
+		[HttpPost]
+		public IActionResult ForceSearchBundleIssues() {
+			if (settings.UseJiraIntegration) {
+				BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(true));
+				return View("Overview");
+			}
+			return NotFound();
 		}
 	}
 }

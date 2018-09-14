@@ -145,6 +145,11 @@ namespace SuperDumpService {
 			services.AddSingleton<SimilarityService>();
 			services.AddSingleton<RelationshipRepository>();
 			services.AddSingleton<RelationshipStorageFilebased>();
+			services.AddSingleton<IdenticalDumpStorageFilebased>();
+			services.AddSingleton<IdenticalDumpRepository>();
+			services.AddSingleton<JiraApiService>();
+			services.AddSingleton<JiraIssueStorageFilebased>();
+			services.AddSingleton<JiraIssueRepository>();
 			services.AddWebSocketManager();
 		}
 
@@ -153,6 +158,10 @@ namespace SuperDumpService {
 			app.ApplicationServices.GetService<BundleRepository>().Populate();
 			app.ApplicationServices.GetService<DumpRepository>().Populate();
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
+			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
+			if (settings.Value.UseJiraIntegration) {
+				Task.Run(() => app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
+			}
 
 			// configure Logger
 			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
@@ -170,9 +179,9 @@ namespace SuperDumpService {
 			}
 			if (settings.Value.UseLdapAuthentication) {
 				app.UseAuthentication();
-				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);//TODO remove?
+				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
 			} else {
-				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),//TODO find other way to make the Login controller inaccessible
+				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
 					appBuilder => appBuilder.Run(async context => {
 						context.Response.StatusCode = 404;
 						await context.Response.WriteAsync("");
@@ -209,7 +218,16 @@ namespace SuperDumpService {
 				Queues = new[] { "similarityanalysis" },
 				WorkerCount = 8
 			});
+			if (settings.Value.UseJiraIntegration) {
+				app.UseHangfireServer(new BackgroundJobServerOptions {
+					Queues = new[] { "jirastatus" },
+					WorkerCount = 2
+				});
 
+				JiraIssueRepository jiraIssueRepository = app.ApplicationServices.GetService<JiraIssueRepository>();
+				jiraIssueRepository.StartRefreshHangfireJob();
+				jiraIssueRepository.StartBundleSearchHangfireJob();
+			}
 			app.ApplicationServices.GetService<DumpRetentionService>().StartService();
 
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });

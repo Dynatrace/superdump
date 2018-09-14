@@ -30,7 +30,7 @@ namespace SuperDumpService.Controllers {
 			try {
 				await HttpContext.SignInAsync(
 					authentificationHelper.ValidateAndGetUser(loginModel.Username, loginModel.Password),
-					new AuthenticationProperties { IsPersistent = loginModel.RememberMe });
+						new AuthenticationProperties { IsPersistent = loginModel.RememberMe });
 				logger.LogLoginEvent("Successful Login", HttpContext, loginModel.Username);
 				return Redirect(loginModel.ReturnUrl);
 			} catch (InvalidCredentialException) {
