@@ -70,7 +70,9 @@ namespace SuperDumpService.Services {
 			}
 
 			foreach (Principal parent in principal.GetGroups(context)) {
-				GetUserSuperdumpGroups(context, parent, claims);
+				using (parent) {
+					GetUserSuperdumpGroups(context, parent, claims);
+				}
 			}
 		}
 	}
