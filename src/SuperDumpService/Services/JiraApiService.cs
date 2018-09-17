@@ -15,19 +15,19 @@ using SuperDumpService.Models;
 namespace SuperDumpService.Services {
 	public class JiraApiService {
 		private const string JsonMediaType = "application/json";
-		private const string JiraIssueFields = "status";
+		private const string JiraIssueFields = "status,resolution";
 		private readonly string[] JiraIssueFieldsArray = JiraIssueFields.Split(",");
 
-		private readonly SuperDumpSettings settings;
+		private readonly JiraIntegrationSettings settings;
 		private readonly HttpClient client;
 
-		public JiraApiService(IOptions<SuperDumpSettings> settingOptions) {
-			settings = settingOptions.Value;
+		public JiraApiService(IOptions<SuperDumpSettings> settings) {
+			this.settings = settings.Value.JiraIntegrationSettings;
 
 			client = new HttpClient();
 			client.DefaultRequestHeaders.Accept.Clear();
 			client.DefaultRequestHeaders.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(JsonMediaType));
-			client.DefaultRequestHeaders.Authorization = GetBasicAuthenticationHeader(settings.JiraApiUsername, settings.JiraApiPassword);
+			client.DefaultRequestHeaders.Authorization = GetBasicAuthenticationHeader(this.settings.JiraApiUsername, this.settings.JiraApiPassword);
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetJiraIssues(string bundleId) {
@@ -49,28 +49,27 @@ namespace SuperDumpService.Services {
 			query["fields"] = JiraIssueFields;
 			uriBuilder.Query = query.ToString();
 
-			HttpResponseMessage response = await client.GetAsync(uriBuilder.ToString());
-			try {
-				response.EnsureSuccessStatusCode();
-			} catch (HttpRequestException) {
-				throw new HttpRequestException($"Jira api call returned status code {response.StatusCode}");
-			}
-
-			return (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
+			return await HandleResponse(await client.GetAsync(uriBuilder.ToString()));
 		}
 
 		private async Task<IEnumerable<JiraIssueModel>> JiraPostSearch(string queryString) {
-			HttpResponseMessage response = await client.PostAsJsonAsync(settings.JiraApiSearchUrl, new {
+			return await HandleResponse(await client.PostAsJsonAsync(settings.JiraApiSearchUrl, new {
 				jql = queryString,
 				fields = JiraIssueFieldsArray
-			});
-			try {
-				response.EnsureSuccessStatusCode();
-			} catch (HttpRequestException) {
-				throw new HttpRequestException($"Jira api call returned status code {settings.JiraApiSearchUrl} {queryString} {response.StatusCode}");
+			}));
+		}
+
+		private async Task<IEnumerable<JiraIssueModel>> HandleResponse(HttpResponseMessage response) {
+			if (!response.IsSuccessStatusCode) {
+				throw new HttpRequestException($"Jira api call {response.RequestMessage.RequestUri} returned status code {response.StatusCode}");
 			}
-			
-			return (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
+			IEnumerable<JiraIssueModel> issues = (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
+
+			foreach (JiraIssueModel issue in issues) {
+				issue.Url = settings.JiraIssueUrl + issue.Key;
+			}
+
+			return issues;
 		}
 
 		private AuthenticationHeaderValue GetBasicAuthenticationHeader(string username, string password) {

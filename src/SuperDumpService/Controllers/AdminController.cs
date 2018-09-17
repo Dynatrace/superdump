@@ -13,23 +13,23 @@ using Microsoft.Extensions.Options;
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.AdminPolicy)]
-	public class SimilarityController : Controller {
+	public class AdminController : Controller {
 
 		private readonly SimilarityService similarityService;
 		private readonly DumpRepository dumpRepository;
 		private readonly BundleRepository bundleRepository;
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIssueRepository jiraIssueRepository;
-		private readonly ILogger<SimilarityController> logger;
+		private readonly ILogger<AdminController> logger;
 		private readonly SuperDumpSettings settings;
 
-		public SimilarityController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
+		public AdminController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
 			this.identicalDumpRepository = identicalDumpRepository;
 			this.jiraIssueRepository = jiraIssueRepository;
-			logger = loggerFactory.CreateLogger<SimilarityController>();
+			logger = loggerFactory.CreateLogger<AdminController>();
 			this.settings = settings.Value;
 		}
 

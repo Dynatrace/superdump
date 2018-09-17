@@ -64,7 +64,7 @@
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="Views\Similarity\Overview.cshtml">
+    <Content Update="Views\Admin\Overview.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Similarity\CompareDumps.cshtml">

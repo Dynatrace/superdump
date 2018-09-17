@@ -1,12 +1,10 @@
-﻿@using Microsoft.Extensions.Options
-@inject IOptions<SuperDumpSettings> settings
-@model SuperDumpService.ViewModels.ReportViewModel
+﻿@model SuperDumpService.ViewModels.ReportViewModel
 
 <div class="card">
 	<div class="card-body">
 		<h5 class="card-title">Identical Dumps</h5>
 		@if (!Model.IdenticalDumps.Any()) {
-			<h6 class="card-subtitle mb-2 text-muted">No identical Dumps Found</h6>
+			<h6 class="card-subtitle mb-2 text-muted">No Identical Dumps Found</h6>
 		} else {
 			var identicals = Model.IdenticalDumps;
 			<p class="card-text">@identicals.Count() identical dumps found.</p>
@@ -18,16 +16,13 @@
 					@foreach (var rel in identicals.OrderByDescending(k => k.BundleFileName)) {
 						<li class="list-group-item">
 							<dl>
-								<dt class="col-sm-5 text-right">BundleId:</dt>
-								<dd class="col-sm-7">@rel.BundleId</dd>
-								<dt class="col-sm-5 text-right">BundleFilename:</dt>
-								<dd class="col-sm-7">@System.IO.Path.GetFileName(rel.BundleFileName)</dd>
+								<dt class="col-sm-4 text-right">BundleId:</dt>
+								<dd class="col-sm-8">@rel.BundleId</dd>
+								<dt class="col-sm-4 text-right">Filename:</dt>
+								<dd class="col-sm-8">@System.IO.Path.GetFileName(rel.BundleFileName)</dd>
 
-								@if (settings.Value.UseJiraIntegration) {
-									<dt class="col-sm-5 text-right">JiraIssues:</dt>
-									<dd class="col-sm-7">
-										<partial name="_JiraIssues" model="@Model.JiraIssues[rel.BundleId]" />
-									</dd>
+								@if (Model.UseJiraIntegration) {
+									<partial name="_JiraIssues" model="@Model.JiraIssues[rel.BundleId]" />
 								}
 							</dl>
 						</li>

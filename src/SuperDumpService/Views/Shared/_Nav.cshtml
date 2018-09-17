@@ -17,7 +17,7 @@
 				<li><a asp-area="" asp-controller="Home" asp-action="Overview">Overview</a></li>
 				@if (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.AdminPolicy)) {
 					<li><a href="/hangfire">Hangfire</a></li>
-					<li><a asp-area="" asp-controller="Similarity" asp-action="Overview">Similarity</a></li>
+					<li><a asp-area="" asp-controller="Admin" asp-action="Overview">Admin</a></li>
 				}
 				<li><a href="/swagger/ui">API Doc</a></li>
 				<li><a asp-area="" asp-controller="Home" asp-action="Elastic">Elastic</a></li>

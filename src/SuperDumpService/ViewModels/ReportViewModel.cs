@@ -28,6 +28,7 @@ namespace SuperDumpService.ViewModels {
 		public bool IsDumpAvailable { get; set; }
 		public IEnumerable<BundleMetainfo> IdenticalDumps { get; internal set; }
 		public IDictionary<string, IEnumerable<JiraIssueModel>> JiraIssues { get; set; }
+		public bool UseJiraIntegration { get; internal set; }
 
 		public ReportViewModel(string bundleId, string dumpId) {
 			this.BundleId = bundleId;

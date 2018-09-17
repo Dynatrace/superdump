@@ -21,7 +21,8 @@ namespace SuperDumpService.Services {
 			HashSet<string> currentRelationships = File.Exists(path) ? await Read(originalBundleId) : new HashSet<string>();
 			currentRelationships.Add(identicalBundleId);
 
-			await File.WriteAllTextAsync(path, JsonConvert.SerializeObject(currentRelationships));
+			if (Directory.Exists(Path.GetDirectoryName(path)))
+				await File.WriteAllTextAsync(path, JsonConvert.SerializeObject(currentRelationships));
 		}
 
 		public async Task<HashSet<string>> Read(string bundleId) {

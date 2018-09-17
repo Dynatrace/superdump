@@ -222,7 +222,7 @@ namespace SuperDumpService.Controllers {
 
 			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
-			IEnumerable<BundleMetainfo> identicalDumps = (await identicalDumpRepository.GetIdenticalRelationships(bundleId)).Select(x => bundleRepo.Get(x));
+			IEnumerable<BundleMetainfo> identicalDumps = (await identicalDumpRepository.GetIdenticalRelationships(bundleId)).Select(x => bundleRepo.Get(x)).Where(bundle => bundle != null);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -244,8 +244,9 @@ namespace SuperDumpService.Controllers {
 				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
 				IdenticalDumps = identicalDumps,
 				JiraIssues = jiraIssueRepository.GetIssuesByBundleIdsWithoutWait( new List<string>() { bundleId }
-					.Union(similarDumps.Select(dump => dump.Key.BundleId))
-					.Union(identicalDumps.Select(bundle => bundle.BundleId)))
+								.Union(similarDumps.Select(dump => dump.Key.BundleId))
+								.Union(identicalDumps.Select(bundle => bundle.BundleId))),
+				UseJiraIntegration = settings.UseJiraIntegration
 			});
 		}
 

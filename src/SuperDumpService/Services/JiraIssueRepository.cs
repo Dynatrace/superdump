@@ -15,7 +15,7 @@ namespace SuperDumpService.Services {
 		private readonly JiraApiService apiService;
 		private readonly BundleRepository bundleRepo;
 		private readonly JiraIssueStorageFilebased jiraIssueStorage;
-		private readonly SuperDumpSettings settings;
+		private readonly JiraIntegrationSettings settings;
 		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
 
 
@@ -23,7 +23,7 @@ namespace SuperDumpService.Services {
 			this.apiService = apiService;
 			this.bundleRepo = bundleRepo;
 			this.jiraIssueStorage = jiraIssueStorage;
-			this.settings = settings.Value;
+			this.settings = settings.Value.JiraIntegrationSettings;
 		}
 
 		public async Task Populate() {

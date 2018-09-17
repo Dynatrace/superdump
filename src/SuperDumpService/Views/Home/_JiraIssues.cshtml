@@ -1,12 +1,16 @@
-﻿@using Microsoft.Extensions.Options
-@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
-@inject IOptions<SuperDumpSettings> settings
+﻿@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
 
-@if (Model != null) {
-	foreach (var jiraIssue in Model) {
-	<dl class="row" style="margin-bottom:auto">
-		<dt class="col-sm-6"><a href="@string.Concat(settings.Value.JiraIssueUrl, jiraIssue.Key)">@jiraIssue.Key</a></dt>
-		<dd class="col-sm-6">@jiraIssue.GetStatusName()</dd>
-	</dl>
-	}
+@if (Model != null && Model.Any()) {
+	<dt class="col-sm-4 text-right">JiraIssues:</dt>
+	<dd class="col-sm-8">
+		@foreach (var jiraIssue in Model) {
+			<dl class="row" style="margin-bottom:auto">
+				<dt class="col-sm-5" style="padding-right:0px"><a href="@jiraIssue.Url">@jiraIssue.Key</a></dt>
+				<dd class="col-sm-7">
+					<font color="@jiraIssue.GetStatusColor()">@jiraIssue.GetStatusName()</font>
+					(@jiraIssue.GetResolutionName())
+				</dd>
+			</dl>
+		}
+	</dd>
 }
