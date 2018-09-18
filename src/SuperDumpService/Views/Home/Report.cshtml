@@ -118,20 +118,20 @@
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-					  .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
-						<dd class="col-sm-10">
-							<ul class="flat">
-								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-									<li>
-										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-									</li>
-								}
-							</ul>
-						</dd>
-					</dl>
-				}
+						   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+							<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+								<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+								<dd class="col-sm-10">
+									<ul class="flat">
+										@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+											<li>
+												@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+											</li>
+										}
+									</ul>
+								</dd>
+							</dl>
+						}
 					</div>
 				</dd>
 			</dl>
