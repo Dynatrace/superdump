@@ -1,11 +1,11 @@
 ﻿@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
 
-@foreach (var jiraIssue in Model) {
-	<ul class="list-unstyled">
+<ul class="list-unstyled">
+	@foreach (var jiraIssue in Model) {
 		<li>
 			<a href="@jiraIssue.Url">@jiraIssue.Key </a>
 			<font color="@jiraIssue.GetStatusColor()">@jiraIssue.GetStatusName()</font>
 			(@jiraIssue.GetResolutionName())
 		</li>
-	</ul>
-}
+	}
+</ul>
