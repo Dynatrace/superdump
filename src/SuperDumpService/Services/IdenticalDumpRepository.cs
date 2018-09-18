@@ -80,13 +80,13 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public async Task<HashSet<string>> GetIdenticalRelationships(string bundleId) {
+		public async Task<IEnumerable<string>> GetIdenticalRelationships(string bundleId) {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				if (identicalDumps.TryGetValue(bundleId, out HashSet<string> relationShips)) {
 					return relationShips;
 				}
-				return new HashSet<string>();
+				return Enumerable.Empty<string>();
 			} finally {
 				semaphoreSlim.Release();
 			}

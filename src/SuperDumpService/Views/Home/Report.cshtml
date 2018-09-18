@@ -35,13 +35,13 @@
 
 				@if (Model.UseJiraIntegration) {
 					<div class="card">
+						<div class="card-header">Jira Issues</div>
 						<div class="card-body">
-							<h5 class="card-title">Jira Issues</h5>
-							@if (Model.JiraIssues[Model.BundleId] == null || !Model.JiraIssues[Model.BundleId].Any()) {
+							@if (!Model.MainBundleJiraIssues.Any()) {
 								<h6 class="card-subtitle mb-2 text-muted">No Jira Issues Found</h6>
 							} else {
 								<div>
-									<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
+									<partial name="_JiraIssues" model="Model.MainBundleJiraIssues" />
 								</div>
 							}
 						</div>
@@ -50,8 +50,8 @@
 				}
 
 				<div class="card">
+					<div class="card-header">Similar Dumps</div>
 					<div class="card-body">
-						<h5 class="card-title">Similar Dumps</h5>
 						@if (!Model.Similarities.Any()) {
 							<h6 class="card-subtitle mb-2 text-muted">No similar dumps found.</h6>
 						} else {
@@ -66,13 +66,13 @@
 										<li class="list-group-item">
 											<p>
 												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
-											<p>
-												@if (Model.UseJiraIntegration) {
-													<dl>
-														<partial name="_JiraIssues" model="Model.JiraIssues[rel.Key.BundleId]" />
-													</dl>
-												}
 											<p>(@rel.Key.Created)</p>
+											@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
+												<div class="border-top border-bottom">
+													<h5>Jira Issues</h5>
+													<div><partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" /></div>
+												</div>
+											}
 										</li>
 									}
 								</ul>
@@ -80,8 +80,6 @@
 						}
 					</div>
 				</div>
-				<br />
-				<partial name="_IdenticalDumps" />
 			</div>
 
 			<dl class="row courier-small compact">
@@ -120,20 +118,20 @@
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-						   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-							<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-								<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
-								<dd class="col-sm-10">
-									<ul class="flat">
-										@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-											<li>
-												@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-											</li>
-										}
-									</ul>
-								</dd>
-							</dl>
-						}
+					  .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+						<dd class="col-sm-10">
+							<ul class="flat">
+								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+									<li>
+										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+									</li>
+								}
+							</ul>
+						</dd>
+					</dl>
+				}
 					</div>
 				</dd>
 			</dl>

@@ -33,7 +33,6 @@ namespace SuperDumpService.Controllers {
 		private readonly SimilarityService similarityService;
 		private readonly ILogger<HomeController> logger;
 		private readonly IAuthorizationHelper authorizationHelper;
-		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIssueRepository jiraIssueRepository;
 
 		public HomeController(IHostingEnvironment environment, 
@@ -46,8 +45,7 @@ namespace SuperDumpService.Controllers {
 				RelationshipRepository relationshipRepo, 
 				SimilarityService similarityService, 
 				ILoggerFactory loggerFactory, 
-				IAuthorizationHelper authorizationHelper, 
-				IdenticalDumpRepository identicalDumpRepository,
+				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
@@ -60,7 +58,6 @@ namespace SuperDumpService.Controllers {
 			this.similarityService = similarityService;
 			logger = loggerFactory.CreateLogger<HomeController>();
 			this.authorizationHelper = authorizationHelper;
-			this.identicalDumpRepository = identicalDumpRepository;
 			this.jiraIssueRepository = jiraIssueRepository;
 		}
 
@@ -222,7 +219,6 @@ namespace SuperDumpService.Controllers {
 
 			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
-			IEnumerable<BundleMetainfo> identicalDumps = (await identicalDumpRepository.GetIdenticalRelationships(bundleId)).Select(x => bundleRepo.Get(x)).Where(bundle => bundle != null);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
 				BundleFileName = bundleInfo.BundleFileName,
@@ -242,10 +238,8 @@ namespace SuperDumpService.Controllers {
 				InteractiveGdbHost = settings.InteractiveGdbHost,
 				Similarities = similarDumps,
 				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
-				IdenticalDumps = identicalDumps,
-				JiraIssues = jiraIssueRepository.GetIssuesByBundleIdsWithoutWait( new List<string>() { bundleId }
-								.Union(similarDumps.Select(dump => dump.Key.BundleId))
-								.Union(identicalDumps.Select(bundle => bundle.BundleId))),
+				MainBundleJiraIssues = await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
+				SimilarDumpIssues = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration
 			});
 		}
