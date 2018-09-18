@@ -3,11 +3,6 @@ using System.Collections.Generic;
 
 namespace SuperDumpService.Models {
 	public class JiraIssueModel {
-		private const string HtmlFontGreen = "green";
-		private const string HtmlFontDefault = "initial";
-
-		private const string JiraStatusResolved = "resolved"; //this is compared with Status.Name.ToLower()
-
 		public string Id { get; set; }
 		public string Key { get; set; }
 		public string Url { get; set; }
@@ -15,15 +10,6 @@ namespace SuperDumpService.Models {
 
 		public string GetStatusName() {
 			return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
-		}
-
-		public string GetStatusColor() {
-			switch (GetStatusName().ToLower()) {
-				case JiraStatusResolved:
-					return HtmlFontGreen;
-				default:
-					return HtmlFontDefault;
-			}
 		}
 
 		public string GetResolutionName() {

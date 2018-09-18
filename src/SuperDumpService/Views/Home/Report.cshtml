@@ -63,17 +63,15 @@
 							<div class="collapse show" id="collapseDuplicates">
 								<ul class="list-group list-group-flush">
 									@foreach (var rel in dupls.OrderByDescending(x => x.Value)) {
-										<li class="list-group-item">
-											<p>
-												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
-											<p>(@rel.Key.Created)</p>
-											@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
-												<div class="border-top border-bottom">
-													<h5>Jira Issues</h5>
-													<div><partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" /></div>
-												</div>
-											}
-										</li>
+									<li class="list-group-item">
+										<div class="small">(@rel.Key.Created)</div>
+										<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+										@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
+											<div class="mt-2 small">
+												<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
+											</div>
+										}
+									</li>
 									}
 								</ul>
 							</div>

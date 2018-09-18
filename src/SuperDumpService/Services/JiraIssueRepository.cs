@@ -64,8 +64,9 @@ namespace SuperDumpService.Services {
 			var result = new Dictionary<string, IEnumerable<JiraIssueModel>>();
 			foreach (string bundleId in bundleIds) {
 				IEnumerable<JiraIssueModel> issues = await GetAllIssuesByBundleIdWithoutWait(bundleId);
-				if (issues.Any())
+				if (issues.Any()) {
 					result.Add(bundleId, issues);
+				}
 			}
 
 			return result;

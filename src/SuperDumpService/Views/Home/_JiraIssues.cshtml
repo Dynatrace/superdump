@@ -2,10 +2,17 @@
 
 <ul class="list-unstyled">
 	@foreach (var jiraIssue in Model) {
+		bool resolved = jiraIssue.GetStatusName() == "Resolved";
+		string strikethroughstyle = resolved ? "text-decoration: line-through" : string.Empty;
+
 		<li>
-			<a href="@jiraIssue.Url">@jiraIssue.Key </a>
-			<font color="@jiraIssue.GetStatusColor()">@jiraIssue.GetStatusName()</font>
-			(@jiraIssue.GetResolutionName())
+			<a style="@strikethroughstyle" href="@jiraIssue.Url">@jiraIssue.Key</a>
+			@if (resolved) {
+				<span class="text-success">@jiraIssue.GetStatusName()</span>
+			} else {
+				<span class="text-danger">@jiraIssue.GetStatusName()</span>
+			}
+			<span class="text-muted">(@jiraIssue.GetResolutionName())</span>
 		</li>
 	}
 </ul>
