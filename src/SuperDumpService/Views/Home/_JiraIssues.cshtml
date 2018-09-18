@@ -1,12 +1,18 @@
-﻿@using Microsoft.Extensions.Options
-@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
-@inject IOptions<SuperDumpSettings> settings
+﻿@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
 
-@if (Model != null) {
-	foreach (var jiraIssue in Model) {
-	<dl class="row" style="margin-bottom:auto">
-		<dt class="col-sm-6"><a href="@string.Concat(settings.Value.JiraIssueUrl, jiraIssue.Key)">@jiraIssue.Key</a></dt>
-		<dd class="col-sm-6">@jiraIssue.GetStatusName()</dd>
-	</dl>
+<ul class="list-unstyled">
+	@foreach (var jiraIssue in Model) {
+		bool resolved = jiraIssue.GetStatusName() == "Resolved";
+		string strikethroughstyle = resolved ? "text-decoration: line-through" : string.Empty;
+
+		<li>
+			<a style="@strikethroughstyle" href="@jiraIssue.Url">@jiraIssue.Key</a>
+			@if (resolved) {
+				<span class="text-success">@jiraIssue.GetStatusName()</span>
+			} else {
+				<span class="text-danger">@jiraIssue.GetStatusName()</span>
+			}
+			<span class="text-muted">(@jiraIssue.GetResolutionName())</span>
+		</li>
 	}
-}
+</ul>

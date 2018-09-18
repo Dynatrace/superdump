@@ -2,9 +2,7 @@
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
 @using SuperDumpService.ViewModels
-@using Microsoft.Extensions.Options
 @inject IAuthorizationHelper AuthorizationHelper
-@inject IOptions<SuperDumpSettings> settings
 @{
 	ViewData["Title"] = "Report";
 }
@@ -34,42 +32,52 @@
 						</div>
 					}
 				}
+
+				@if (Model.UseJiraIntegration) {
+					<div class="card">
+						<div class="card-header">Jira Issues</div>
+						<div class="card-body">
+							@if (!Model.MainBundleJiraIssues.Any()) {
+								<h6 class="card-subtitle mb-2 text-muted">No Jira Issues Found</h6>
+							} else {
+								<div>
+									<partial name="_JiraIssues" model="Model.MainBundleJiraIssues" />
+								</div>
+							}
+						</div>
+					</div>
+					<br />
+				}
+
 				<div class="card">
+					<div class="card-header">Similar Dumps</div>
 					<div class="card-body">
-						<h5 class="card-title">Duplicates</h5>
 						@if (!Model.Similarities.Any()) {
-							<h6 class="card-subtitle mb-2 text-muted">No duplicates found.</h6>
+							<h6 class="card-subtitle mb-2 text-muted">No similar dumps found.</h6>
 						} else {
 							var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
-							<p class="card-text">@dupls.Count() possible duplicates found.</p>
+							<p class="card-text">@dupls.Count() similar dumps found.</p>
 							<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
 								Hide/Show
 							</button>
 							<div class="collapse show" id="collapseDuplicates">
 								<ul class="list-group list-group-flush">
 									@foreach (var rel in dupls.OrderByDescending(x => x.Value)) {
-										<li class="list-group-item">
-											<p>
-												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
-											<p>
-												@if (settings.Value.UseJiraIntegration) {
-													<dl>
-														<dt class="col-sm-5 text-right">JiraIssues:</dt>
-														<dd class="col-sm-7">
-															<partial name="_JiraIssues" model="Model.JiraIssues[rel.Key.BundleId]" />
-														</dd>
-													</dl>
-												}
-											<p>(@rel.Key.Created)</p>
-										</li>
+									<li class="list-group-item">
+										<div class="small">(@rel.Key.Created)</div>
+										<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+										@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
+											<div class="mt-2 small">
+												<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
+											</div>
+										}
+									</li>
 									}
 								</ul>
 							</div>
 						}
 					</div>
 				</div>
-				<br />
-				<partial name="_IdenticalDumps"/>
 			</div>
 
 			<dl class="row courier-small compact">
@@ -103,33 +111,25 @@
 					</dd>
 				}
 
-				@if (settings.Value.UseJiraIntegration) {
-					<dt class="col-sm-2 text-right">JiraIssues:</dt>
-					<dd class="col-sm-4">
-						<partial name="_JiraIssues" model="Model.JiraIssues[Model.BundleId]" />
-					</dd>
-					<dd class="col-sm-6" />
-				}
-
 				<dt class="col-sm-2 text-right">Files:</dt>
 				<dd class="col-sm-10">
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-				   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
-						<dd class="col-sm-10">
-							<ul class="flat">
-								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-									<li>
-										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-									</li>
-								}
-							</ul>
-						</dd>
-					</dl>
-				}
+						   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+							<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+								<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+								<dd class="col-sm-10">
+									<ul class="flat">
+										@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+											<li>
+												@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+											</li>
+										}
+									</ul>
+								</dd>
+							</dl>
+						}
 					</div>
 				</dd>
 			</dl>

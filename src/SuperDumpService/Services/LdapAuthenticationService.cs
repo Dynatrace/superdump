@@ -69,8 +69,10 @@ namespace SuperDumpService.Services {
 				claims.Add(new Claim(ClaimTypes.GroupSid, principal.Name));
 			}
 
-			foreach (Principal parent in principal.GetGroups(context)) {
-				GetUserSuperdumpGroups(context, parent, claims);
+			using (PrincipalSearchResult<Principal> groups = principal.GetGroups(context)) {
+				foreach (Principal parent in groups) {
+					GetUserSuperdumpGroups(context, parent, claims);
+				}
 			}
 		}
 	}

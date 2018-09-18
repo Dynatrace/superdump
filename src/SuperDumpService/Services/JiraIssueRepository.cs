@@ -15,15 +15,21 @@ namespace SuperDumpService.Services {
 		private readonly JiraApiService apiService;
 		private readonly BundleRepository bundleRepo;
 		private readonly JiraIssueStorageFilebased jiraIssueStorage;
-		private readonly SuperDumpSettings settings;
+		private readonly IdenticalDumpRepository identicalDumpRepository;
+		private readonly JiraIntegrationSettings settings;
 		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
 
 
-		public JiraIssueRepository(IOptions<SuperDumpSettings> settings, JiraApiService apiService, BundleRepository bundleRepo, JiraIssueStorageFilebased jiraIssueStorage) {
+		public JiraIssueRepository(IOptions<SuperDumpSettings> settings, 
+				JiraApiService apiService,
+				BundleRepository bundleRepo, 
+				JiraIssueStorageFilebased jiraIssueStorage,
+				IdenticalDumpRepository identicalDumpRepository) {
 			this.apiService = apiService;
 			this.bundleRepo = bundleRepo;
 			this.jiraIssueStorage = jiraIssueStorage;
-			this.settings = settings.Value;
+			this.identicalDumpRepository = identicalDumpRepository;
+			this.settings = settings.Value.JiraIntegrationSettings;
 		}
 
 		public async Task Populate() {
@@ -45,8 +51,25 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public IDictionary<string, IEnumerable<JiraIssueModel>> GetIssuesByBundleIdsWithoutWait(IEnumerable<string> bundleIds) {
-			return bundleIds.ToDictionary(bundleId => bundleId, bundleId => bundleIssues.GetValueOrDefault(bundleId));
+		public IEnumerable<JiraIssueModel> GetIssues(string bundleId) {
+			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>());
+		}
+
+		public async Task<IEnumerable<JiraIssueModel>> GetAllIssuesByBundleIdWithoutWait(string bundleId) {
+			return GetIssues(bundleId).Concat((await identicalDumpRepository.GetIdenticalRelationships(bundleId))
+						.SelectMany(identicalBundle => GetIssues(identicalBundle)));
+		}
+
+		public async Task<IDictionary<string, IEnumerable<JiraIssueModel>>> GetAllIssuesByBundleIdsWithoutWait(IEnumerable<string> bundleIds) {
+			var result = new Dictionary<string, IEnumerable<JiraIssueModel>>();
+			foreach (string bundleId in bundleIds) {
+				IEnumerable<JiraIssueModel> issues = await GetAllIssuesByBundleIdWithoutWait(bundleId);
+				if (issues.Any()) {
+					result.Add(bundleId, issues);
+				}
+			}
+
+			return result;
 		}
 
 		public async Task WipeJiraIssueCache() {

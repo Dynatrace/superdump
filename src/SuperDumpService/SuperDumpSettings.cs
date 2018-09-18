@@ -32,16 +32,7 @@ namespace SuperDumpService {
 		public bool UseLdapAuthentication { get; set; }
 		public bool UseHttpsRedirection { get; set; }
 		public LdapAuthenticationSettings LdapAuthenticationSettings { get; set; }
-		public string JiraApiSearchUrl { get; set; }
-		public string JiraApiUsername { get; set; }
-		public string JiraApiPassword { get; set; }
-		public string JiraIssueUrl { get; set; }
 		public bool UseJiraIntegration { get; set; }
-		public string JiraIssueRefreshCron { get; set; }
-		public string JiraBundleIssueSearchCron { get; set; }
-		public string CustomPropertyJiraIssueKey { get; set; }
-		public int JiraBundleSearchLimit { get; set; }
-		public double JiraBundleSearchDelay { get; set; }
-		public TimeSpan JiraBundleSearchTimeSpan { get; set; }
+		public JiraIntegrationSettings JiraIntegrationSettings { get; set; }
 	}
 }
