@@ -238,8 +238,8 @@ namespace SuperDumpService.Controllers {
 				InteractiveGdbHost = settings.InteractiveGdbHost,
 				Similarities = similarDumps,
 				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
-				MainBundleJiraIssues = await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
-				SimilarDumpIssues = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
+				MainBundleJiraIssues = !settings.UseJiraIntegration ? null : await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
+				SimilarDumpIssues = !settings.UseJiraIntegration ? null : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration
 			});
 		}

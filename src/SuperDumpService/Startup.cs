@@ -160,7 +160,7 @@ namespace SuperDumpService {
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
 			if (settings.Value.UseJiraIntegration) {
-				Task.Run(() => app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
+				Task.Run(async () => await app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
 			}
 
 			// configure Logger
