@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SuperDumpService.Models;
 
@@ -17,6 +18,7 @@ namespace SuperDumpService.Services {
 		private readonly JiraIssueStorageFilebased jiraIssueStorage;
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIntegrationSettings settings;
+		private readonly ILogger<JiraIssueRepository> logger;
 		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
 
 
@@ -24,12 +26,14 @@ namespace SuperDumpService.Services {
 				JiraApiService apiService,
 				BundleRepository bundleRepo, 
 				JiraIssueStorageFilebased jiraIssueStorage,
-				IdenticalDumpRepository identicalDumpRepository) {
+				IdenticalDumpRepository identicalDumpRepository,
+				ILoggerFactory loggerFactory) {
 			this.apiService = apiService;
 			this.bundleRepo = bundleRepo;
 			this.jiraIssueStorage = jiraIssueStorage;
 			this.identicalDumpRepository = identicalDumpRepository;
 			this.settings = settings.Value.JiraIntegrationSettings;
+			logger = loggerFactory.CreateLogger<JiraIssueRepository>();
 		}
 
 		public async Task Populate() {
@@ -42,7 +46,7 @@ namespace SuperDumpService.Services {
 							bundleIssues[bundle.BundleId] = jiraIssues;
 						}
 					} catch (Exception e) {
-						Console.WriteLine("error reading jira-issue file: " + e.ToString());
+						logger.LogError("error reading jira-issue file: " + e.ToString());
 						jiraIssueStorage.Wipe(bundle.BundleId);
 					}
 				}
@@ -180,8 +184,8 @@ namespace SuperDumpService.Services {
 			//Select the issues for each bundle and store them in the bundleIssues Dictionary
 			//I am not sure if this is the best way to do this
 			var fileStorageTasks = new List<Task>();
-			foreach (KeyValuePair<string, IEnumerable<JiraIssueModel>> bundle in bundleIssues) {
-				IEnumerable<JiraIssueModel> issues = bundleIssues[bundle.Key].Select(issue => issueDictionary.GetValueOrDefault(issue.Key));
+			foreach (KeyValuePair<string, IEnumerable<JiraIssueModel>> bundle in bundlesToUpdate) {
+				IEnumerable<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]);
 				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
 			}
 
