@@ -93,7 +93,7 @@
 
 				<br />
 				<div class="row">
-					<div class="col-sm-4" style="margin:0;padding:0">
+					<div class="col-sm-4 admin-group-no-margin">
 						@using (Html.BeginForm("ForceSearchBundleIssues", "Admin")) {
 							<span class="col-sm-2">days:</span><input class="col-sm-2" type="text" name="days" value="30" />
 							<div class="col-sm-8">
@@ -116,4 +116,19 @@
 			</div>
 		</div>
 	}
+
+	<div class="panel panel-default">
+		<div class="panel-heading">Elastic Search</div>
+		<div class="panel-body container">
+			<div class="row">
+				<div class="col-sm-4 admin-group-no-margin">
+					@using (Html.BeginForm("PushElasticSearch", "Admin")) {
+						<span class="col-sm-2">clean:</span><input class="col-sm-2" type="checkbox" name="clean" value="true" />
+						<div class="col-sm-8"><input class="col-sm-12" type="submit" value="Push Elastic Search" /></div>
+					}
+				</div>
+				<div class="col-sm-8">Pushes all dumps to the ElasticSearch, clean specifies if the current index should be deleted</div>
+			</div>
+		</div>
+	</div>
 </div>

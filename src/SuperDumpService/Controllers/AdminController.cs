@@ -20,15 +20,24 @@ namespace SuperDumpService.Controllers {
 		private readonly BundleRepository bundleRepository;
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIssueRepository jiraIssueRepository;
+		private readonly ElasticSearchService elasticService;
 		private readonly ILogger<AdminController> logger;
 		private readonly SuperDumpSettings settings;
 
-		public AdminController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
+		public AdminController(SimilarityService similarityService,
+				DumpRepository dumpRepository,
+				BundleRepository bundleRepository,
+				ILoggerFactory loggerFactory,
+				IdenticalDumpRepository identicalDumpRepository, 
+				JiraIssueRepository jiraIssueRepository, 
+				IOptions<SuperDumpSettings> settings,
+				ElasticSearchService elasticService) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
 			this.identicalDumpRepository = identicalDumpRepository;
 			this.jiraIssueRepository = jiraIssueRepository;
+			this.elasticService = elasticService;
 			logger = loggerFactory.CreateLogger<AdminController>();
 			this.settings = settings.Value;
 		}
@@ -135,6 +144,13 @@ namespace SuperDumpService.Controllers {
 				return View("Overview");
 			}
 			return NotFound();
+		}
+
+		[HttpPost]
+		public IActionResult PushElasticSearch(bool clean) {
+			logger.LogElasticClean("PushElasticSearch", HttpContext, clean);
+			BackgroundJob.Enqueue(() => elasticService.PushAllResultsAsync(clean));
+			return View("Overview");
 		}
 	}
 }
