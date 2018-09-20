@@ -22,9 +22,9 @@ namespace SuperDumpService.Services {
 		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
 
 
-		public JiraIssueRepository(IOptions<SuperDumpSettings> settings, 
+		public JiraIssueRepository(IOptions<SuperDumpSettings> settings,
 				JiraApiService apiService,
-				BundleRepository bundleRepo, 
+				BundleRepository bundleRepo,
 				JiraIssueStorageFilebased jiraIssueStorage,
 				IdenticalDumpRepository identicalDumpRepository,
 				ILoggerFactory loggerFactory) {
@@ -66,7 +66,7 @@ namespace SuperDumpService.Services {
 
 		public async Task<IDictionary<string, IEnumerable<JiraIssueModel>>> GetAllIssuesByBundleIdsWithoutWait(IEnumerable<string> bundleIds) {
 			var result = new Dictionary<string, IEnumerable<JiraIssueModel>>();
-			foreach (string bundleId in bundleIds) {
+			foreach (string bundleId in bundleIds.Distinct()) {
 				IEnumerable<JiraIssueModel> issues = await GetAllIssuesByBundleIdWithoutWait(bundleId);
 				if (issues.Any()) {
 					result.Add(bundleId, issues);

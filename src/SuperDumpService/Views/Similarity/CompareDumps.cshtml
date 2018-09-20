@@ -6,7 +6,7 @@
 @if (!string.IsNullOrEmpty(Model.Error) || Model.CrashSimilarity == null) {
 	<stong>Error: @Model.Error</stong>
 } else {
-
+	<h3>Compare Dumps</h3>
 	<dl>
 		<dt>Overall</dt>
 		<dd>@Model.CrashSimilarity.OverallSimilarity</dd>
