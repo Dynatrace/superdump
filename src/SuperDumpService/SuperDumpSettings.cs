@@ -34,5 +34,6 @@ namespace SuperDumpService {
 		public LdapAuthenticationSettings LdapAuthenticationSettings { get; set; }
 		public bool UseJiraIntegration { get; set; }
 		public JiraIntegrationSettings JiraIntegrationSettings { get; set; }
+		public bool UseAllRequestLogging { get; set; }
 	}
 }

@@ -177,7 +177,11 @@ namespace SuperDumpService {
 			var logPath = Path.GetDirectoryName(fileLogConfig.GetValue<string>("PathFormat"));
 			Directory.CreateDirectory(logPath);
 			loggerFactory.AddFile(Configuration.GetSection("FileLogging"));
-			loggerFactory.AddFile(Configuration.GetSection("RequestFileLogging"));
+
+			if (settings.Value.UseAllRequestLogging) {
+				loggerFactory.AddFile(Configuration.GetSection("RequestFileLogging"));
+			}
+
 			loggerFactory.AddDebug();
 
 
@@ -195,11 +199,13 @@ namespace SuperDumpService {
 					}));
 			}
 
-			ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
-			app.Use(async (context, next) => {
-				logger.LogRequest(context);
-				await next.Invoke();
-			});
+			if (settings.Value.UseAllRequestLogging) {
+				ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
+				app.Use(async (context, next) => {
+					logger.LogRequest(context);
+					await next.Invoke();
+				});
+			}
 
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions {
 				Authorization = new[] { new CustomAuthorizeFilter(authorizationHelper) }
