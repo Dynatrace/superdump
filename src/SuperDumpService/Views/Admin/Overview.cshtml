@@ -93,9 +93,12 @@
 
 				<br />
 				<div class="row">
-					<div class="col-sm-4">
+					<div class="col-sm-4" style="margin:0;padding:0">
 						@using (Html.BeginForm("ForceSearchBundleIssues", "Admin")) {
-							<input class="col-sm-12" type="submit" value="Force Search For Bundle Issues" />
+							<span class="col-sm-2">days:</span><input class="col-sm-2" type="text" name="days" value="30" />
+							<div class="col-sm-8">
+								<input class="col-sm-12" type="submit" value="Force Bundle Issue Search" />
+							</div>
 						}
 					</div>
 					<div class="col-sm-8">Starts a Hangfire Job that searches jira issues for all bundles, regardless of their age</div>
