@@ -20,15 +20,24 @@ namespace SuperDumpService.Controllers {
 		private readonly BundleRepository bundleRepository;
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIssueRepository jiraIssueRepository;
+		private readonly ElasticSearchService elasticService;
 		private readonly ILogger<AdminController> logger;
 		private readonly SuperDumpSettings settings;
 
-		public AdminController(SimilarityService similarityService, DumpRepository dumpRepository, BundleRepository bundleRepository, ILoggerFactory loggerFactory, IdenticalDumpRepository identicalDumpRepository, JiraIssueRepository jiraIssueRepository, IOptions<SuperDumpSettings> settings) {
+		public AdminController(SimilarityService similarityService,
+				DumpRepository dumpRepository,
+				BundleRepository bundleRepository,
+				ILoggerFactory loggerFactory,
+				IdenticalDumpRepository identicalDumpRepository, 
+				JiraIssueRepository jiraIssueRepository, 
+				IOptions<SuperDumpSettings> settings,
+				ElasticSearchService elasticService) {
 			this.similarityService = similarityService;
 			this.dumpRepository = dumpRepository;
 			this.bundleRepository = bundleRepository;
 			this.identicalDumpRepository = identicalDumpRepository;
 			this.jiraIssueRepository = jiraIssueRepository;
+			this.elasticService = elasticService;
 			logger = loggerFactory.CreateLogger<AdminController>();
 			this.settings = settings.Value;
 		}
@@ -69,7 +78,7 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public IActionResult TriggerSimilarityAnalysisForAllDumps(bool force, int days = -1) {
-			logger.LogSimilarityEvent("TriggerSimilarityAnalysisForAllDumps", HttpContext);
+			logger.LogAdminEvent("TriggerSimilarityAnalysisForAllDumps", HttpContext);
 			DateTime timeFrom = DateTime.MinValue;
 			if (days > 0) {
 				timeFrom = DateTime.Now - TimeSpan.FromDays(days);
@@ -80,26 +89,28 @@ namespace SuperDumpService.Controllers {
 
 		[HttpPost]
 		public async Task<IActionResult> WipeAll() {
-			logger.LogSimilarityEvent("SimilarityWipeAll", HttpContext);
+			logger.LogAdminEvent("SimilarityWipeAll", HttpContext);
 			await similarityService.WipeAll();
 			return View("Overview");
 		}
 
 		[HttpPost]
 		public IActionResult CleanSimilarityAnalysisQueue() {
-			logger.LogSimilarityEvent("CleanSimilarityAnalysisQueue", HttpContext);
+			logger.LogAdminEvent("CleanSimilarityAnalysisQueue", HttpContext);
 			similarityService.CleanQueue();
 			return View("Overview");
 		}
 
 		[HttpPost]
 		public async Task<IActionResult> CreateAllIdenticalDumpRelationships() {
+			logger.LogAdminEvent("CreateAllIdenticalDumpRelationships", HttpContext);
 			await identicalDumpRepository.CreateAllIdenticalRelationships();
 			return View("Overview");
 		}
 
 		[HttpPost]
 		public async Task<IActionResult> WipeAllIdenticalDumpRelationships() {
+			logger.LogAdminEvent("WipeAllIdenticalDumpRelationships", HttpContext);
 			await identicalDumpRepository.WipeAll();
 			return View("Overview");
 		}
@@ -107,6 +118,7 @@ namespace SuperDumpService.Controllers {
 		[HttpPost]
 		public IActionResult ForceRefreshAllJiraIssues() {
 			if (settings.UseJiraIntegration) {
+				logger.LogAdminEvent("ForceRefreshAllJiraIssues", HttpContext);
 				BackgroundJob.Enqueue(() => jiraIssueRepository.ForceRefreshAllIssuesAsync());
 				return View("Overview");
 			}
@@ -116,6 +128,7 @@ namespace SuperDumpService.Controllers {
 		[HttpPost]
 		public async Task<IActionResult> WipeJiraIssueCache() {
 			if (settings.UseJiraIntegration) {
+				logger.LogAdminEvent("WipeJiraIssueCache", HttpContext);
 				await jiraIssueRepository.WipeJiraIssueCache();
 				return View("Overview");
 			}
@@ -123,12 +136,21 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpPost]
-		public IActionResult ForceSearchBundleIssues() {
+		public IActionResult ForceSearchBundleIssues(int days = -1) {
 			if (settings.UseJiraIntegration) {
-				BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(true));
+				logger.LogAdminEvent("ForceSearchBundleIssues", HttpContext);
+				TimeSpan timeFrom = days > 0 ? TimeSpan.FromDays(days) : TimeSpan.MaxValue;
+				BackgroundJob.Enqueue(() => jiraIssueRepository.SearchAllBundleIssues(timeFrom, true));
 				return View("Overview");
 			}
 			return NotFound();
+		}
+
+		[HttpPost]
+		public IActionResult PushElasticSearch(bool clean) {
+			logger.LogElasticClean("PushElasticSearch", HttpContext, clean);
+			BackgroundJob.Enqueue(() => elasticService.PushAllResultsAsync(clean));
+			return View("Overview");
 		}
 	}
 }

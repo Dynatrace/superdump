@@ -74,7 +74,7 @@ namespace SuperDumpService.Helpers {
 				context.Request.Method, context.Request.Path, context.Request.Query);
 		}
 
-		public static void LogSimilarityEvent(this ILogger logger, string text, HttpContext context) {
+		public static void LogAdminEvent(this ILogger logger, string text, HttpContext context) {
 			logger.LogInformation(DefaultLogText, text, context.Connection.RemoteIpAddress.ToString(), context.User.Identity.Name);
 		}
 		public static void LogSimilarityEvent(this ILogger logger, string text, HttpContext context, string bundleId1, string dumpId1, string bundleId2, string dumpId2) {

@@ -12,7 +12,7 @@
 			} else {
 				<span class="text-danger">@jiraIssue.GetStatusName()</span>
 			}
-			<span class="text-muted">(@jiraIssue.GetResolutionName())</span>
+			<span class="text-muted">(@(jiraIssue.GetResolutionName() == null ? "Unresolved" : jiraIssue.GetResolutionName()))</span>
 		</li>
 	}
 </ul>

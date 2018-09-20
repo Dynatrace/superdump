@@ -137,13 +137,12 @@ namespace SuperDumpService.Services {
 		}
 
 		public void StartBundleSearchHangfireJob() {
-			RecurringJob.AddOrUpdate(() => SearchAllBundleIssues(false), settings.JiraBundleIssueSearchCron, null, "jirastatus");
+			RecurringJob.AddOrUpdate(() => SearchAllBundleIssues(settings.JiraBundleSearchTimeSpan, false), settings.JiraBundleIssueSearchCron, null, "jirastatus");
 		}
 
 		[Queue("jirastatus")]
-		public void SearchAllBundleIssues(bool force = false) {
-			IEnumerable<BundleMetainfo> bundles = force ? bundleRepo.GetAll() :
-				bundleRepo.GetAll().Where(bundle => DateTime.Now - bundle.Created <= settings.JiraBundleSearchTimeSpan);
+		public void SearchAllBundleIssues(TimeSpan searchTimeSpan, bool force = false) {
+			IEnumerable<BundleMetainfo> bundles = bundleRepo.GetAll().Where(bundle => DateTime.Now - bundle.Created <= searchTimeSpan);
 			int idx = 0;
 
 			while (bundles.Skip(idx).Any()) {
