@@ -60,8 +60,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetAllIssuesByBundleIdWithoutWait(string bundleId) {
-				return GetIssues(bundleId).Concat((await identicalDumpRepository.GetIdenticalRelationships(bundleId))
-							.SelectMany(identicalBundle => GetIssues(identicalBundle)));
+			return GetIssues(bundleId).Concat((await identicalDumpRepository.GetIdenticalRelationships(bundleId))
+						.SelectMany(identicalBundle => GetIssues(identicalBundle)));
 		}
 
 		public async Task<IDictionary<string, IEnumerable<JiraIssueModel>>> GetAllIssuesByBundleIdsWithoutWait(IEnumerable<string> bundleIds) {
@@ -156,7 +156,7 @@ namespace SuperDumpService.Services {
 		public async Task SearchBundleIssuesAsync(IEnumerable<BundleMetainfo> bundles, bool force = false) {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
-				IEnumerable<BundleMetainfo> bundlesToSearch = force ? bundles :
+				IEnumerable<BundleMetainfo> bundlesToSearch = force ? bundles : 
 					bundles.Where(bundle => !bundleIssues.TryGetValue(bundle.BundleId, out IEnumerable<JiraIssueModel> issues) || !issues.Any()); //All bundles without issues
 
 				await Task.WhenAll(bundlesToSearch.Select(bundle => SearchBundleAsync(bundle, force)));
