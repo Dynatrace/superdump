@@ -120,6 +120,13 @@ namespace SuperDumpService {
 				if (xmlDocFile.Exists) {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
+
+				options.AddSecurityDefinition("Bearer", new ApiKeyScheme() {
+					In = "header",
+					Description = "Please insert JWT Bearer Token into field",
+					Name = "Authorization",
+					Type = "apiKey"
+				});
 			});
 
 			// for pagination list
