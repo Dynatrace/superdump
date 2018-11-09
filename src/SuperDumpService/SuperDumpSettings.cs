@@ -29,6 +29,8 @@ namespace SuperDumpService {
 		public string InteractiveGdbHost { get; set; }
 		public string ElasticSearchHost { get; set; }
 		public string NodeJsPath { get; set; }
+		public bool SimilarityDetectionEnabled { get; set; }
+		public int SimilarityDetectionMaxDays { get; set; } = 90;
 		public bool UseLdapAuthentication { get; set; }
 		public bool UseHttpsRedirection { get; set; }
 		public LdapAuthenticationSettings LdapAuthenticationSettings { get; set; }

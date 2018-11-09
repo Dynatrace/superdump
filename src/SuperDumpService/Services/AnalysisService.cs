@@ -19,7 +19,16 @@ namespace SuperDumpService.Services {
 		private readonly ElasticSearchService elasticSearch;
 		private readonly SimilarityService similarityService;
 
-		public AnalysisService(DumpStorageFilebased dumpStorage, DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, NotificationService notifications, ElasticSearchService elasticSearch, SimilarityService similarityService) {
+		public AnalysisService(
+					DumpStorageFilebased dumpStorage,
+					DumpRepository dumpRepo,
+					BundleRepository bundleRepo,
+					PathHelper pathHelper,
+					IOptions<SuperDumpSettings> settings,
+					NotificationService notifications,
+					ElasticSearchService elasticSearch,
+					SimilarityService similarityService
+				) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -43,6 +52,8 @@ namespace SuperDumpService.Services {
 
 		[Hangfire.Queue("analysis", Order = 2)]
 		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+			await BlockIfBundleRepoNotReady($"AnalysisService.Analyze for {dumpInfo.Id}");
+
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
 
@@ -53,12 +64,12 @@ namespace SuperDumpService.Services {
 				} else {
 					throw new Exception("unknown dumptype. here be dragons");
 				}
-				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
 
 				// Re-fetch dump info as it was updated
 				dumpInfo = dumpRepo.Get(dumpInfo.BundleId, dumpInfo.DumpId);
 
-				SDResult result = await dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId);
+				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);
+
 				if (result != null) {
 					var bundle = bundleRepo.Get(dumpInfo.BundleId);
 					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
@@ -71,7 +82,7 @@ namespace SuperDumpService.Services {
 					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
 				}
 				await notifications.NotifyDumpAnalysisFinished(dumpInfo);
-				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(90)); // last 90 days.
+				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
 			}
 		}
 
@@ -160,6 +171,17 @@ namespace SuperDumpService.Services {
 					Console.WriteLine(error);
 					throw new Exception(error);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Blocks until bundleRepo is fully populated.
+		/// </summary>
+		private async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!bundleRepo.IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because dumpRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => bundleRepo.IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
 			}
 		}
 	}

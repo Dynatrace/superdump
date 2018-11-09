@@ -2,6 +2,7 @@
 using SharpCompress.Archives.GZip;
 using SharpCompress.Archives.Tar;
 using SharpCompress.Archives.Zip;
+using SharpCompress.Common;
 using SharpCompress.Readers;
 using SuperDump.Common;
 using System;

@@ -2,11 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
@@ -20,7 +22,7 @@ namespace SuperDumpService.Services {
 		private readonly JiraIntegrationSettings settings;
 		private readonly ILogger<JiraIssueRepository> logger;
 		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
-
+		public bool IsPopulated { get; private set; } = false;
 
 		public JiraIssueRepository(IOptions<SuperDumpSettings> settings,
 				JiraApiService apiService,
@@ -37,6 +39,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task Populate() {
+			await BlockIfBundleRepoNotReady("JiraIssueRepository.Populate");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				foreach (BundleMetainfo bundle in bundleRepo.GetAll()) {
@@ -51,6 +55,7 @@ namespace SuperDumpService.Services {
 					}
 				}
 			} finally {
+				IsPopulated = true;
 				semaphoreSlim.Release();
 			}
 		}
@@ -94,6 +99,8 @@ namespace SuperDumpService.Services {
 
 		[Queue("jirastatus")]
 		public async Task RefreshAllIssuesAsync() {
+			await BlockIfBundleRepoNotReady("JiraIssueRepository.RefreshAllIssuesAsync");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				//Only update bundles with unresolved issues
@@ -120,6 +127,8 @@ namespace SuperDumpService.Services {
 
 		[Queue("jirastatus")]
 		public async Task ForceRefreshAllIssuesAsync() {
+			await BlockIfBundleRepoNotReady("JiraIssueRepository.ForceRefreshAllIssuesAsync");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				if (!bundleIssues.Any()) {
@@ -141,7 +150,9 @@ namespace SuperDumpService.Services {
 		}
 
 		[Queue("jirastatus")]
-		public void SearchAllBundleIssues(TimeSpan searchTimeSpan, bool force = false) {
+		public async Task SearchAllBundleIssues(TimeSpan searchTimeSpan, bool force = false) {
+			await BlockIfBundleRepoNotReady("JiraIssueRepository.SearchAllBundleIssues");
+
 			IEnumerable<BundleMetainfo> bundles = bundleRepo.GetAll().Where(bundle => DateTime.Now - bundle.Created <= searchTimeSpan);
 			int idx = 0;
 
@@ -154,6 +165,8 @@ namespace SuperDumpService.Services {
 
 		[Queue("jirastatus")]
 		public async Task SearchBundleIssuesAsync(IEnumerable<BundleMetainfo> bundles, bool force = false) {
+			await BlockIfBundleRepoNotReady("JiraIssueRepository.SearchBundleIssuesAsync");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				IEnumerable<BundleMetainfo> bundlesToSearch = force ? bundles : 
@@ -189,6 +202,17 @@ namespace SuperDumpService.Services {
 			}
 
 			await Task.WhenAll(fileStorageTasks);
+		}
+
+		/// <summary>
+		/// Blocks until bundleRepo is fully populated.
+		/// </summary>
+		private async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!bundleRepo.IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because bundleRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => bundleRepo.IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
+			}
 		}
 	}
 }

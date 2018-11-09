@@ -52,14 +52,14 @@ namespace SuperDump.Analyzers {
 		public void GetBlockingObjects() {
 			context.WriteLine(" --- Blocking objects in heap ---");
 			try {
-			if (this.context.Heap != null && this.context.Heap.CanWalkHeap) {
-				context.WriteLine("{0,-20} {1,-10} {2,-8} {3,-20} {4,-20}", "Address", "Type", "Locked", "Owners", "Pending");
-				foreach (BlockingObject obj in this.context.Heap.EnumerateBlockingObjects()) {
-					this.blockingObjects.Add(obj.ToSDModel());
+				if (this.context.Heap != null && this.context.Heap.CanWalkHeap) {
+					context.WriteLine("{0,-20} {1,-10} {2,-8} {3,-20} {4,-20}", "Address", "Type", "Locked", "Owners", "Pending");
+					foreach (BlockingObject obj in this.context.Heap.EnumerateBlockingObjects()) {
+						this.blockingObjects.Add(obj.ToSDModel());
+					}
+				} else {
+					context.WriteWarning("no heap information avaliable!");
 				}
-			} else {
-				context.WriteWarning("no heap information avaliable!");
-			}
 			} catch (NullReferenceException e) {
 				context.WriteWarning("NullReferenceException in PrintChainForThread. Known CLRMD bug (https://github.com/Microsoft/clrmd/issues/85)");
 			}
@@ -68,7 +68,7 @@ namespace SuperDump.Analyzers {
 		public void PrintMemoryStat() {
 			context.WriteLine("{0,-20} {1,-10} {2,-10} {3}", "MT", "Count", "TotalSize", "Class Name");
 			foreach (var memObj in from e in memDict
-									orderby e.Value.Size
+								   orderby e.Value.Size
 								   descending
 								   select e) {
 				context.WriteLine("{0,-20:x16} {1,-10} {2,-10} {3}",
@@ -110,12 +110,12 @@ namespace SuperDump.Analyzers {
 
 				// heap query for type and count them
 				foreach (var q in from obj in context.Heap.EnumerateObjectAddresses()
-								   let t = this.context.Heap.GetObjectType(obj)
-								   where t.Name.ToUpper().Contains(type)
-								   group obj by t.Name into g
-								   let count = g.Count()
-								   orderby count descending
-								   select new { Type = g.Key, Count = count }) {
+								  let t = this.context.Heap.GetObjectType(obj)
+								  where t.Name.ToUpper().Contains(type)
+								  group obj by t.Name into g
+								  let count = g.Count()
+								  orderby count descending
+								  select new { Type = g.Key, Count = count }) {
 					context.WriteLine("Type: {0,-120}, Count: {1}", q.Type, q.Count);
 				}
 			} else {
@@ -126,12 +126,12 @@ namespace SuperDump.Analyzers {
 		public void GetHttpObjects() {
 			if (this.context.Heap != null && this.context.Heap.CanWalkHeap) {
 				foreach (var q in from obj in this.context.Heap.EnumerateObjectAddresses()
-								   let t = this.context.Heap.GetObjectType(obj)
-								   where t.Name.ToUpper().Contains("HTTP")
-								   group obj by t.Name into g
-								   let count = g.Count()
-								   orderby count descending
-								   select new { Type = g.Key, Count = count }) {
+								  let t = this.context.Heap.GetObjectType(obj)
+								  where t.Name.ToUpper().Contains("HTTP")
+								  group obj by t.Name into g
+								  let count = g.Count()
+								  orderby count descending
+								  select new { Type = g.Key, Count = count }) {
 					context.WriteLine("Type: {0,-120}, Count: {1}", q.Type, q.Count);
 				}
 			} else {

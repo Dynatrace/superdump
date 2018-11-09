@@ -19,6 +19,16 @@
 } else {
 	<div class="wrapper">
 		<h2>Dump Id: @Model.DumpId</h2>
+		@if (!Model.IsRelationshipsPopulated) {
+			<div>
+				<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Similarity repository</strong> is being populated right now. Similarities might not be complete yet.
+			</div>
+		}
+		@if (!Model.IsJiraIssuesPopulated) {
+			<div>
+				<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Jira issue repository</strong> is populated right now. Linked jira issues might not be complete yet.
+			</div>
+		}
 
 		<!-- Page Content -->
 		<div id="content">
@@ -49,37 +59,41 @@
 					<br />
 				}
 
-				<div class="card">
-					<div class="card-header">Similar Dumps</div>
-					<div class="card-body">
-						@if (!Model.Similarities.Any()) {
-							<h6 class="card-subtitle mb-2 text-muted">No similar dumps found.</h6>
-						} else {
-							var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
-							<p class="card-text">@dupls.Count() similar dumps found.</p>
-							<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
-								Hide/Show
-							</button>
-							<div class="collapse show" id="collapseDuplicates">
-								<ul class="list-group list-group-flush">									
-									@foreach (var rel in dupls.OrderByDescending(x => x.Value + (Model.UseJiraIntegration && Model.SimilarDumpIssues.ContainsKey(x.Key.BundleId) ? 100 : 0))) {
-										<li class="list-group-item">
-											<div class="small">(@rel.Key.Created)</div>
-											<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
-											@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
-												<div class="mt-2 small">
-													<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
-												</div>
-											}
-										</li>
-									}
-								</ul>
-							</div>
-						}
+				@if (Model.SimilarityDetectionEnabled) {
+					<div class="card" style="z-index:999">
+						<div class="card-header">Similar Dumps</div>
+						<div class="card-body">
+							@if (!Model.Similarities.Any()) {
+								<h6 class="card-subtitle mb-2 text-muted">No similar dumps found.</h6>
+							} else {
+								var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
+								<p class="card-text">@dupls.Count() similar dumps found.</p>
+								<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
+									Hide/Show
+								</button>
+								<div class="collapse show" id="collapseDuplicates">
+									<ul class="list-group list-group-flush">
+										@foreach (var rel in dupls.OrderByDescending(x => x.Value + (Model.UseJiraIntegration && Model.SimilarDumpIssues.ContainsKey(x.Key.BundleId) ? 100 : 0))) {
+											<li class="list-group-item">
+												<div class="small">(@rel.Key.Created)</div>
+												<a asp-controller="Similarity" asp-action="CompareDumps" asp-route-bundleId1="@Model.BundleId" asp-route-dumpId1="@Model.DumpId" asp-route-bundleId2="@rel.Key.BundleId" asp-route-dumpId2="@rel.Key.DumpId">
+													<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span>
+												</a>
+												<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+												@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
+													<div class="mt-2 small">
+														<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
+													</div>
+												}
+											</li>
+										}
+									</ul>
+								</div>
+							}
+						</div>
 					</div>
-				</div>
+				}
 			</div>
-
 			<dl class="row courier-small compact">
 				@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
 					<dt class="col-sm-2 text-right">BundleFileName:</dt>
@@ -116,7 +130,7 @@
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-						   .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+						  .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
 							<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
 								<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
 								<dd class="col-sm-10">
@@ -135,10 +149,13 @@
 			</dl>
 
 			<div class="container-fluid">
-				@if (Model.HasAnalysisFailed) {
+				@if (!string.IsNullOrEmpty(Model.SDResultReadError)) {
+					<h2>Something went wrong when reading SDResult.</h2>
+					<pre>@Model.SDResultReadError</pre>
+				} else if (Model.DumpStatus == DumpStatus.Failed) {
 					<h2>Analysis failed with errors, no report avaliable.</h2>
 					<pre>Error: @Model.AnalysisError</pre>
-				} else if (Model.Result == null) {
+				} else if (Model.Result == null || Model.DumpStatus != DumpStatus.Finished) {
 					if (Model.CustomTextResult != null) {
 						@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
 							<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>

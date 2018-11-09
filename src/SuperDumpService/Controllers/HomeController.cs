@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -31,6 +30,7 @@ namespace SuperDumpService.Controllers {
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
 		private readonly SimilarityService similarityService;
+		private readonly ElasticSearchService elasticService;
 		private readonly ILogger<HomeController> logger;
 		private readonly IAuthorizationHelper authorizationHelper;
 		private readonly JiraIssueRepository jiraIssueRepository;
@@ -43,7 +43,8 @@ namespace SuperDumpService.Controllers {
 				IOptions<SuperDumpSettings> settings, 
 				PathHelper pathHelper, 
 				RelationshipRepository relationshipRepo, 
-				SimilarityService similarityService, 
+				SimilarityService similarityService,
+				ElasticSearchService elasticService,
 				ILoggerFactory loggerFactory, 
 				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository) {
@@ -56,6 +57,7 @@ namespace SuperDumpService.Controllers {
 			this.pathHelper = pathHelper;
 			this.relationshipRepo = relationshipRepo;
 			this.similarityService = similarityService;
+			this.elasticService = elasticService;
 			logger = loggerFactory.CreateLogger<HomeController>();
 			this.authorizationHelper = authorizationHelper;
 			this.jiraIssueRepository = jiraIssueRepository;
@@ -67,14 +69,12 @@ namespace SuperDumpService.Controllers {
 
 		public IActionResult About() {
 			ViewData["Message"] = "SuperDump";
-
 			return View();
 		}
 
 		[HttpGet]
 		public IActionResult Create() {
 			ViewData["Message"] = "New Analysis";
-
 			return View();
 		}
 
@@ -107,11 +107,14 @@ namespace SuperDumpService.Controllers {
 			if (bundleRepo.ContainsBundle(bundleId)) {
 				return View(new BundleViewModel(bundleRepo.Get(bundleId), GetDumpListViewModels(bundleId)));
 			}
-			throw new NotImplementedException($"bundleid '{bundleId}' does not exist in repository");
+			throw new Exception($"bundleid '{bundleId}' does not exist in repository");
 		}
 
 		private IEnumerable<DumpListViewModel> GetDumpListViewModels(string bundleId) {
-			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x, new Similarities(similarityService.GetSimilarities(x.Id).Result)));
+			if (relationshipRepo.IsPopulated) {
+				return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x, new Similarities(similarityService.GetSimilarities(x.Id).Result)));
+			}
+			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x));
 		}
 
 		[HttpPost]
@@ -134,30 +137,60 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public IActionResult Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false) {
-			var bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, GetDumpListViewModels(r.BundleId))).OrderByDescending(b => b.Created);
-
-			var filtered = Search(searchFilter, bundles);
-			filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
-
-			ViewData["searchFilter"] = searchFilter;
+		public IActionResult Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
 			logger.LogDefault("Overview", HttpContext);
-			return View(new OverviewViewModel {
-				All = bundles,
-				Filtered = filtered,
-				Paged = filtered.ToPagedList(pagesize, page)
-			});
+
+			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
+				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
+
+				// TODO CN: I need to change this to just a list of dumps, not a list of bundles
+
+				var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
+				var foundBundles = bundleInfos.Select(x => new BundleViewModel(x, GetDumpListViewModels(x.BundleId))).OrderByDescending(b => b.Created);
+				// TODO CN: we now show all dumps of bundles that have been found. needs fixing.
+
+				ViewData["elasticSearchFilter"] = elasticSearchFilter;
+				return View(new OverviewViewModel {
+					All = foundBundles,
+					Filtered = foundBundles, // filtered is wrong here
+					Paged = foundBundles.ToPagedList(pagesize, page),
+					KibanaUrl = KibanaUrl(),
+					IsPopulated = bundleRepo.IsPopulated,
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+				});
+			} else {
+				var bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, GetDumpListViewModels(r.BundleId))).OrderByDescending(b => b.Created);
+
+				var filtered = Search(searchFilter, bundles);
+				filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
+
+				ViewData["searchFilter"] = searchFilter;
+				return View(new OverviewViewModel {
+					All = bundles,
+					Filtered = filtered,
+					Paged = filtered.ToPagedList(pagesize, page),
+					KibanaUrl = KibanaUrl(),
+					IsPopulated = bundleRepo.IsPopulated,
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+				});
+			}
 		}
 
 		[HttpGet(Name = "Elastic")]
 		public IActionResult Elastic() {
+			logger.LogDefault("ElasticSearch", HttpContext);
+			return Redirect(KibanaUrl());
+		}
+
+		private string KibanaUrl() {
 			string portlessUrl = settings.ElasticSearchHost;
 			if (portlessUrl.Contains(':')) {
 				int colon = portlessUrl.LastIndexOf(':');
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
-			logger.LogDefault("ElasticSearch", HttpContext);
-			return Redirect(portlessUrl + ":5601");
+			return portlessUrl + ":5601";
 		}
 
 		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
@@ -200,6 +233,7 @@ namespace SuperDumpService.Controllers {
 		[HttpGet(Name = "Report")]
 		public async Task<IActionResult> Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
+			var id = new DumpIdentifier(bundleId, dumpId);
 
 			var bundleInfo = superDumpRepo.GetBundle(bundleId);
 			if (bundleInfo == null) {
@@ -215,9 +249,18 @@ namespace SuperDumpService.Controllers {
 
 			logger.LogDumpAccess("Report", HttpContext, bundleInfo, dumpId);
 
-			SDResult res = await superDumpRepo.GetResult(bundleId, dumpId);
+			string sdReadError = string.Empty;
+			SDResult res = null;
+			try {
+				res = await superDumpRepo.GetResultAndThrow(id);
+			} catch (Exception e) {
+				sdReadError = e.ToString();
+			}
 
-			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps = (await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
+			// don't add relationships when the repo is not ready yet. it might take some time with large amounts.
+			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps =
+				!relationshipRepo.IsPopulated ? Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>() :
+				(await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
 
 			return base.View(new ReportViewModel(bundleId, dumpId) {
@@ -225,22 +268,25 @@ namespace SuperDumpService.Controllers {
 				DumpFileName = dumpInfo.DumpFileName,
 				Result = res,
 				CustomProperties = Utility.Sanitize(bundleInfo.CustomProperties),
-				HasAnalysisFailed = dumpInfo.Status == DumpStatus.Failed,
 				TimeStamp = dumpInfo.Created,
 				Files = dumpRepo.GetFileNames(bundleId, dumpId),
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
 				PointerSize = res == null ? 8 : (res.SystemContext?.ProcessArchitecture == "X86" ? 8 : 12),
 				CustomTextResult = await ReadCustomTextResult(dumpInfo),
-				SDResultReadError = string.Empty,
+				SDResultReadError = sdReadError,
 				DumpType = dumpInfo.DumpType,
 				RepositoryUrl = settings.RepositoryUrl,
 				InteractiveGdbHost = settings.InteractiveGdbHost,
+				SimilarityDetectionEnabled = settings.SimilarityDetectionEnabled,
 				Similarities = similarDumps,
 				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
-				MainBundleJiraIssues = !settings.UseJiraIntegration ? null : await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
-				SimilarDumpIssues = !settings.UseJiraIntegration ? null : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
-				UseJiraIntegration = settings.UseJiraIntegration
+				MainBundleJiraIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? Enumerable.Empty<JiraIssueModel>() : await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
+				SimilarDumpIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? new Dictionary<string, IEnumerable<JiraIssueModel>>() : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
+				UseJiraIntegration = settings.UseJiraIntegration,
+				DumpStatus = dumpInfo.Status,
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
 			});
 		}
 

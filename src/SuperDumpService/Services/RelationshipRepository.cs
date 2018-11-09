@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
@@ -15,13 +17,19 @@ namespace SuperDumpService.Services {
 		private readonly IDictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>> relationShips = new Dictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>>();
 		private readonly RelationshipStorageFilebased relationshipStorage;
 		private readonly DumpRepository dumpRepo;
+		private readonly IOptions<SuperDumpSettings> settings;
+		public bool IsPopulated { get; private set; } = false;
 
-		public RelationshipRepository(RelationshipStorageFilebased relationshipStorage, DumpRepository dumpRepo) {
+		public RelationshipRepository(RelationshipStorageFilebased relationshipStorage, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) {
 			this.relationshipStorage = relationshipStorage;
 			this.dumpRepo = dumpRepo;
+			this.settings = settings;
 		}
 
 		public async Task Populate() {
+			if (!settings.Value.SimilarityDetectionEnabled) return;
+			await BlockIfBundleRepoNotReady("RelationshipRepository.Populate");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				foreach (var dump in dumpRepo.GetAll()) {
@@ -35,11 +43,14 @@ namespace SuperDumpService.Services {
 					}
 				}
 			} finally {
+				IsPopulated = true;
 				semaphoreSlim.Release();
 			}
 		}
 
-		public async Task UpdateSimilarity(DumpIdentifier dumpA, DumpIdentifier dumpB, CrashSimilarity similarity) {
+		public async Task UpdateSimilarity(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
+			if (!settings.Value.SimilarityDetectionEnabled) return;
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				await UpdateSimilarity0(dumpA, dumpB, similarity);
@@ -50,7 +61,7 @@ namespace SuperDumpService.Services {
 		}
 
 
-		private async Task UpdateSimilarity0(DumpIdentifier dumpA, DumpIdentifier dumpB, CrashSimilarity similarity) {
+		private async Task UpdateSimilarity0(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
 			if (relationShips.TryGetValue(dumpA, out IDictionary<DumpIdentifier, double> relationShip)) {
 				await UpdateRelationship(dumpA, dumpB, similarity, relationShip);
 			} else {
@@ -60,8 +71,8 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private async Task UpdateRelationship(DumpIdentifier dumpA, DumpIdentifier dumpB, CrashSimilarity similarity, IDictionary<DumpIdentifier, double> relationShip) {
-			relationShip[dumpB] = similarity.OverallSimilarity;
+		private async Task UpdateRelationship(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity, IDictionary<DumpIdentifier, double> relationShip) {
+			relationShip[dumpB] = similarity;
 
 			// update storage
 			await relationshipStorage.StoreRelationships(dumpA, relationShip);
@@ -105,6 +116,16 @@ namespace SuperDumpService.Services {
 				semaphoreSlim.Release();
 			}
 		}
-	}
 
+		/// <summary>
+		/// Blocks until bundleRepo is fully populated.
+		/// </summary>
+		private async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!dumpRepo.IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because dumpRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => dumpRepo.IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
+			}
+		}
+	}
 }

@@ -1,11 +1,15 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Elasticsearch.Net;
+using Microsoft.Extensions.Options;
 using Nest;
 using SuperDump.Models;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,6 +43,10 @@ namespace SuperDumpService.Services {
 			}
 		}
 
+		private IEnumerable<ElasticSDResult> GetBatch(IEnumerable<ElasticSDResult> list, int pageNumber) {
+			return list.Skip(pageNumber * 1000).Take(1000);
+		}
+
 		[Hangfire.Queue("elasticsearch", Order = 3)]
 		public async Task PushAllResultsAsync(bool clean) {
 			if (elasticClient == null) {
@@ -48,7 +56,19 @@ namespace SuperDumpService.Services {
 			if (clean) {
 				DeleteIndex();
 				CreateIndex();
+
+				// since we are clean, we can do everything in one bulk
+				var dumps = dumpRepo.GetAll().OrderByDescending(x => x.Created);
+				foreach (var dumpsBatch in dumps.Batch(100)) {
+					var results = (await Task.WhenAll(dumpsBatch.Select(async x =>
+						new { res = await dumpRepo.GetResult(x.Id), bundleInfo = bundleRepo.Get(x.BundleId), dumpInfo = x })))
+						.Where(x => x.res != null);
+					Console.WriteLine($"pushing {results.Count()} results into elasticsearch");
+					await PushBulk(results.Select(x => ElasticSDResult.FromResult(x.res, x.bundleInfo, x.dumpInfo, pathHelper)));
+				}
+				return;
 			}
+
 			IEnumerable<string> documentIds = GetAllDocumentIds();
 
 			int nErrorsLogged = 0;
@@ -56,7 +76,9 @@ namespace SuperDumpService.Services {
 			if (bundles == null) {
 				throw new InvalidOperationException("Bundle repository must be populated before pushing data into ES.");
 			}
-			// Note that this ES push can be improved significantly by using bulk operations to create the documents
+
+			// In order to check if a dump has already been added, we go through them all and add one at the time
+			// There is potential to optimize this and still do a bulk add.
 			foreach (BundleMetainfo bundle in bundles) {
 				var dumps = dumpRepo.Get(bundle.BundleId);
 				if (dumps == null) {
@@ -78,15 +100,61 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
-			if (elasticClient != null) {
-				new Nest.CreateRequest<ElasticSDResult>(RESULT_IDX);
-				var response = await elasticClient.CreateAsync(new CreateDescriptor<ElasticSDResult>(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper)));
-				if (response.Result != Result.Created) {
-					return false;
-				}
-			}
+		public async Task<bool> PushBulk(IEnumerable<ElasticSDResult> results) {
+			if (elasticClient == null) return false;
+			var descriptor = new BulkDescriptor();
+			descriptor.CreateMany<ElasticSDResult>(results);
+			Console.WriteLine($"Inserting {results.Count()} superdump results into ES...");
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var result = await elasticClient.BulkAsync(descriptor);
+
+			sw.Stop();
+			Console.WriteLine($"Finished inserting in {sw.Elapsed}");
 			return true;
+		}
+
+		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
+			try {
+				if (elasticClient != null && result != null) {
+					new Nest.CreateRequest<ElasticSDResult>(RESULT_IDX);
+					var response = await elasticClient.CreateAsync(new CreateDescriptor<ElasticSDResult>(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper)));
+
+					if (response.Result != Result.Created) {
+						return false;
+					}
+				}
+				return true;
+			} catch (Exception e) {
+				Console.WriteLine($"PushResultAsync failed for {dumpInfo.Id} with exception: {e}");
+				return false;
+			}
+		}
+
+		internal IEnumerable<ElasticSDResult> SearchDumpsByJson(string jsonQuery) {
+			var result = elasticClient.LowLevel.Search<SearchResponse<dynamic>>(jsonQuery);
+			if (!result.IsValid) {
+				throw new Exception($"elastic search query failed: {result.DebugInformation}");
+			}
+			foreach (var res in result.Documents) {
+				ElasticSDResult deserialized = null;
+				try {
+					string str = Convert.ToString(res);
+					using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(str))) {
+						deserialized = elasticClient.RequestResponseSerializer.Deserialize<ElasticSDResult>(stream);
+					}
+				} catch (Exception e) {
+					Console.WriteLine("error deserializing elasticsearch result");
+				}
+				if (deserialized != null) yield return deserialized;
+			}
+			//SearchRequest searchRequest;
+			//using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonQuery))) {
+			//	searchRequest = elasticClient.RequestResponseSerializer.Deserialize<SearchRequest>(stream);
+			//}
+			//var result = elasticClient.Search<ElasticSDResult>(searchRequest);
+			//return Enumerable.Empty<ElasticSDResult>();
 		}
 
 		private bool IndexExists() {
@@ -108,7 +176,7 @@ namespace SuperDumpService.Services {
 				var result = elasticClient.Search<ElasticSDResult>(s =>
 					s.Source(src => src.Includes(e => e.Field(p => p.Id).Field(p => p.BundleId).Field(p => p.DumpId)))
 					.Query(q => q.MatchAll())
-					.From(i*10000).Size(10000));
+					.From(i * 10000).Size(10000));
 				if (result.Documents.Count == 0) {
 					break;
 				}

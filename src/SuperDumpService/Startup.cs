@@ -162,8 +162,7 @@ namespace SuperDumpService {
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns, IAuthorizationHelper authorizationHelper) {
-			app.ApplicationServices.GetService<BundleRepository>().Populate();
-			app.ApplicationServices.GetService<DumpRepository>().Populate();
+			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
 			if (settings.Value.UseJiraIntegration) {

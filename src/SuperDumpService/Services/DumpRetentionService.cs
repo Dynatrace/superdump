@@ -22,7 +22,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public void StartService() {
-			if(string.IsNullOrEmpty(settings.DumpRetentionCron) || settings.DumpRetentionDays <= 0) {
+			if (string.IsNullOrEmpty(settings.DumpRetentionCron) || settings.DumpRetentionDays <= 0) {
 				return;
 			}
 			RecurringJob.AddOrUpdate(() => RemoveOldDumps(), settings.DumpRetentionCron, null, "retention");
@@ -30,11 +30,11 @@ namespace SuperDumpService.Services {
 
 		[Hangfire.Queue("retention", Order = 2)]
 		public void RemoveOldDumps() {
-			foreach(var bundle in bundleRepo.GetAll()) {
+			foreach (var bundle in bundleRepo.GetAll()) {
 				if (bundle == null) continue;
-				foreach(var dump in dumpRepo.Get(bundle.BundleId)) {
+				foreach (var dump in dumpRepo.Get(bundle.BundleId)) {
 					if (dump == null) continue;
-					if(dump.Created < DateTime.Now.Subtract(TimeSpan.FromDays(settings.DumpRetentionDays))) {
+					if (dump.Created < DateTime.Now.Subtract(TimeSpan.FromDays(settings.DumpRetentionDays))) {
 						RemoveOldDumps(dump);
 					}
 				}
@@ -47,17 +47,17 @@ namespace SuperDumpService.Services {
 		/// </summary>
 		private void RemoveOldDumps(DumpMetainfo dump) {
 			string dumpDirectory = pathHelper.GetDumpDirectory(dump.BundleId, dump.DumpId);
-			if(!Directory.Exists(dumpDirectory)) {
+			if (!Directory.Exists(dumpDirectory)) {
 				return;
 			}
 			Console.WriteLine($"[DumpRetention] Deleting dump {dump.BundleId}/{dump.DumpId}");
 			// Delete all directories in the dump directory
-			foreach(var subdir in Directory.EnumerateDirectories(dumpDirectory)) {
+			foreach (var subdir in Directory.EnumerateDirectories(dumpDirectory)) {
 				Directory.Delete(subdir, true);
 			}
 			// Delete all dump files in the dump directory
-			foreach(var file in Directory.EnumerateFiles(dumpDirectory)) {
-				if(file.EndsWith(".core.gz") || file.EndsWith("libs.tar.gz") || file.EndsWith(".dmp")) {
+			foreach (var file in Directory.EnumerateFiles(dumpDirectory)) {
+				if (file.EndsWith(".core.gz") || file.EndsWith("libs.tar.gz") || file.EndsWith(".dmp")) {
 					File.Delete(file);
 				}
 			}

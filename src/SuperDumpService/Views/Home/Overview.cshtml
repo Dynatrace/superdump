@@ -5,62 +5,85 @@
 <h2>All dumps</h2>
 <div class="container">
 
-	<form asp-action="Overview" method="get">
-		<div class="form-actions no-color">
-			<p>
-				<input type="text" name="searchFilter" value="@ViewData["searchFilter"]" />
-				<input type="submit" value="Search" class="btn" />
-				@if (!string.IsNullOrEmpty(ViewData["searchFilter"] as string)) {
-					<a asp-action="Overview">Clear search</a>
-				}
-			</p>
-			<p>Showing @Model.Filtered.Sum(b => b.DumpInfos.Count()) dumps.</p>
+	<div class="panel panel-default">
+
+		@{
+			bool isSimpleFilterSet = !string.IsNullOrEmpty(ViewData["searchFilter"] as string);
+			bool isElasticFilterSet = !string.IsNullOrEmpty(ViewData["elasticSearchFilter"] as string);
+
+			var simpleSearchClasses = (isSimpleFilterSet || !isElasticFilterSet) ? "active show" : string.Empty;
+			var elasticSearchClasses = isElasticFilterSet ? "active show" : string.Empty;
+		}
+
+		<div class="panel-heading">
+			<ul class="nav nav-tabs">
+				<li class="nav-item"><a class="nav-link @simpleSearchClasses" href="#simplesearch" data-toggle="tab">Simple Search</a></li>
+				<li class="nav-item"><a class="nav-link @elasticSearchClasses" href="#elasticsearch" data-toggle="tab">Elasticsearch</a></li>
+			</ul>
 		</div>
-	</form>
+		<div class="panel-body">
+			<div class="tab-content">
+				<div class="tab-pane fade @simpleSearchClasses" id="simplesearch">
+					<form asp-action="Overview" method="get">
+						<div class="form-actions no-color">
+							<p>
+								<input type="text" name="searchFilter" class="form-control float-left w-75 p-3" value="@ViewData["searchFilter"]" />
+								<input type="hidden" name="elasticSearch" value="false" />
+								<input type="submit" value="Search" class="btn btn-primary" />
+								@if (!string.IsNullOrEmpty(ViewData["searchFilter"] as string)) {
+									<a asp-action="Overview">Clear search</a>
+								}
+							</p>
+						</div>
+					</form>
 
-	<table class="table table-striped table-word-break">
-		<thead>
-			<tr>
-				<th style="width: 80px;">Bundle ID</th>
-				<th style="">Dumps</th>
-				<th style="">Properties</th>
-				<th style="width: 80px;">Status</th>
-				<th style="width: 90px;">Created</th>
-			</tr>
-		</thead>
-		<tbody>
-			@foreach (var bundle in @Model.Paged.OrderByDescending(bundle => bundle.Created)) {
-				<tr>
-					<td>
-						@Html.ActionLink(bundle.BundleId, "BundleCreated", "Home", new { bundleId = bundle.BundleId })
-					</td>
-					<td>
-						<ul class="flat">
-							@foreach (var dump in bundle.DumpInfos) {
-								<li>
-									<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.DumpInfo.DumpId (@System.IO.Path.GetFileName(dump.DumpInfo.DumpFileName))</a>
-									@if (dump.Similarities.AboveThresholdSimilarities().Any()) {
-										<span>(@dump.Similarities.AboveThresholdSimilarities().Count() duplicates)</span>
-									}
-								</li>
-							}
-						</ul>
-					</td>
-					<td>
-						<ul class="flat">
-							@foreach (var customProp in bundle.CustomProperties) {
-								<li>
-									<strong>@customProp.Key:</strong>
-									<possible-link href="@customProp.Value" is-external="true">@customProp.Value</possible-link>
-								</li>
-							}
-						</ul>
-					</td>
-					<td>@bundle.Status.ToString()</td>
-					<td>@bundle.Created</td>
-				</tr>}
-		</tbody>
-	</table>
-
-	<pager source="@Model.Paged" />
+				</div>
+				<div class="tab-pane fade @elasticSearchClasses" id="elasticsearch">
+					<form asp-action="Overview" method="get">
+						<div class="form-group">
+							<label for="searchFilter">Elasticsearch query:</label>
+							<textarea class="form-control courier-small" rows="10" id="elasticSearchFilter" name="elasticSearchFilter">
+								@if (string.IsNullOrEmpty(ViewData["elasticSearchFilter"] as string)) {
+<text>{
+    "query": {
+        "wildcard": {
+            "loadedModules": "clr*"
+        }
+    },
+    "size": "1000"
+}
+</text>
+								} else {
+									@ViewData["elasticSearchFilter"]
+								}
+							</textarea>
+						</div>
+						<div class="alert alert-light" role="alert">
+							You can run an arbitrary <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_introducing_the_query_language.html">Elastic Search query language</a> here. To see which fields are enabled, take a look via <a href="@Model.KibanaUrl/app/kibana#/discover?_g=(time:(from:now-1y,mode:quick,to:now))">Kibana</a>.
+						</div>
+						<div class="form-actions no-color">
+							<input type="submit" value="Search" class="btn btn-primary" />
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	@if (!Model.IsPopulated) {
+		<div>
+			<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Bundles/Dumps</strong> are being populated right now. List is not complete yet.
+		</div>
+	}
+	@if (!Model.IsRelationshipsPopulated) {
+		<div>
+			<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Similarity repository</strong> is being populated right now. Similarities might not be complete yet.
+		</div>
+	}
+	@if (!Model.IsJiraIssuesPopulated) {
+		<div>
+			<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Jira issue repository</strong> is populated right now. Linked jira issues might not be complete yet.
+		</div>
+	}
+	<p>Showing @Model.Filtered.Sum(b => b.DumpInfos.Count()) dumps.</p>
+	@{Html.RenderPartial("_DumpList", Model);}
 </div>

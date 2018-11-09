@@ -26,7 +26,7 @@ namespace SuperDump {
 			if (target.ClrVersions == null || target.ClrVersions.Count <= 0) {
 				throw new FileNotFoundException("No CLR was loaded in that process!");
 			}
-			ClrInfo version = target.ClrVersions.MaxBy(v => v.Version.ToString());
+			ClrInfo version = target.ClrVersions.MaxBy(v => v.Version.ToString()).First();
 
 			// try to make sure we have the right Dac to load.  Note we are doing this manually for
 			// illustration.  Simply calling version.CreateRuntime with no arguments does the same steps.

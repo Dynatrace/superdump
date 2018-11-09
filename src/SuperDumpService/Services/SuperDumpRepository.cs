@@ -51,8 +51,12 @@ namespace SuperDumpService.Services {
 			pathHelper.PrepareDirectories();
 		}
 
-		public async Task<SDResult> GetResult(string bundleId, string dumpId) {
-			return await dumpRepo.GetResult(bundleId, dumpId);
+		public async Task<SDResult> GetResultAndThrow(DumpIdentifier id) {
+			return await dumpRepo.GetResultAndThrow(id);
+
+		}
+		public async Task<SDResult> GetResult(DumpIdentifier id) {
+			return await dumpRepo.GetResult(id);
 		}
 
 		public bool ContainsBundle(string bundleId) {
@@ -164,7 +168,7 @@ namespace SuperDumpService.Services {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
 			try {
 				using (TempDirectoryHandle tempDir = await downloadService.Download(bundleId, url, filename)) {
-					if(!SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
+					if (!SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
 						// duplication detected
 						return;
 					}
@@ -206,6 +210,8 @@ namespace SuperDumpService.Services {
 			}
 
 			WipeAllExceptDump(bundleId, dumpId);
+
+			dumpRepo.ResetDumpTyp(new DumpIdentifier(bundleId, dumpId));
 			var dumpInfo = dumpRepo.Get(bundleId, dumpId);
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
 		}

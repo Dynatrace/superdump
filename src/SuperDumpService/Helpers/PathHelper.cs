@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using SuperDumpService.Models;
 
 namespace SuperDumpService.Helpers {
 	public class PathHelper {
@@ -42,8 +43,16 @@ namespace SuperDumpService.Helpers {
 			return Path.GetFullPath(workingDir);
 		}
 
+		public string GetDumpDirectory(DumpIdentifier id) {
+			return Path.Combine(GetBundleDirectory(id.BundleId), id.DumpId);
+		}
+
 		public string GetDumpDirectory(string bundleId, string dumpId) {
 			return Path.Combine(GetBundleDirectory(bundleId), dumpId);
+		}
+
+		internal string GetDumpMiniInfoPath(DumpIdentifier id) {
+			return Path.Combine(GetDumpDirectory(id), "mini-info.json");
 		}
 
 		public string GetBundleDirectory(string bundleId) {
