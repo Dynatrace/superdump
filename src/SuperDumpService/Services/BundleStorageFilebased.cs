@@ -24,8 +24,9 @@ namespace SuperDumpService.Services {
 		public async Task<IEnumerable<BundleMetainfo>> ReadBundleMetainfos() {
 			var list = new List<BundleMetainfo>();
 			pathHelper.PrepareDirectories();
-			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetWorkingDir())) {
-				var bundleId = new DirectoryInfo(dir).Name;
+			var baseDir = new DirectoryInfo(pathHelper.GetWorkingDir());
+			foreach (var dir in baseDir.GetDirectories().OrderByDescending(x => x.CreationTime)) {
+				var bundleId = dir.Name;
 				var metainfoFilename = pathHelper.GetBundleMetadataPath(bundleId);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist
@@ -37,10 +38,10 @@ namespace SuperDumpService.Services {
 			}
 			return list;
 		}
-		
+
 		private static BundleMetainfo ReadMetainfoFile(string filename) {
 			try {
-			return JsonConvert.DeserializeObject<BundleMetainfo>(File.ReadAllText(filename));
+				return JsonConvert.DeserializeObject<BundleMetainfo>(File.ReadAllText(filename));
 			} catch (Exception e) {
 				Console.Error.WriteLine($"Error reading bundle metadata '{filename}': {e.Message}");
 				return null;

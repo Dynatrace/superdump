@@ -50,7 +50,7 @@ namespace SuperDumpService.Controllers.Api {
 			logger.LogBundleAccess("Api get Bundle", HttpContext, bundleInfo);
 			var resultList = new List<SDResult>();
 			foreach (var dumpInfo in dumpRepo.Get(bundleId)) {
-				resultList.Add(await superDumpRepo.GetResult(bundleId, dumpInfo.DumpId));
+				resultList.Add(await superDumpRepo.GetResult(dumpInfo.Id));
 			}
 			return Content(JsonConvert.SerializeObject(resultList, Formatting.Indented, new JsonSerializerSettings {
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore

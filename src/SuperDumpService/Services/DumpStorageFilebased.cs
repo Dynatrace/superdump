@@ -50,6 +50,14 @@ namespace SuperDumpService.Services {
 			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
+		internal bool MiniInfoExists(DumpIdentifier id) {
+			return File.Exists(pathHelper.GetDumpMiniInfoPath(id));
+		}
+
+		internal async Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id) {
+			return JsonConvert.DeserializeObject<DumpMiniInfo>(await File.ReadAllTextAsync(pathHelper.GetDumpMiniInfoPath(id)));
+		}
+
 		private async Task CreateMetainfoForCompat(string bundleId, string dumpId) {
 			var metainfo = new DumpMetainfo() {
 				BundleId = bundleId,
@@ -68,6 +76,15 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<SDResult> ReadResults(string bundleId, string dumpId) {
+			try {
+				return await ReadResultsAndThrow(bundleId, dumpId);
+			} catch (Exception e) {
+				Console.Error.WriteLine(e.Message);
+				return null;
+			}
+		}
+
+		public async Task<SDResult> ReadResultsAndThrow(string bundleId, string dumpId) {
 			var filename = pathHelper.GetJsonPath(bundleId, dumpId);
 			if (!File.Exists(filename)) {
 				// fallback for older dumps
@@ -80,8 +97,17 @@ namespace SuperDumpService.Services {
 					new SDSystemContextConverter(), new SDModuleConverter(), new SDCombinedStackFrameConverter(), new SDTagConverter());
 			} catch (Exception e) {
 				string error = $"could not deserialize {filename}: {e.Message}";
-				Console.WriteLine(error);
-				return null;
+				throw new Exception(error, e);
+			}
+		}
+
+		public void WriteResult(DumpIdentifier id, SDResult result) {
+			string filename = pathHelper.GetJsonPath(id.BundleId, id.DumpId);
+			try {
+				result.WriteResultToJSONFile(filename);
+			} catch (Exception e) {
+				string error = $"could not write result for {id} exception {e.Message}";
+				Console.Error.WriteLine(error);
 			}
 		}
 
@@ -109,6 +135,10 @@ namespace SuperDumpService.Services {
 				throw new DirectoryAlreadyExistsException("Cannot create '{dir}'. It already exists.");
 			}
 			Directory.CreateDirectory(dir);
+		}
+
+		internal async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
+			await File.WriteAllTextAsync(pathHelper.GetDumpMiniInfoPath(id), JsonConvert.SerializeObject(miniInfo, Formatting.None));
 		}
 
 		internal void Store(DumpMetainfo dumpInfo) {
@@ -141,10 +171,18 @@ namespace SuperDumpService.Services {
 				FileName = fileInfo.Name
 			};
 			if (Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
-				fileEntry.Type = SDFileType.SuperDumpData;
+				fileEntry.Type = SDFileType.SuperDumpMetaData;
 				return fileEntry;
 			}
 			if (Path.GetFileName(pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
+				fileEntry.Type = SDFileType.SuperDumpMetaData;
+				return fileEntry;
+			}
+			if (Path.GetFileName(pathHelper.GetDumpMiniInfoPath(dumpInfo.Id)) == fileInfo.Name) {
+				fileEntry.Type = SDFileType.SuperDumpMetaData;
+				return fileEntry;
+			}
+			if (Path.GetFileName(pathHelper.GetRelationshipsPath(dumpInfo.BundleId, dumpInfo.DumpId)) == fileInfo.Name) {
 				fileEntry.Type = SDFileType.SuperDumpMetaData;
 				return fileEntry;
 			}
@@ -176,7 +214,6 @@ namespace SuperDumpService.Services {
 				fileEntry.Type = SDFileType.LinuxLibraries;
 				return fileEntry;
 			}
-
 			// can't figure out filetype
 			fileEntry.Type = SDFileType.Other;
 			return fileEntry;

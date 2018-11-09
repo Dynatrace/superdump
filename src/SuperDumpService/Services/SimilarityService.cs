@@ -29,10 +29,12 @@ namespace SuperDumpService.Services {
 	public class SimilarityService {
 		private readonly DumpRepository dumpRepo;
 		private readonly RelationshipRepository relationShipRepo;
+		private readonly IOptions<SuperDumpSettings> settings;
 
-		public SimilarityService(DumpRepository dumpRepo, RelationshipRepository relationShipRepository) {
+		public SimilarityService(DumpRepository dumpRepo, RelationshipRepository relationShipRepository, IOptions<SuperDumpSettings> settings) {
 			this.dumpRepo = dumpRepo;
 			this.relationShipRepo = relationShipRepository;
+			this.settings = settings;
 		}
 
 		public async Task<IDictionary<DumpIdentifier, double>> GetSimilarities(DumpIdentifier dumpId) {
@@ -44,6 +46,8 @@ namespace SuperDumpService.Services {
 		/// if force==false, only relationships that have not been analyzed yet are run again.
 		/// </summary>
 		public void TriggerSimilarityAnalysisForAllDumps(bool force, DateTime timeFrom) {
+			if (!settings.Value.SimilarityDetectionEnabled) return;
+
 			Console.WriteLine($"Triggering similarity analysis for all dumps new thatn {timeFrom}. force={force}");
 			// start analysis with newest dump
 			// for every dump, only analyze newer ones.
@@ -54,10 +58,14 @@ namespace SuperDumpService.Services {
 		}
 
 		public void ScheduleSimilarityAnalysis(DumpIdentifier dumpId, bool force, DateTime timeFrom) {
+			if (!settings.Value.SimilarityDetectionEnabled) return;
+
 			ScheduleSimilarityAnalysis(dumpRepo.Get(dumpId), force, timeFrom);
 		}
 		
 		public void ScheduleSimilarityAnalysis(DumpMetainfo dumpInfo, bool force, DateTime timeFrom) {
+			if (!settings.Value.SimilarityDetectionEnabled) return;
+
 			// schedule actual analysis
 			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, force, timeFrom));
 		}
@@ -70,12 +78,36 @@ namespace SuperDumpService.Services {
 			await relationShipRepo.WipeAll();
 		}
 
+		public async Task<DumpMiniInfo> GetOrCreateMiniInfo(DumpIdentifier id) {
+			if (dumpRepo.MiniInfoExists(id)) {
+				var loadedMiniInfo = await dumpRepo.GetMiniInfo(id);
+				if (loadedMiniInfo.DumpSimilarityInfoVersion == CrashSimilarity.MiniInfoVersion) {
+					return loadedMiniInfo;
+				}
+			}
+			
+			// no mini-info exists yet, or version is outdated. re-create.
+			var result = await dumpRepo.GetResult(id);
+			var miniInfo =
+				(result == null)
+				? new DumpMiniInfo() // just store an empty mini-info if result is null
+				: CrashSimilarity.SDResultToMiniInfo(result);
+			await dumpRepo.StoreMiniInfo(id, miniInfo);
+			return miniInfo;
+		}
+
 		[Hangfire.Queue("similarityanalysis", Order = 3)]
 		public async Task CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
 			try {
 				var swTotal = new Stopwatch();
 				swTotal.Start();
-				var resultA = await dumpRepo.GetResult(dumpA.BundleId, dumpA.DumpId);
+				if (!dumpRepo.IsPopulated) {
+					Console.WriteLine($"CalculateSimilarity for {dumpA.Id} is blocked because dumpRepo is not yet fully populated...");
+					await Utility.BlockUntil(() => dumpRepo.IsPopulated);
+					Console.WriteLine($"...continuing CalculateSimilarity for {dumpA.Id}.");
+				}
+
+				var resultA = await GetOrCreateMiniInfo(dumpA.Id);
 
 				if (resultA == null) return; // no results found. do nothing.
 
@@ -88,19 +120,25 @@ namespace SuperDumpService.Services {
 					i--;
 					sw.Start();
 					if (!force) {
-						if (await relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id) != 0) continue; // relationship already exists. skip!
+						var existingSimilarity = await relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id);
+						if (existingSimilarity != 0) {
+							// relationship already exists. skip!
+							// but make sure the relationship is stored bi-directional
+							await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, existingSimilarity);
+							continue; 
+						}
 					}
 
 					if (!PreSelectOnMetadata(dumpA, dumpB)) continue;
-					var resultB = await dumpRepo.GetResult(dumpB.BundleId, dumpB.DumpId);
+					var resultB = await GetOrCreateMiniInfo(dumpB.Id);
 					if (resultB == null) continue;
 					if (!PreSelectOnResults(resultA, resultB)) continue;
 
 					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(resultA, resultB);
 
 					// only store value if above a certain threshold to avoid unnecessary disk writes
-					if (crashSimilarity.OverallSimilarity > 0.2) {
-						await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity);
+					if (crashSimilarity.OverallSimilarity > 0.6) {
+						await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity.OverallSimilarity);
 					}
 					sw.Stop();
 					//Console.WriteLine($"CalculateSimilarity.Finished for {dumpA}/{dumpB} ({i} to go...); (elapsed: {sw.Elapsed}) (TID:{Thread.CurrentThread.ManagedThreadId})");
@@ -119,10 +157,9 @@ namespace SuperDumpService.Services {
 				&& dumpA.DumpType == dumpB.DumpType; // don't compare windows and linux dumps
 		}
 
-		private bool PreSelectOnResults(SDResult resultA, SDResult resultB) {
+		private bool PreSelectOnResults(DumpMiniInfo resultA, DumpMiniInfo resultB) {
 			return true; // no ideas on how to pre-select here yet.
 		}
-
 	}
 
 	public static class HangfireExtensions {

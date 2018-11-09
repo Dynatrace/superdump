@@ -23,7 +23,7 @@ namespace SuperDumpService.Services {
 
 		public JiraApiService(IOptions<SuperDumpSettings> settings) {
 			this.settings = settings.Value.JiraIntegrationSettings;
-
+			if (this.settings == null) return;
 			client = new HttpClient();
 			client.DefaultRequestHeaders.Accept.Clear();
 			client.DefaultRequestHeaders.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(JsonMediaType));

@@ -2,10 +2,9 @@
 @{
 	ViewData["Title"] = "Login";
 }
-
-<body>
+<h2>Login</h2>
+<p>
 	@using (Html.BeginForm("Login", "Login", FormMethod.Post)) {
-		<br />
 		if (!string.IsNullOrEmpty(Model.AlertMessage)) {
 			<div class=" alert alert-danger">@Model.AlertMessage</div>
 		}
@@ -27,5 +26,4 @@
 
 		@Html.AntiForgeryToken()
 	}
-</body>
-
+</p>

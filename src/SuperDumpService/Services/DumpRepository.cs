@@ -14,39 +14,33 @@ namespace SuperDumpService.Services {
 	/// Stores dump metainfos in memory. Also delegates to persistent storage.
 	/// </summary>
 	public class DumpRepository {
-		private readonly object sync = new object();
 		private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>> dumps = new ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>>();
+		private readonly ConcurrentDictionary<DumpIdentifier, DumpMiniInfo> miniInfosLazyCache = new ConcurrentDictionary<DumpIdentifier, DumpMiniInfo>();
 		private readonly DumpStorageFilebased storage;
-		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
 
-		public DumpRepository(DumpStorageFilebased storage, BundleRepository bundleRepo, PathHelper pathHelper) {
+		public bool IsPopulated { get; private set; }
+
+		public DumpRepository(DumpStorageFilebased storage, PathHelper pathHelper) {
 			this.storage = storage;
-			this.bundleRepo = bundleRepo;
 			this.pathHelper = pathHelper;
 		}
 
-		public void Populate() {
-			var sw = new Stopwatch();
-			sw.Start();
-			foreach(var bundle in bundleRepo.GetAll()) {
-				PopulateForBundle(bundle.BundleId);
-			}
-			sw.Stop();
-			Console.WriteLine($"Finished populating DumpRepository in {sw.Elapsed}");
+		// only BundleRepository is supposed to call this!
+		public void SetIsPopulated() {
+			IsPopulated = true;
 		}
 
-		public void PopulateForBundle(string bundleId) {
-			lock (sync) {
-				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
-				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId).Result) {
-					if (dumpInfo == null) {
-						Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
-						continue;
-					}
-					dumps[bundleId][dumpInfo.DumpId] = dumpInfo;
+		public async Task PopulateForBundle(string bundleId) {
+			var dict = new ConcurrentDictionary<string, DumpMetainfo>();
+			foreach (var dumpInfo in await storage.ReadDumpMetainfoForBundle(bundleId)) {
+				if (dumpInfo == null) {
+					Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
+					continue;
 				}
+				dict[dumpInfo.DumpId] = dumpInfo;
 			}
+			dumps.TryAdd(bundleId, dict);
 		}
 
 		public DumpMetainfo Get(string bundleId, string dumpId) {
@@ -67,9 +61,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<DumpMetainfo> GetAll() {
-			lock (sync) {
-				return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
-			}
+			return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
 		}
 
 		/// <summary>
@@ -80,19 +72,18 @@ namespace SuperDumpService.Services {
 		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
-			lock (sync) {
-				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
-				dumpId = CreateUniqueDumpId();
-				dumpInfo = new DumpMetainfo() {
-					BundleId = bundleId,
-					DumpId = dumpId,
-					DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
-					DumpType = DetermineDumpType(sourcePath),
-					Created = DateTime.Now,
-					Status = DumpStatus.Created
-				};
-				dumps[bundleId][dumpId] = dumpInfo;
-			}
+			var dict = new ConcurrentDictionary<string, DumpMetainfo>();
+			dumpId = CreateUniqueDumpId();
+			dumpInfo = new DumpMetainfo() {
+				BundleId = bundleId,
+				DumpId = dumpId,
+				DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
+				DumpType = DetermineDumpType(sourcePath),
+				Created = DateTime.Now,
+				Status = DumpStatus.Created
+			};
+			dict[dumpId] = dumpInfo;
+			dumps.TryAdd(bundleId, dict);
 			storage.Create(bundleId, dumpId);
 
 			FileInfo destFile = await storage.AddFileCopy(bundleId, dumpId, sourcePath);
@@ -100,8 +91,14 @@ namespace SuperDumpService.Services {
 			return dumpInfo;
 		}
 
+		internal string GetDumpFilePath(DumpIdentifier id) => GetDumpFilePath(id.BundleId, id.DumpId);
+
 		internal string GetDumpFilePath(string bundleId, string dumpId) {
 			return storage.GetDumpFilePath(bundleId, dumpId);
+		}
+
+		public void ResetDumpTyp(DumpIdentifier id) {
+			SetDumpType(id, DetermineDumpType(new FileInfo(Get(id).DumpFileName)));
 		}
 
 		private DumpType DetermineDumpType(FileInfo sourcePath) {
@@ -130,8 +127,34 @@ namespace SuperDumpService.Services {
 			}
 		}
 
+		internal async Task<SDResult> GetResultAndThrow(DumpIdentifier id) => await storage.ReadResultsAndThrow(id.BundleId, id.DumpId);
+		internal async Task<SDResult> GetResult(DumpIdentifier id) => await storage.ReadResults(id.BundleId, id.DumpId);
+
 		internal async Task<SDResult> GetResult(string bundleId, string dumpId) {
 			return await storage.ReadResults(bundleId, dumpId);
+		}
+
+		internal bool MiniInfoExists(DumpIdentifier id) {
+			if (miniInfosLazyCache.ContainsKey(id)) return true;
+			return storage.MiniInfoExists(id);
+		}
+
+		internal async Task<DumpMiniInfo> GetMiniInfo(DumpIdentifier id) {
+			if (miniInfosLazyCache.TryGetValue(id, out var cachedMiniInfo)) {
+				return cachedMiniInfo;
+			}
+			var miniInfo = await storage.ReadMiniInfo(id);
+			miniInfosLazyCache.TryAdd(id, miniInfo);
+			return miniInfo;
+		}
+
+		internal async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
+			miniInfosLazyCache.TryAdd(id, miniInfo);
+			await storage.StoreMiniInfo(id, miniInfo);
+		}
+
+		internal void WriteResult(DumpIdentifier id, SDResult result) {
+			storage.WriteResult(id, result);
 		}
 
 		internal IEnumerable<SDFileInfo> GetFileNames(string bundleId, string dumpId) {
@@ -149,6 +172,12 @@ namespace SuperDumpService.Services {
 			if (status == DumpStatus.Finished || status == DumpStatus.Failed) {
 				dumpInfo.Finished = DateTime.Now;
 			}
+			storage.Store(dumpInfo);
+		}
+
+		internal void SetDumpType(DumpIdentifier id, DumpType type) {
+			DumpMetainfo dumpInfo = Get(id);
+			dumpInfo.DumpType = type;
 			storage.Store(dumpInfo);
 		}
 

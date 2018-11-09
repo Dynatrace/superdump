@@ -9,6 +9,7 @@ using System.Linq;
 namespace SuperDumpService.Services {
 	public class ElasticSDResult {
 		public static ElasticSDResult FromResult(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
+			if (result == null) throw new ArgumentNullException("result");
 			ElasticSDResult eResult = new ElasticSDResult() {
 				BundleId = dumpInfo.BundleId,
 				DumpId = dumpInfo.DumpId,
@@ -16,13 +17,13 @@ namespace SuperDumpService.Services {
 				Type = dumpInfo.DumpType.ToString(),
 				Executable = (result.SystemContext as SDCDSystemContext)?.FileName ?? "",
 				IsManaged = result.IsManagedProcess,
-				ProcessArchitecture = result.SystemContext.ProcessArchitecture,
-				SystemArchitecture = result.SystemContext.SystemArchitecture,
-				NrThreads = result.ThreadInformation.Count,
+				ProcessArchitecture = result.SystemContext?.ProcessArchitecture,
+				SystemArchitecture = result.SystemContext?.SystemArchitecture,
+				NrThreads = result.ThreadInformation != null ? result.ThreadInformation.Count : 0,
 				LastEventDescription = result.LastEvent?.Description,
-				LoadedModules = result.SystemContext.DistinctModules().Select(m => m.FileName).Aggregate("", (m1, m2) => m1 + " " + m2),
-				LoadedModulesVersioned = result.SystemContext.DistinctModules().Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
-				DynatraceLoadedModulesVersioned = result.SystemContext.DistinctModules().Where(m => m.Tags.Contains(SDTag.DynatraceAgentTag)).Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
+				LoadedModules = result.SystemContext?.DistinctModules().Select(m => m.FileName).Aggregate("", (m1, m2) => m1 + " " + m2),
+				LoadedModulesVersioned = result.SystemContext?.DistinctModules().Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
+				DynatraceLoadedModulesVersioned = result.SystemContext?.DistinctModules().Where(m => m.Tags.Contains(SDTag.DynatraceAgentTag)).Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
 				ExitType = result.LastEvent?.Type ?? ""
 			};
 			bundleInfo.CustomProperties.TryGetValue("ref", out string reference);

@@ -17,19 +17,30 @@ namespace SuperDumpService.Services {
 		private readonly object sync = new object();
 		private readonly ConcurrentDictionary<string, BundleMetainfo> bundles = new ConcurrentDictionary<string, BundleMetainfo>();
 		private readonly BundleStorageFilebased storage;
+		private readonly DumpRepository dumpRepository;
+		public bool IsPopulated { get; private set; }
 
-		public BundleRepository(BundleStorageFilebased storage) {
+
+		public BundleRepository(BundleStorageFilebased storage, DumpRepository dumpRepository) {
 			this.storage = storage;
+			this.dumpRepository = dumpRepository;
 		}
 
-		public void Populate() {
+		public async Task Populate() {
 			var sw = new Stopwatch();
 			sw.Start();
-			foreach(var info in storage.ReadBundleMetainfos().Result) {
-				if (info == null) continue;
-				bundles[info.BundleId] = info;
+			foreach (var info in await storage.ReadBundleMetainfos()) {
+				try {
+					if (info == null) continue;
+					bundles[info.BundleId] = info;
+					await dumpRepository.PopulateForBundle(info.BundleId);
+				} catch (Exception e) {
+					Console.Error.WriteLine($"Populating BundleRepository failed for {info.BundleId}: {e}");
+				}
 			}
 			sw.Stop();
+			IsPopulated = true;
+			dumpRepository.SetIsPopulated();
 			Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
 		}
 

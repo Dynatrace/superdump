@@ -244,11 +244,48 @@ namespace SuperDumpService.Helpers {
 			}
 			return distance[currentRow, m];
 		}
+
+		public static async Task BlockUntil(Func<bool> predicate) {
+			while (!predicate()) {
+				await Task.Delay(500);
+			}
+		}
+
 	}
 
 	public static class StringExtensions {
 		public static bool Contains(this string source, string toCheck, StringComparison comp) {
 			return source.IndexOf(toCheck, comp) >= 0;
+		}
+	}
+
+	public static class IEnumerableExtensions {
+
+		// borrowed from https://stackoverflow.com/questions/15414347/how-to-loop-through-ienumerable-in-batches
+		public static IEnumerable<IEnumerable<T>> Batch<T>(
+		this IEnumerable<T> source, int size) {
+			T[] bucket = null;
+			var count = 0;
+
+			foreach (var item in source) {
+				if (bucket == null)
+					bucket = new T[size];
+
+				bucket[count++] = item;
+
+				if (count != size)
+					continue;
+
+				yield return bucket.Select(x => x);
+
+				bucket = null;
+				count = 0;
+			}
+
+			// Return the last bucket with all remaining elements
+			if (bucket != null && count > 0) {
+				yield return bucket.Take(count);
+			}
 		}
 	}
 }

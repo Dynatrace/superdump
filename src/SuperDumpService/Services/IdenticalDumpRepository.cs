@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
@@ -20,6 +22,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task Populate() {
+			await BlockIfBundleRepoNotReady("IdenticalDumpRepository.Populate");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				foreach (BundleMetainfo bundle in bundleRepo.GetAll()) {
@@ -39,6 +43,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task CreateAllIdenticalRelationships() {
+			await BlockIfBundleRepoNotReady("IdenticalDumpRepository.CreateAllIdenticalRelationships");
+
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				foreach (BundleMetainfo bundleInfo in bundleRepo.GetAll().Where(bundleInfo => bundleInfo.Status == BundleStatus.Duplication)) {
@@ -89,6 +95,17 @@ namespace SuperDumpService.Services {
 				return Enumerable.Empty<string>();
 			} finally {
 				semaphoreSlim.Release();
+			}
+		}
+
+		/// <summary>
+		/// Blocks until bundleRepo is fully populated.
+		/// </summary>
+		private async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!bundleRepo.IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because dumpRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => bundleRepo.IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
 			}
 		}
 	}

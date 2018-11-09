@@ -7,14 +7,14 @@
 	@{Html.RenderPartial("_Resources");}
 </head>
 <body>
-	@{Html.RenderPartial("_Nav");}
-	<nav class="container body-content" style="float: left !important;">
+	<partial name="_Nav" />
+	<div class="container body-content" style="float: left !important;">
 		@RenderBody()
 		<hr />
 		<footer>
 			<p><a href="https://github.com/Dynatrace/superdump">github.com/Dynatrace/superdump</a></p>
 		</footer>
-	</nav>
+	</div>
 	@RenderSection("scripts", required: false)
 </body>
 </html>

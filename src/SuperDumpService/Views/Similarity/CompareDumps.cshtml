@@ -2,26 +2,29 @@
 @{
 	ViewData["Title"] = "Similarity";
 }
-
+<br/>
 @if (!string.IsNullOrEmpty(Model.Error) || Model.CrashSimilarity == null) {
 	<stong>Error: @Model.Error</stong>
 } else {
+
 	<h3>Compare Dumps</h3>
-	<dl>
-		<dt>Overall</dt>
-		<dd>@Model.CrashSimilarity.OverallSimilarity</dd>
+	<p>Compared <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.DumpA.BundleId" asp-route-dumpId="@Model.DumpA.DumpId">@Model.DumpA</a> with <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.DumpB.BundleId" asp-route-dumpId="@Model.DumpB.DumpId">@Model.DumpB</a>.</p>
 
-		<dt>Stacktrace</dt>
-		<dd>@Model.CrashSimilarity.StackTraceSimilarity</dd>
+	<dl class="row compact">
+		<dt class="col-sm-3 text-right">Overall (average)</dt>
+		<dd class="col-sm-9">@Model.CrashSimilarity.OverallSimilarity.ToString("N2")</dd>
 
-		<dt>Modules</dt>
-		<dd>@Model.CrashSimilarity.ModulesSimilarity</dd>
+		<dt class="col-sm-3 text-right">Stacktrace (fauling thread)</dt>
+		<dd class="col-sm-9">@(Model.CrashSimilarity.StackTraceSimilarity.HasValue ? Model.CrashSimilarity.StackTraceSimilarity.Value.ToString("N2") : "-")</dd>
 
-		<dt>LastEvent</dt>
-		<dd>@Model.CrashSimilarity.LastEventSimilarity</dd>
+		<dt class="col-sm-3 text-right">Modules (fauling thread)</dt>
+		<dd class="col-sm-9">@(Model.CrashSimilarity.ModulesSimilarity.HasValue ? Model.CrashSimilarity.ModulesSimilarity.Value.ToString("N2") : "-")</dd>
 
-		<dt>Exception</dt>
-		<dd>@Model.CrashSimilarity.ExceptionSimilarity</dd>
+		<dt class="col-sm-3 text-right">LastEvent</dt>
+		<dd class="col-sm-9">@(Model.CrashSimilarity.LastEventSimilarity.HasValue ? Model.CrashSimilarity.LastEventSimilarity.Value.ToString("N2") : "-")</dd>
+
+		<dt class="col-sm-3 text-right">CLR Exception</dt>
+		<dd class="col-sm-9">@(Model.CrashSimilarity.ExceptionSimilarity.HasValue ? Model.CrashSimilarity.ExceptionSimilarity.Value.ToString("N2") : "-")</dd>
 	</dl>
 
 }

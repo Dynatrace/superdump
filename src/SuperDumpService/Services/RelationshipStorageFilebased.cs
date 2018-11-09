@@ -25,7 +25,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task StoreRelationships(DumpIdentifier dumpId, IDictionary<DumpIdentifier, double> relationships) {
-			List<KeyValuePair<DumpIdentifier, double>> data = relationships.ToList(); // use a list, otherwise complex key (DumpIdentifier) is problematic
+			List<KeyValuePair<DumpIdentifier, double>> data = relationships.OrderByDescending(x => Math.Round(x.Value, 3)).ToList(); // use a list, otherwise complex key (DumpIdentifier) is problematic
 			await File.WriteAllTextAsync(pathHelper.GetRelationshipsPath(dumpId.BundleId, dumpId.DumpId), JsonConvert.SerializeObject(data));
 		}
 

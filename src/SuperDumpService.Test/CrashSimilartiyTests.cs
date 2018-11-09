@@ -38,7 +38,7 @@ namespace SuperDumpService.Test {
 			};
 			AddTagToFrameAndThread(res2, SDTag.NativeExceptionTag);
 
-			var similarity = CrashSimilarity.Calculate(res1, res2);
+			var similarity = CrashSimilarity.Calculate(CrashSimilarity.SDResultToMiniInfo(res1), CrashSimilarity.SDResultToMiniInfo(res2));
 
 			Assert.Equal(0.875, similarity.StackTraceSimilarity);
 			Assert.Equal(1.0, similarity.ModulesSimilarity);

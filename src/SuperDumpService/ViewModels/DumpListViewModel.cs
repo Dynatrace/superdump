@@ -11,5 +11,10 @@ namespace SuperDumpService.ViewModels {
 			this.DumpInfo = DumpInfo;
 			this.Similarities = similarities;
 		}
+
+		public DumpListViewModel(DumpMetainfo DumpInfo) {
+			this.DumpInfo = DumpInfo;
+			this.Similarities = new Similarities(new Dictionary<DumpIdentifier, double>());
+		}
 	}
 }
