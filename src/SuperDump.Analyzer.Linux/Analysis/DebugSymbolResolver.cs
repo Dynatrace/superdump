@@ -78,7 +78,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				return true;
 			}
 			if (module.FilePath.Contains("/lib/ruxit") || module.FilePath.Contains("/lib64/ruxit") ||
-				module.FilePath.Contains("/lib/oneagent") || module.FilePath.Contains("/lib64/oneagent")) {
+				module.FilePath.Contains("/lib/oneagent") || module.FilePath.Contains("/lib64/oneagent") ||
+			    module.FilePath.Contains("/lib/dtzagent") || module.FilePath.Contains("/lib64/dtzagent")) {
 				return true;
 			}
 			return false;
