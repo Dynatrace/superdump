@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{F1C07791-3C2A-400E-8505-87F0AA3D21EC}"
 	ProjectSection(SolutionItems) = preProject
-		..\conf\appsettings.template.json = ..\conf\appsettings.template.json
+		..\conf\appsettings.json.template = ..\conf\appsettings.json.template
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump", "SuperDump\SuperDump.csproj", "{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}"
