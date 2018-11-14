@@ -29,15 +29,16 @@ namespace SuperDumpService.Services {
 		public async Task Populate() {
 			var sw = new Stopwatch();
 			sw.Start();
-			foreach (var info in await storage.ReadBundleMetainfos()) {
+			var tasks = (await storage.ReadBundleMetainfos()).Select(info => Task.Run(async () => {
 				try {
-					if (info == null) continue;
+					if (info == null) return;
 					bundles[info.BundleId] = info;
 					await dumpRepository.PopulateForBundle(info.BundleId);
 				} catch (Exception e) {
 					Console.Error.WriteLine($"Populating BundleRepository failed for {info.BundleId}: {e}");
 				}
-			}
+			}));
+			await Task.WhenAll(tasks);
 			sw.Stop();
 			IsPopulated = true;
 			dumpRepository.SetIsPopulated();
