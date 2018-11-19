@@ -107,7 +107,7 @@ namespace SuperDumpService.Services {
 		/** dynatrace specific **/
 		[Text(Name = "dynatraceLoadedModulesVersioned", Fielddata = true, Analyzer = "whitespace")]
 		public string DynatraceLoadedModulesVersioned { get; set; }
-		[Text(Name = "tenantId")]
+		[Keyword(Name = "tenantId")]
 		public string TenantId { get; set; }
 		/** dynatrace specific **/
 
