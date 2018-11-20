@@ -3,6 +3,7 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,10 +23,16 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<IEnumerable<BundleMetainfo>> ReadBundleMetainfos() {
-			var list = new List<BundleMetainfo>();
+			var list = new System.Collections.Concurrent.ConcurrentBag<BundleMetainfo>();
 			pathHelper.PrepareDirectories();
 			var baseDir = new DirectoryInfo(pathHelper.GetWorkingDir());
-			foreach (var dir in baseDir.GetDirectories().OrderByDescending(x => x.CreationTime)) {
+
+			var sw = new Stopwatch(); sw.Start();
+			var subdirs = baseDir.GetDirectories().OrderByDescending(x => x.CreationTime);
+			sw.Stop(); Console.WriteLine($"Getting list of {subdirs.Count()} subdirectories took {sw.Elapsed.TotalSeconds} seconds."); sw.Reset();
+
+			sw.Start();
+			var tasks = subdirs.Select(dir => Task.Run(async () => {
 				var bundleId = dir.Name;
 				var metainfoFilename = pathHelper.GetBundleMetadataPath(bundleId);
 				if (!File.Exists(metainfoFilename)) {
@@ -35,7 +42,10 @@ namespace SuperDumpService.Services {
 					list.Add(new BundleMetainfo() { BundleId = bundleId });
 				}
 				list.Add(ReadMetainfoFile(metainfoFilename));
-			}
+			}));
+			await Task.WhenAll(tasks);
+			sw.Stop(); Console.WriteLine($"ReadBundleMetainfos of {subdirs.Count()} bundles took {sw.Elapsed.TotalSeconds} seconds."); sw.Reset();
+
 			return list;
 		}
 

@@ -27,8 +27,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task Populate() {
-			var sw = new Stopwatch();
-			sw.Start();
+			var sw = new Stopwatch(); sw.Start();
 			var tasks = (await storage.ReadBundleMetainfos()).Select(info => Task.Run(async () => {
 				try {
 					if (info == null) return;
@@ -39,10 +38,9 @@ namespace SuperDumpService.Services {
 				}
 			}));
 			await Task.WhenAll(tasks);
-			sw.Stop();
 			IsPopulated = true;
 			dumpRepository.SetIsPopulated();
-			Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
+			sw.Stop(); Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
 		}
 
 		public BundleMetainfo Get(string bundleId) {
