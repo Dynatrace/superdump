@@ -7,9 +7,12 @@ using SuperDump.Analyzers;
 using SuperDump.Printers;
 using System.Runtime.ExceptionServices;
 using CommandLine;
+using Dynatrace.OneAgent.Sdk.Api;
 
 namespace SuperDump {
 	public static class Program {
+		private static IOneAgentSdk dynatraceSdk = OneAgentSdkFactory.CreateInstance();
+
 		public static string DUMP_LOC;
 		private static string OUTPUT_LOC;
 		public static string SYMBOL_PATH = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
@@ -18,7 +21,9 @@ namespace SuperDump {
 			try {
 				var result = Parser.Default.ParseArguments<Options>(args)
 					.WithParsed(options => {
-						RunAnalysis(options);
+						var tracer = dynatraceSdk.TraceIncomingRemoteCall("Analyze", "SuperDump", "unknownserviceendpoint");
+						tracer.SetDynatraceStringTag(options.TraceTag);
+						tracer.Trace(() => RunAnalysis(options));
 					});
 			} catch (Exception e) {
 				Console.Error.WriteLine($"Exception happened: {e}");

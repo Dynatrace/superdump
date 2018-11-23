@@ -8,14 +8,20 @@ using System.Reflection;
 using System.Threading.Tasks;
 using SuperDump.Common;
 using CommandLine;
+using Dynatrace.OneAgent.Sdk.Api;
+using Dynatrace.OneAgent.Sdk.Api.Enums;
 
 namespace SuperDumpSelector {
 	public static class Program {
+		private static IOneAgentSdk dynatraceSdk = OneAgentSdkFactory.CreateInstance();
+
 		public static int Main(string[] args) {
 			try {
 				var result = Parser.Default.ParseArguments<Options>(args)
 					.WithParsed(options => {
-						RunAnalysis(options);
+						var tracer = dynatraceSdk.TraceIncomingRemoteCall("Analyze", "SuperDumpSelector", "unknownserviceendpoint");
+						tracer.SetDynatraceStringTag(options.TraceTag);
+						tracer.Trace(() => RunAnalysis(options));
 					});
 			} catch (Exception e) {
 				Console.Error.WriteLine($"SuperDumpSelector failed: {e}");
@@ -32,7 +38,7 @@ namespace SuperDumpSelector {
 
 			if (File.Exists(dumpfile)) {
 				var superDumpPathInfo = FindSuperDumpPath(dumpfile);
-				RunSuperDump(superDumpPathInfo, dumpfile, outputfile).Wait();
+				RunSuperDump(superDumpPathInfo, dumpfile, outputfile, options.TraceTag).Wait();
 			} else {
 				throw new FileNotFoundException($"Dump file was not found at {dumpfile}. Please try again");
 			}
@@ -40,7 +46,7 @@ namespace SuperDumpSelector {
 
 		private static FileInfo FindSuperDumpPath(string dumpfile) {
 			using (DataTarget target = DataTarget.LoadCrashDump(dumpfile)) {
-				string superDumpPath; ;
+				string superDumpPath;
 				if (target.PointerSize == 8) {
 					superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx64"]);
 					if (!File.Exists(superDumpPath)) superDumpPath = ResolvePath(ConfigurationManager.AppSettings["superdumpx64_deployment"]);
@@ -56,20 +62,26 @@ namespace SuperDumpSelector {
 			}
 		}
 
-		private static async Task RunSuperDump(FileInfo superDumpPath, string dumpfile, string outputfile) {
-			string[] arguments = {
-				$"--dump \"{dumpfile}\"",
-				$"--out \"{outputfile}\""
-			};
-			using (var process = await ProcessRunner.Run(superDumpPath.FullName, superDumpPath.Directory, arguments)) {
-				//TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
-				Console.WriteLine($"stdout: {process.StdOut}");
-				Console.WriteLine($"stderr: {process.StdErr}");
-				Console.WriteLine($"exitcode: {process.ExitCode}");
-				if (process.ExitCode != 0) {
-					throw new SuperDumpFailedException(process.StdErr);
+		private static async Task RunSuperDump(FileInfo superDumpPath, string dumpfile, string outputfile, string dtTraceTag) {
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "SuperDump", "unknownserviceendpoint", ChannelType.OTHER, superDumpPath.FullName);
+			await tracer.TraceAsync(async () => {
+
+				string[] arguments = {
+					$"--dump \"{dumpfile}\"",
+					$"--out \"{outputfile}\"",
+					$"--tracetag \"{tracer.GetDynatraceStringTag()}\""
+				};
+
+				using (var process = await ProcessRunner.Run(superDumpPath.FullName, superDumpPath.Directory, arguments)) {
+					//TrySetPriorityClass(process, ProcessPriorityClass.BelowNormal);
+					Console.WriteLine($"stdout: {process.StdOut}");
+					Console.WriteLine($"stderr: {process.StdErr}");
+					Console.WriteLine($"exitcode: {process.ExitCode}");
+					if (process.ExitCode != 0) {
+						throw new SuperDumpFailedException(process.StdErr);
+					}
 				}
-			}
+			});
 		}
 
 		private static string ResolvePath(string relativePath) {

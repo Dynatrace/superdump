@@ -12,5 +12,8 @@ namespace SuperDumpSelector {
 
 		[Option("out", HelpText = "Output file (json)", Required = true)]
 		public string OutputFile { get; set; }
+
+		[Option("tracetag", HelpText = "dynatrace tracetag", Required = false)]
+		public string TraceTag { get; set; }
 	}
 }
