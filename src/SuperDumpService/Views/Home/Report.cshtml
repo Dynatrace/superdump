@@ -114,8 +114,8 @@
 						}
 					</dd>
 				}
-				<dt class="col-sm-2 text-right">Time:</dt>
-				<dd class="col-sm-10">@Model.TimeStamp</dd>
+				<dt class="col-sm-2 text-right">Analyzed at:</dt>
+				<dd class="col-sm-10">@Model.TimeStamp.ToString("yyyy-MM-dd HH:mmzzz")</dd>
 				@foreach (var customProp in Model.CustomProperties) {
 					<dt class="col-sm-2 text-right">
 						@customProp.Key:

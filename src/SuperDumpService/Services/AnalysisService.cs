@@ -90,7 +90,11 @@ namespace SuperDumpService.Services {
 			string dumpselector = "SuperDumpSelector.exe"; // should be on PATH
 
 			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
-			using (var process = await ProcessRunner.Run(dumpselector, workingDir, WrapInQuotes(dumpFilePath), WrapInQuotes(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)))) {
+			string[] arguments = {
+				$"--dump \"{dumpFilePath}\"",
+				$"--out \"{pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)}\""
+			};
+			using (var process = await ProcessRunner.Run(dumpselector, workingDir, arguments)) {
 				string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
 					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
 					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
@@ -103,10 +107,6 @@ namespace SuperDumpService.Services {
 			}
 
 			await RunDebugDiagAnalysis(dumpInfo, workingDir, dumpFilePath);
-		}
-
-		private static string WrapInQuotes(string str) {
-			return $"\"{str}\"";
 		}
 
 		private async Task RunDebugDiagAnalysis(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {

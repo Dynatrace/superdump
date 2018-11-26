@@ -6,6 +6,7 @@ using System.IO;
 using SuperDump.Analyzers;
 using SuperDump.Printers;
 using System.Runtime.ExceptionServices;
+using CommandLine;
 
 namespace SuperDump {
 	public static class Program {
@@ -17,6 +18,19 @@ namespace SuperDump {
 		private static DataTarget target;
 
 		private static int Main(string[] args) {
+			try {
+				var result = Parser.Default.ParseArguments<Options>(args)
+					.WithParsed(options => {
+						RunAnalysis(options);
+					});
+			} catch (Exception e) {
+				context.WriteError($"Exception happened: {e}");
+				return 1;
+			}
+			return 0;
+		}
+
+		private static void RunAnalysis(Options options) {
 			if (Environment.Is64BitProcess) {
 				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x64;");
 			} else {
@@ -30,19 +44,8 @@ namespace SuperDump {
 					Console.WriteLine("WARNING: Environment variable _NT_SYMBOL_PATH is not set!");
 				}
 
-				if (args.Length < 1) {
-					Console.WriteLine("no dump file was specified! Please enter dump path: ");
-					DUMP_LOC = Console.ReadLine();
-				} else {
-					DUMP_LOC = args[0];
-				}
-
-				if (args.Length < 2) {
-					Console.WriteLine("no output file was specified! Please enter output file: ");
-					OUTPUT_LOC = Console.ReadLine();
-				} else {
-					OUTPUT_LOC = args[1];
-				}
+				DUMP_LOC = options.DumpFile;
+				OUTPUT_LOC = options.OutputFile;
 
 				string absoluteDumpFile = Path.GetFullPath(DUMP_LOC);
 				Console.WriteLine(absoluteDumpFile);
@@ -50,89 +53,83 @@ namespace SuperDump {
 				var logfile = new FileInfo(Path.Combine(Path.GetDirectoryName(OUTPUT_LOC), "superdump.log"));
 				context.Printer = new FilePrinter(logfile.FullName);
 
-				try {
-					if (File.Exists(absoluteDumpFile)) {
-						LoadDump(absoluteDumpFile);
+				if (File.Exists(absoluteDumpFile)) {
+					LoadDump(absoluteDumpFile);
 
-						// do this as early as possible, as some WinDbg commands help us get the right DAC files
-						RunSafe(nameof(WinDbgAnalyzer), () => {
-							var windbgAnalyzer = new WinDbgAnalyzer(context, Path.Combine(context.DumpDirectory, "windbg.log"));
-							windbgAnalyzer.Analyze();
-						});
+					// do this as early as possible, as some WinDbg commands help us get the right DAC files
+					RunSafe(nameof(WinDbgAnalyzer), () => {
+						var windbgAnalyzer = new WinDbgAnalyzer(context, Path.Combine(context.DumpDirectory, "windbg.log"));
+						windbgAnalyzer.Analyze();
+					});
 
-						// start analysis
-						var analysisResult = new SDResult();
-						analysisResult.IsManagedProcess = context.Target.ClrVersions.Count > 0;
+					// start analysis
+					var analysisResult = new SDResult();
+					analysisResult.IsManagedProcess = context.Target.ClrVersions.Count > 0;
 
-						if (analysisResult.IsManagedProcess) {
-							SetupCLRRuntime();
+					if (analysisResult.IsManagedProcess) {
+						SetupCLRRuntime();
+					}
+
+					RunSafe(nameof(ExceptionAnalyzer), () => {
+						var sysInfo = new SystemAnalyzer(context);
+						analysisResult.SystemContext = sysInfo.systemInfo;
+
+						//get non loaded symbols
+						List<string> notLoadedSymbols = new List<string>();
+						foreach (var item in sysInfo.systemInfo.Modules) {
+							if (item.PdbInfo == null || string.IsNullOrEmpty(item.PdbInfo.FileName) || string.IsNullOrEmpty(item.PdbInfo.Guid)) {
+								notLoadedSymbols.Add(item.FileName);
+							}
+							analysisResult.NotLoadedSymbols = notLoadedSymbols;
 						}
 
-						RunSafe(nameof(ExceptionAnalyzer), () => {
-							var sysInfo = new SystemAnalyzer(context);
-							analysisResult.SystemContext = sysInfo.systemInfo;
+						// print to log
+						sysInfo.PrintArchitecture();
+						sysInfo.PrintCLRVersions();
+						sysInfo.PrintAppDomains();
+						sysInfo.PrintModuleList();
+					});
 
-							//get non loaded symbols
-							List<string> notLoadedSymbols = new List<string>();
-							foreach (var item in sysInfo.systemInfo.Modules) {
-								if (item.PdbInfo == null || string.IsNullOrEmpty(item.PdbInfo.FileName) || string.IsNullOrEmpty(item.PdbInfo.Guid)) {
-									notLoadedSymbols.Add(item.FileName);
-								}
-								analysisResult.NotLoadedSymbols = notLoadedSymbols;
-							}
+					RunSafe(nameof(ExceptionAnalyzer), () => {
+						var exceptionAnalyzer = new ExceptionAnalyzer(context, analysisResult);
+					});
 
-							// print to log
-							sysInfo.PrintArchitecture();
-							sysInfo.PrintCLRVersions();
-							sysInfo.PrintAppDomains();
-							sysInfo.PrintModuleList();
-						});
+					RunSafe(nameof(ThreadAnalyzer), () => {
+						context.WriteInfo("--- Thread analysis ---");
+						ThreadAnalyzer threadAnalyzer = new ThreadAnalyzer(context);
+						analysisResult.ExceptionRecord = threadAnalyzer.exceptions;
+						analysisResult.ThreadInformation = threadAnalyzer.threads;
+						analysisResult.DeadlockInformation = threadAnalyzer.deadlocks;
+						analysisResult.LastExecutedThread = threadAnalyzer.GetLastExecutedThreadOSId();
+						context.WriteInfo("Last executed thread (engine id): " + threadAnalyzer.GetLastExecutedThreadEngineId().ToString());
 
-						RunSafe(nameof(ExceptionAnalyzer), () => {
-							var exceptionAnalyzer = new ExceptionAnalyzer(context, analysisResult);
-						});
+						threadAnalyzer.PrintManagedExceptions();
+						threadAnalyzer.PrintCompleteStackTrace();
+					});
 
-						RunSafe(nameof(ThreadAnalyzer), () => {
-							context.WriteInfo("--- Thread analysis ---");
-							ThreadAnalyzer threadAnalyzer = new ThreadAnalyzer(context);
-							analysisResult.ExceptionRecord = threadAnalyzer.exceptions;
-							analysisResult.ThreadInformation = threadAnalyzer.threads;
-							analysisResult.DeadlockInformation = threadAnalyzer.deadlocks;
-							analysisResult.LastExecutedThread = threadAnalyzer.GetLastExecutedThreadOSId();
-							context.WriteInfo("Last executed thread (engine id): " + threadAnalyzer.GetLastExecutedThreadEngineId().ToString());
+					RunSafe(nameof(MemoryAnalyzer), () => {
+						var memoryAnalyzer = new MemoryAnalyzer(context);
+						analysisResult.MemoryInformation = memoryAnalyzer.memDict;
+						analysisResult.BlockingObjects = memoryAnalyzer.blockingObjects;
 
-							threadAnalyzer.PrintManagedExceptions();
-							threadAnalyzer.PrintCompleteStackTrace();
-						});
+						memoryAnalyzer.PrintExceptionsObjects();
+					});
 
-						RunSafe(nameof(MemoryAnalyzer), () => {
-							var memoryAnalyzer = new MemoryAnalyzer(context);
-							analysisResult.MemoryInformation = memoryAnalyzer.memDict;
-							analysisResult.BlockingObjects = memoryAnalyzer.blockingObjects;
+					// this analyzer runs after all others to put tags onto taggableitems
+					RunSafe(nameof(TagAnalyzer), () => {
+						var tagAnalyzer = new TagAnalyzer(analysisResult);
+						tagAnalyzer.Analyze();
+					});
 
-							memoryAnalyzer.PrintExceptionsObjects();
-						});
+					// write to json
+					analysisResult.WriteResultToJSONFile(OUTPUT_LOC);
 
-						// this analyzer runs after all others to put tags onto taggableitems
-						RunSafe(nameof(TagAnalyzer), () => {
-							var tagAnalyzer = new TagAnalyzer(analysisResult);
-							tagAnalyzer.Analyze();
-						});
-
-						// write to json
-						analysisResult.WriteResultToJSONFile(OUTPUT_LOC);
-
-						context.WriteInfo("--- End of output ---");
-						Console.WriteLine("done.");
-					} else {
-						throw new FileNotFoundException("File can not be found!");
-					}
-				} catch (Exception e) {
-					context.WriteError($"Exception happened: {e}");
-					return 1;
+					context.WriteInfo("--- End of output ---");
+					Console.WriteLine("done.");
+				} else {
+					throw new FileNotFoundException("File can not be found!");
 				}
 			}
-			return 0;
 		}
 
 		private static void LoadDump(string absoluteDumpFile) {
