@@ -26,7 +26,7 @@ namespace SuperDumpTests {
 
 				context.Target = target;
 				context.Runtime = target.CreateRuntime(ref dac);
-				context.Heap = context.Runtime.GetHeap();
+				context.Heap = context.Runtime.Heap;
 				context.DumpFile = dump;
 				context.DumpDirectory = Path.GetDirectoryName(context.DumpFile);
 				context.Printer = new ConsolePrinter();

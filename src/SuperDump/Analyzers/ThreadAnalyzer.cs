@@ -396,7 +396,7 @@ namespace SuperDump.Analyzers {
 
 		private void PrintThreadPoolInfo() {
 			if (context.Runtime != null) {
-				ClrThreadPool threadPool = this.context.Runtime.GetThreadPool();
+				ClrThreadPool threadPool = this.context.Runtime.ThreadPool;
 
 				if (threadPool != null) {
 					context.WriteLine("Total threads:     {0}", threadPool.TotalThreads);
