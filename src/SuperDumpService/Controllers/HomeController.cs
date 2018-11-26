@@ -103,16 +103,16 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public IActionResult BundleCreated(string bundleId) {
+		public async Task<IActionResult> BundleCreated(string bundleId) {
 			if (bundleRepo.ContainsBundle(bundleId)) {
-				return View(new BundleViewModel(bundleRepo.Get(bundleId), GetDumpListViewModels(bundleId)));
+				return View(new BundleViewModel(bundleRepo.Get(bundleId), await GetDumpListViewModels(bundleId)));
 			}
 			throw new Exception($"bundleid '{bundleId}' does not exist in repository");
 		}
 
-		private IEnumerable<DumpListViewModel> GetDumpListViewModels(string bundleId) {
+		private async Task<IEnumerable<DumpListViewModel>> GetDumpListViewModels(string bundleId) {
 			if (relationshipRepo.IsPopulated) {
-				return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x, new Similarities(similarityService.GetSimilarities(x.Id).Result)));
+				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpListViewModel(x, new Similarities(await similarityService.GetSimilarities(x.Id)))));
 			}
 			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x));
 		}
@@ -137,7 +137,7 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public IActionResult Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
+		public async Task<IActionResult> Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
 			logger.LogDefault("Overview", HttpContext);
 
 			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
@@ -146,7 +146,7 @@ namespace SuperDumpService.Controllers {
 				// TODO CN: I need to change this to just a list of dumps, not a list of bundles
 
 				var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
-				var foundBundles = bundleInfos.Select(x => new BundleViewModel(x, GetDumpListViewModels(x.BundleId))).OrderByDescending(b => b.Created);
+				var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
 				// TODO CN: we now show all dumps of bundles that have been found. needs fixing.
 
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
@@ -156,11 +156,11 @@ namespace SuperDumpService.Controllers {
 					Paged = foundBundles.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			} else {
-				var bundles = bundleRepo.GetAll().Select(r => new BundleViewModel(r, GetDumpListViewModels(r.BundleId))).OrderByDescending(b => b.Created);
+				var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
 
 				var filtered = Search(searchFilter, bundles);
 				filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
@@ -172,8 +172,8 @@ namespace SuperDumpService.Controllers {
 					Paged = filtered.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			}
 		}
@@ -285,8 +285,8 @@ namespace SuperDumpService.Controllers {
 				SimilarDumpIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? new Dictionary<string, IEnumerable<JiraIssueModel>>() : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration,
 				DumpStatus = dumpInfo.Status,
-				IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 			});
 		}
 

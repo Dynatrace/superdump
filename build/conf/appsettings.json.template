@@ -67,6 +67,7 @@
     "InteractiveGdbHost": "http://127.0.0.1:3000", // required for interactive sessions with GDB. The specified host must run a GoTTY instance
     "ElasticSearchHost": "http://127.0.0.1:9200",
     "NodeJsPath": "C:\\Program Files\\nodejs\\node.exe",
+    "SimilarityDetectionEnabled": "true",
 
     //Logging
     "UseAllRequestLogging": "true",

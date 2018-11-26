@@ -53,6 +53,8 @@ namespace SuperDumpService.Services {
 				throw new InvalidOperationException("ElasticSearch has not been initialized! Please verify that the settings specify a correct elastic search host.");
 			}
 
+			await BlockIfBundleRepoNotReady("ElasticSearchService.PushAllResultsAsync");
+
 			if (clean) {
 				DeleteIndex();
 				CreateIndex();
@@ -60,11 +62,12 @@ namespace SuperDumpService.Services {
 				// since we are clean, we can do everything in one bulk
 				var dumps = dumpRepo.GetAll().OrderByDescending(x => x.Created);
 				foreach (var dumpsBatch in dumps.Batch(100)) {
-					var results = (await Task.WhenAll(dumpsBatch.Select(async x =>
-						new { res = await dumpRepo.GetResult(x.Id), bundleInfo = bundleRepo.Get(x.BundleId), dumpInfo = x })))
-						.Where(x => x.res != null);
+					var tasks = dumpsBatch.Select(x => Task.Run(async () => new { res = await dumpRepo.GetResult(x.Id), bundleInfo = bundleRepo.Get(x.BundleId), dumpInfo = x }));
+					var results = (await Task.WhenAll(tasks)).Where(x => x.res != null);
+
 					Console.WriteLine($"pushing {results.Count()} results into elasticsearch");
-					await PushBulk(results.Select(x => ElasticSDResult.FromResult(x.res, x.bundleInfo, x.dumpInfo, pathHelper)));
+					var sdResults = results.Select(x => ElasticSDResult.FromResultOrDefault(x.res, x.bundleInfo, x.dumpInfo, pathHelper)).Where(x => x != null);
+					await PushBulk(sdResults);
 				}
 				return;
 			}
@@ -100,7 +103,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public async Task<bool> PushBulk(IEnumerable<ElasticSDResult> results) {
+		private async Task<bool> PushBulk(IEnumerable<ElasticSDResult> results) {
 			if (elasticClient == null) return false;
 			var descriptor = new BulkDescriptor();
 			descriptor.CreateMany<ElasticSDResult>(results);
@@ -111,8 +114,14 @@ namespace SuperDumpService.Services {
 			var result = await elasticClient.BulkAsync(descriptor);
 
 			sw.Stop();
-			Console.WriteLine($"Finished inserting in {sw.Elapsed}");
-			return true;
+
+			if (result.IsValid) {
+				Console.WriteLine($"Finished inserting in {sw.Elapsed})");
+				return true;
+			}
+			// something failed
+			Console.WriteLine($"PushBulk failed for {result.ItemsWithErrors?.Count()} items. servererror: {result.ServerError?.ToString()}, error on first item: {result.ItemsWithErrors?.FirstOrDefault()?.Error}");
+			return false;
 		}
 
 		public async Task<bool> PushResultAsync(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo) {
@@ -183,6 +192,17 @@ namespace SuperDumpService.Services {
 				ids.AddRange(result.Documents.Select(doc => doc.Id));
 			}
 			return ids;
+		}
+
+		/// <summary>
+		/// Blocks until dumpRepo is fully populated.
+		/// </summary>
+		private async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!dumpRepo.IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because dumpRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => dumpRepo.IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
+			}
 		}
 	}
 }

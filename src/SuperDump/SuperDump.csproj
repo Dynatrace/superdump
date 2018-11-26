@@ -73,6 +73,9 @@
     <Reference Include="ByteSize, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ByteSize.1.3.0\lib\net45\ByteSize.dll</HintPath>
     </Reference>
+    <Reference Include="CommandLine, Version=2.3.0.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.2.3.0\lib\net45\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="ISymWrapper" />
     <Reference Include="Microsoft.Diagnostics.Runtime, Version=0.9.0.0, Culture=neutral, PublicKeyToken=4c5463f04c407af6, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Diagnostics.Runtime.0.9.180305.01\lib\net40\Microsoft.Diagnostics.Runtime.dll</HintPath>
@@ -159,6 +162,7 @@
     <Compile Include="ModelHelpers\ModelHelpers.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="NativeStructs.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="Printers\ConsolePrinter.cs" />
     <Compile Include="DumpContext.cs" />
     <Compile Include="Printers\FilePrinter.cs" />

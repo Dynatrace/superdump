@@ -70,11 +70,11 @@ namespace SuperDump.Models {
 		// order threads by importance of their error-tags, then return first
 		public SDThread GetFaultingThread() {
 			// order threads by importance of their error-tags, then return first
-			return ThreadInformation.Values.Where(x => x.ErrorTags.Any()).OrderByDescending(t => t.ErrorTags.Max(x => x.Importance)).FirstOrDefault();
+			return ThreadInformation?.Values.Where(x => x.ErrorTags.Any()).OrderByDescending(t => t.ErrorTags.Max(x => x.Importance)).FirstOrDefault();
 		}
 
 		public SDThread GetLastExecutingThread() {
-			return ThreadInformation.Values.SingleOrDefault(x => x.Tags.Any(t => SDTag.LastExecutingTag.Equals(t)));
+			return ThreadInformation?.Values.SingleOrDefault(x => x.Tags.Any(t => SDTag.LastExecutingTag.Equals(t)));
 		}
 
 		public SDThread GetErrorOrLastExecutingThread() {
