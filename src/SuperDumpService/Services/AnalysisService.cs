@@ -71,6 +71,9 @@ namespace SuperDumpService.Services {
 				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);
 
 				if (result != null) {
+					dumpRepo.WriteResult(dumpInfo.Id, result);
+					dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
+
 					var bundle = bundleRepo.Get(dumpInfo.BundleId);
 					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
 				}
