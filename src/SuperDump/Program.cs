@@ -168,7 +168,7 @@ namespace SuperDump {
 				context.DacLocation = dac;
 				context.Runtime = target.CreateRuntime(ref dac);
 				context.WriteInfo("created runtime with version " + context.Runtime.ClrInfo.Version);
-				context.Heap = context.Runtime.GetHeap();
+				context.Heap = context.Runtime.Heap;
 			} catch (FileNotFoundException ex) {
 				context.WriteError("The right dac file could not be found.");
 				context.WriteLine(ex.Message);
