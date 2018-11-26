@@ -156,8 +156,8 @@ namespace SuperDumpService.Controllers {
 					Paged = foundBundles.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			} else {
 				var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
@@ -172,8 +172,8 @@ namespace SuperDumpService.Controllers {
 					Paged = filtered.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			}
 		}
@@ -285,8 +285,8 @@ namespace SuperDumpService.Controllers {
 				SimilarDumpIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? new Dictionary<string, IEnumerable<JiraIssueModel>>() : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration,
 				DumpStatus = dumpInfo.Status,
-				IsRelationshipsPopulated = relationshipRepo.IsPopulated,
-				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 			});
 		}
 
