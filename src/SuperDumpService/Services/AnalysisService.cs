@@ -51,7 +51,11 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
-		public async Task Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
+			AsyncHelper.RunSync(() => AnalyzeAsync(dumpInfo, dumpFilePath, analysisWorkingDir));
+		}
+
+		public async Task AnalyzeAsync(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
 			await BlockIfBundleRepoNotReady($"AnalysisService.Analyze for {dumpInfo.Id}");
 
 			try {
