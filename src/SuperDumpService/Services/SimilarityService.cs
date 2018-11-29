@@ -97,7 +97,11 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("similarityanalysis", Order = 3)]
-		public async Task CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
+		public void CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
+			AsyncHelper.RunSync(() => CalculateSimilarityAsync(dumpA, force, timeFrom));
+		}
+
+		public async Task CalculateSimilarityAsync(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
 			try {
 				var swTotal = new Stopwatch();
 				swTotal.Start();

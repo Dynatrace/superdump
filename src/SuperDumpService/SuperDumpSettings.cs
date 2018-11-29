@@ -37,5 +37,6 @@ namespace SuperDumpService {
 		public bool UseJiraIntegration { get; set; }
 		public JiraIntegrationSettings JiraIntegrationSettings { get; set; }
 		public bool UseAllRequestLogging { get; set; }
+		public bool DuplicationDetectionEnabled { get; set; }
 	}
 }

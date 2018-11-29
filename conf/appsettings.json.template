@@ -120,6 +120,7 @@
 
       "JiraApiUsername": "",
       "JiraApiPassword": ""
-    }
+    },
+    "DuplicationDetectionEnabled": "true" // if enabled, the same bundle (md5 hash check) does not get analyzed twice
   }
 }

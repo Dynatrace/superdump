@@ -35,7 +35,7 @@ namespace SuperDumpService.Helpers {
 				Timeout = new TimeSpan(0, 0, 10)
 			};
 			try {
-				HttpResponseMessage resTask = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri)).Result;
+				HttpResponseMessage resTask = AsyncHelper.RunSync(() => client.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri)));
 				if (string.IsNullOrEmpty(filename)) {
 					try {
 						filename = resTask.Content.Headers.ContentDisposition.FileName.Replace("\"", "");
@@ -288,4 +288,27 @@ namespace SuperDumpService.Helpers {
 			}
 		}
 	}
+
+	public static class AsyncHelper {
+		private static readonly TaskFactory _taskFactory = new
+			TaskFactory(CancellationToken.None,
+						TaskCreationOptions.None,
+						TaskContinuationOptions.None,
+						TaskScheduler.Default);
+
+		public static TResult RunSync<TResult>(Func<Task<TResult>> func)
+			=> _taskFactory
+				.StartNew(func)
+				.Unwrap()
+				.GetAwaiter()
+				.GetResult();
+
+		public static void RunSync(Func<Task> func)
+			=> _taskFactory
+				.StartNew(func)
+				.Unwrap()
+				.GetAwaiter()
+				.GetResult();
+	}
+
 }

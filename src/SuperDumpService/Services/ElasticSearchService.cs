@@ -48,6 +48,10 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("elasticsearch", Order = 3)]
+		public void PushAllResults(bool clean) {
+			AsyncHelper.RunSync(() => PushAllResultsAsync(clean));
+		}
+
 		public async Task PushAllResultsAsync(bool clean) {
 			if (elasticClient == null) {
 				throw new InvalidOperationException("ElasticSearch has not been initialized! Please verify that the settings specify a correct elastic search host.");
