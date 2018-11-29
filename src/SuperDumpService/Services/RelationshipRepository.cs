@@ -60,7 +60,6 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-
 		private async Task UpdateSimilarity0(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
 			if (relationShips.TryGetValue(dumpA, out IDictionary<DumpIdentifier, double> relationShip)) {
 				await UpdateRelationship(dumpA, dumpB, similarity, relationShip);

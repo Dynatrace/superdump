@@ -11,6 +11,7 @@ using System.IO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Linq;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -90,7 +91,8 @@ namespace SuperDumpService.Controllers.Api {
 					return BadRequest("Invalid request, resource identifier is not valid or cannot be reached.");
 				}
 			} else {
-				return BadRequest("Invalid request, check if value was set.");
+				var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(x => "'" + x.Exception.Message + "'"));
+				return BadRequest($"Invalid request, check if value was set: {errors}");
 			}
 		}
 	}

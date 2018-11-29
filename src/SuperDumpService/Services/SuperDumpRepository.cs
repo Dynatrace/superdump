@@ -168,7 +168,7 @@ namespace SuperDumpService.Services {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
 			try {
 				using (TempDirectoryHandle tempDir = await downloadService.Download(bundleId, url, filename)) {
-					if (!SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
+					if (settings.Value.DuplicationDetectionEnabled && !SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
 						// duplication detected
 						return;
 					}
