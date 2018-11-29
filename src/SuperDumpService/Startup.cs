@@ -28,26 +28,20 @@ using WebSocketManager;
 
 namespace SuperDumpService {
 	public class Startup {
-		public Startup(IHostingEnvironment env) {
-			var builder = new ConfigurationBuilder()
-				.SetBasePath(env.ContentRootPath)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), "appsettings.json"), optional: false, reloadOnChange: true)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), $"appsettings.{env.EnvironmentName}.json"), optional: true)
-				.AddEnvironmentVariables();
+		private readonly IHostingEnvironment env;
+		private readonly IConfiguration config;
+		private readonly ILoggerFactory loggerFactory;
 
-			if (env.IsDevelopment()) {
-				builder.AddUserSecrets<Startup>();
-			}
-
-			Configuration = builder.Build();
+		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory loggerFactory) {
+			this.env = env;
+			this.config = config;
+			this.loggerFactory = loggerFactory;
 		}
-
-		public IConfigurationRoot Configuration { get; }
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
 			// setup path
-			IConfigurationSection configurationSection = Configuration.GetSection(nameof(SuperDumpSettings));
+			IConfigurationSection configurationSection = config.GetSection(nameof(SuperDumpSettings));
 			IConfigurationSection binPathSection = configurationSection.GetSection(nameof(SuperDumpSettings.BinPath));
 			IEnumerable<string> binPath = binPathSection.GetChildren().Select(s => s.Value);
 			string path = Environment.GetEnvironmentVariable("PATH");
@@ -55,13 +49,13 @@ namespace SuperDumpService {
 			Environment.SetEnvironmentVariable("PATH", path + ";" + additionalPath);
 
 			services.AddOptions();
-			services.Configure<SuperDumpSettings>(Configuration.GetSection(nameof(SuperDumpSettings)));
+			services.Configure<SuperDumpSettings>(config.GetSection(nameof(SuperDumpSettings)));
 
-			var pathHelper = new PathHelper(Configuration.GetSection(nameof(SuperDumpSettings)));
+			var pathHelper = new PathHelper(config.GetSection(nameof(SuperDumpSettings)));
 			services.AddSingleton(pathHelper);
 
 			var superDumpSettings = new SuperDumpSettings();
-			Configuration.GetSection(nameof(SuperDumpSettings)).Bind(superDumpSettings);
+			config.GetSection(nameof(SuperDumpSettings)).Bind(superDumpSettings);
 
 			// add ldap authentication
 			if (superDumpSettings.UseLdapAuthentication) {
@@ -79,12 +73,12 @@ namespace SuperDumpService {
 			services.AddAntiforgery();
 
 			//configure DB
-			if (Configuration.GetValue<bool>("UseInMemoryHangfireStorage")) {
+			if (config.GetValue<bool>("UseInMemoryHangfireStorage")) {
 				services.AddHangfire(x => x.UseStorage(new Hangfire.MemoryStorage.MemoryStorage()));
 			} else {
 				string connString;
 				Console.WriteLine(Directory.GetCurrentDirectory());
-				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB", pathHelper)) {
+				using (SqlConnection conn = LocalDBAccess.GetLocalDB(config, "HangfireDB", pathHelper)) {
 					connString = conn.ConnectionString;
 				}
 				if (string.IsNullOrEmpty(connString)) {
@@ -94,7 +88,7 @@ namespace SuperDumpService {
 			}
 
 			// set upload limit
-			int maxUploadSizeMB = Configuration.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
+			int maxUploadSizeMB = config.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
 			if (maxUploadSizeMB == 0) maxUploadSizeMB = 16000; // default
 			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 1024L * 1024L * maxUploadSizeMB);
 
@@ -161,7 +155,7 @@ namespace SuperDumpService {
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns, IAuthorizationHelper authorizationHelper) {
+		public void Configure(IApplicationBuilder app, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns, IAuthorizationHelper authorizationHelper) {
 			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
@@ -170,15 +164,15 @@ namespace SuperDumpService {
 			}
 
 			// configure Logger
-			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+			loggerFactory.AddConsole(config.GetSection("Logging"));
 
-			var fileLogConfig = Configuration.GetSection("FileLogging");
+			var fileLogConfig = config.GetSection("FileLogging");
 			var logPath = Path.GetDirectoryName(fileLogConfig.GetValue<string>("PathFormat"));
 			Directory.CreateDirectory(logPath);
-			loggerFactory.AddFile(Configuration.GetSection("FileLogging"));
+			loggerFactory.AddFile(config.GetSection("FileLogging"));
 
 			if (settings.Value.UseAllRequestLogging) {
-				loggerFactory.AddFile(Configuration.GetSection("RequestFileLogging"));
+				loggerFactory.AddFile(config.GetSection("RequestFileLogging"));
 			}
 
 			loggerFactory.AddDebug();
