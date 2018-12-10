@@ -32,7 +32,7 @@ namespace SuperDump.Analyzers {
 					this.context.Runtime.ReadPointer(obj, out value);
 
 					ClrType type = this.context.Heap.GetObjectType(obj);
-					if (type == null || string.IsNullOrEmpty(type.Name) || type.IsFree) {
+					if (type == null || type.IsFree) {
 						continue;
 					}
 
@@ -43,7 +43,12 @@ namespace SuperDump.Analyzers {
 						memDict[value].Count++;
 						memDict[value].Size += size;
 					} else {
-						memDict.Add(value, new SDMemoryObject { Count = 1, Size = size, Type = type.Name });
+						memDict.Add(value, new SDMemoryObject {
+							Count = 1,
+							Size = size,
+							Type = string.IsNullOrEmpty(type.Name) ? "Unknown" : type.Name
+						}
+						);
 					}
 				}
 			}
