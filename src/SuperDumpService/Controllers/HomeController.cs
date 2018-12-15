@@ -25,7 +25,7 @@ namespace SuperDumpService.Controllers {
 		public SuperDumpRepository superDumpRepo;
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
-		public DumpStorageFilebased dumpStorage;
+		public IDumpStorage dumpStorage;
 		public SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
@@ -39,7 +39,7 @@ namespace SuperDumpService.Controllers {
 				SuperDumpRepository superDumpRepo, 
 				BundleRepository bundleRepo, 
 				DumpRepository dumpRepo,
-				DumpStorageFilebased dumpStorage, 
+				IDumpStorage dumpStorage, 
 				IOptions<SuperDumpSettings> settings, 
 				PathHelper pathHelper, 
 				RelationshipRepository relationshipRepo, 

@@ -15,13 +15,11 @@ namespace SuperDumpService.Services {
 	/// for writing and reading of relationship information
 	/// this implementation uses simple filebased storage
 	/// </summary>
-	public class RelationshipStorageFilebased {
+	public class RelationshipStorageFilebased : IRelationshipStorage {
 		private readonly PathHelper pathHelper;
-		private readonly IOptions<SuperDumpSettings> settings;
 
-		public RelationshipStorageFilebased(PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
+		public RelationshipStorageFilebased(PathHelper pathHelper) {
 			this.pathHelper = pathHelper;
-			this.settings = settings;
 		}
 
 		public async Task StoreRelationships(DumpIdentifier dumpId, IDictionary<DumpIdentifier, double> relationships) {

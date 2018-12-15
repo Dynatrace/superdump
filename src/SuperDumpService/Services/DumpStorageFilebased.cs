@@ -15,7 +15,7 @@ namespace SuperDumpService.Services {
 	/// for writing and reading of dumps only
 	/// this implementation uses simple filebased storage
 	/// </summary>
-	public class DumpStorageFilebased {
+	public class DumpStorageFilebased : IDumpStorage {
 		private readonly PathHelper pathHelper;
 		private readonly IOptions<SuperDumpSettings> settings;
 
@@ -50,11 +50,11 @@ namespace SuperDumpService.Services {
 			File.WriteAllText(filename, JsonConvert.SerializeObject(metaInfo, Formatting.Indented));
 		}
 
-		internal bool MiniInfoExists(DumpIdentifier id) {
+		public bool MiniInfoExists(DumpIdentifier id) {
 			return File.Exists(pathHelper.GetDumpMiniInfoPath(id));
 		}
 
-		internal async Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id) {
+		public async Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id) {
 			return JsonConvert.DeserializeObject<DumpMiniInfo>(await File.ReadAllTextAsync(pathHelper.GetDumpMiniInfoPath(id)));
 		}
 
@@ -121,15 +121,15 @@ namespace SuperDumpService.Services {
 		/// <summary>
 		/// actually copies a file into the dumpdirectory
 		/// </summary>
-		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo sourcePath) {
+		public async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo sourcePath) {
 			return await Utility.CopyFile(sourcePath, new FileInfo(Path.Combine(pathHelper.GetDumpDirectory(bundleId, dumpId), sourcePath.Name)));
 		}
 
-		internal void DeleteDumpFile(string bundleId, string dumpId) {
+		public void DeleteDumpFile(string bundleId, string dumpId) {
 			File.Delete(GetDumpFilePath(bundleId, dumpId));
 		}
 
-		internal void Create(string bundleId, string dumpId) {
+		public void Create(string bundleId, string dumpId) {
 			string dir = pathHelper.GetDumpDirectory(bundleId, dumpId);
 			if (Directory.Exists(dir)) {
 				throw new DirectoryAlreadyExistsException("Cannot create '{dir}'. It already exists.");
@@ -137,15 +137,15 @@ namespace SuperDumpService.Services {
 			Directory.CreateDirectory(dir);
 		}
 
-		internal async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
+		public async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
 			await File.WriteAllTextAsync(pathHelper.GetDumpMiniInfoPath(id), JsonConvert.SerializeObject(miniInfo, Formatting.None));
 		}
 
-		internal void Store(DumpMetainfo dumpInfo) {
+		public void Store(DumpMetainfo dumpInfo) {
 			WriteMetainfoFile(dumpInfo, pathHelper.GetDumpMetadataPath(dumpInfo.BundleId, dumpInfo.DumpId));
 		}
 
-		internal IEnumerable<SDFileInfo> GetSDFileInfos(string bundleId, string dumpId) {
+		public IEnumerable<SDFileInfo> GetSDFileInfos(string bundleId, string dumpId) {
 			foreach (var filePath in Directory.EnumerateFiles(pathHelper.GetDumpDirectory(bundleId, dumpId))) {
 				// in case the requested file has a "special" entry in FileEntry list, add that information
 				var dumpInfo = ReadMetainfoFile(bundleId, dumpId);

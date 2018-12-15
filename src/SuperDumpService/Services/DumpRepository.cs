@@ -16,12 +16,12 @@ namespace SuperDumpService.Services {
 	public class DumpRepository {
 		private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>> dumps = new ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>>();
 		private readonly ConcurrentDictionary<DumpIdentifier, DumpMiniInfo> miniInfosLazyCache = new ConcurrentDictionary<DumpIdentifier, DumpMiniInfo>();
-		private readonly DumpStorageFilebased storage;
+		private readonly IDumpStorage storage;
 		private readonly PathHelper pathHelper;
 
 		public bool IsPopulated { get; private set; }
 
-		public DumpRepository(DumpStorageFilebased storage, PathHelper pathHelper) {
+		public DumpRepository(IDumpStorage storage, PathHelper pathHelper) {
 			this.storage = storage;
 			this.pathHelper = pathHelper;
 		}

@@ -10,7 +10,7 @@ using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
-		private readonly DumpStorageFilebased dumpStorage;
+		private readonly IDumpStorage dumpStorage;
 		private readonly DumpRepository dumpRepo;
 		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
@@ -20,7 +20,7 @@ namespace SuperDumpService.Services {
 		private readonly SimilarityService similarityService;
 
 		public AnalysisService(
-					DumpStorageFilebased dumpStorage,
+					IDumpStorage dumpStorage,
 					DumpRepository dumpRepo,
 					BundleRepository bundleRepo,
 					PathHelper pathHelper,

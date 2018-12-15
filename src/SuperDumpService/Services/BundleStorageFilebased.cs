@@ -14,10 +14,10 @@ namespace SuperDumpService.Services {
 	/// this implementation uses simple filebased storage
 	/// </summary>
 	public class BundleStorageFilebased {
-		private readonly DumpStorageFilebased dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
+		private readonly IDumpStorage dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
 		private readonly PathHelper pathHelper;
 
-		public BundleStorageFilebased(DumpStorageFilebased dumpStorage, PathHelper pathHelper) {
+		public BundleStorageFilebased(IDumpStorage dumpStorage, PathHelper pathHelper) {
 			this.dumpStorage = dumpStorage;
 			this.pathHelper = pathHelper;
 		}

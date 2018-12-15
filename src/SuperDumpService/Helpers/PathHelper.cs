@@ -12,11 +12,11 @@ namespace SuperDumpService.Helpers {
 		private static string confDir = Path.Combine(Directory.GetCurrentDirectory(), @"../../conf/");
 		private static string confDirFallback = Directory.GetCurrentDirectory();
 
-		public PathHelper(IConfigurationSection configurationSection) {
+		public PathHelper(string workingDir, string uploadsDir, string hangfireDbDir) {
 			// maybe there is a smarter way to convert IConfigurationSection to SuperDumpSettings?
-			this.workingDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.DumpsDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/");
-			this.uploadsDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/");
-			this.hangfireDbDir = configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/");
+			this.workingDir = workingDir;
+			this.uploadsDir = uploadsDir;
+			this.hangfireDbDir = hangfireDbDir;
 		}
 
 		internal static string GetConfDirectory() {
