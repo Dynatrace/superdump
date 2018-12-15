@@ -51,7 +51,11 @@ namespace SuperDumpService {
 			services.AddOptions();
 			services.Configure<SuperDumpSettings>(config.GetSection(nameof(SuperDumpSettings)));
 
-			var pathHelper = new PathHelper(config.GetSection(nameof(SuperDumpSettings)));
+			var pathHelper = new PathHelper(
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.DumpsDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/"),
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/"),
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/")
+			);
 			services.AddSingleton(pathHelper);
 
 			var superDumpSettings = new SuperDumpSettings();
@@ -134,7 +138,7 @@ namespace SuperDumpService {
 			services.AddSingleton<BundleRepository>();
 			services.AddSingleton<BundleStorageFilebased>();
 			services.AddSingleton<DumpRepository>();
-			services.AddSingleton<DumpStorageFilebased>();
+			services.AddSingleton<IDumpStorage, DumpStorageFilebased>();
 			services.AddSingleton<AnalysisService>();
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
@@ -145,7 +149,7 @@ namespace SuperDumpService {
 			services.AddSingleton<DumpRetentionService>();
 			services.AddSingleton<SimilarityService>();
 			services.AddSingleton<RelationshipRepository>();
-			services.AddSingleton<RelationshipStorageFilebased>();
+			services.AddSingleton<IRelationshipStorage, RelationshipStorageFilebased>();
 			services.AddSingleton<IdenticalDumpStorageFilebased>();
 			services.AddSingleton<IdenticalDumpRepository>();
 			services.AddSingleton<JiraApiService>();

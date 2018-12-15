@@ -25,7 +25,7 @@ namespace SuperDumpService.Controllers {
 		public SuperDumpRepository superDumpRepo;
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
-		public DumpStorageFilebased dumpStorage;
+		public IDumpStorage dumpStorage;
 		public SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
@@ -39,7 +39,7 @@ namespace SuperDumpService.Controllers {
 				SuperDumpRepository superDumpRepo, 
 				BundleRepository bundleRepo, 
 				DumpRepository dumpRepo,
-				DumpStorageFilebased dumpStorage, 
+				IDumpStorage dumpStorage, 
 				IOptions<SuperDumpSettings> settings, 
 				PathHelper pathHelper, 
 				RelationshipRepository relationshipRepo, 
@@ -227,7 +227,8 @@ namespace SuperDumpService.Controllers {
 			}
 
 			logger.LogDumpAccess("Start Interactive Mode", HttpContext, bundleInfo, dumpId);
-			return View(new InteractiveViewModel() { BundleId = bundleId, DumpId = dumpId, DumpInfo = dumpRepo.Get(bundleId, dumpId), Command = cmd });
+			var id = new DumpIdentifier(bundleId, dumpId);
+			return View(new InteractiveViewModel() { Id = id, DumpInfo = dumpRepo.Get(id), Command = cmd });
 		}
 
 		[HttpGet(Name = "Report")]
@@ -241,9 +242,9 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 
-			var dumpInfo = superDumpRepo.GetDump(bundleId, dumpId);
+			var dumpInfo = superDumpRepo.GetDump(id);
 			if (dumpInfo == null) {
-				logger.LogNotFound("Report: Dump not found", HttpContext, "DumpId", dumpId);
+				logger.LogNotFound("Report: Dump not found", HttpContext, "Id", id.ToString());
 				return View(null);
 			}
 
@@ -263,13 +264,13 @@ namespace SuperDumpService.Controllers {
 				(await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
 
-			return base.View(new ReportViewModel(bundleId, dumpId) {
+			return base.View(new ReportViewModel(id) {
 				BundleFileName = bundleInfo.BundleFileName,
 				DumpFileName = dumpInfo.DumpFileName,
 				Result = res,
 				CustomProperties = Utility.Sanitize(bundleInfo.CustomProperties),
 				TimeStamp = dumpInfo.Created,
-				Files = dumpRepo.GetFileNames(bundleId, dumpId),
+				Files = dumpRepo.GetFileNames(id),
 				AnalysisError = dumpInfo.ErrorMessage,
 				ThreadTags = res != null ? res.GetThreadTags() : new HashSet<SDTag>(),
 				PointerSize = res == null ? 8 : (res.SystemContext?.ProcessArchitecture == "X86" ? 8 : 12),
@@ -280,7 +281,7 @@ namespace SuperDumpService.Controllers {
 				InteractiveGdbHost = settings.InteractiveGdbHost,
 				SimilarityDetectionEnabled = settings.SimilarityDetectionEnabled,
 				Similarities = similarDumps,
-				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(bundleId, dumpId),
+				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(id),
 				MainBundleJiraIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? Enumerable.Empty<JiraIssueModel>() : await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
 				SimilarDumpIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? new Dictionary<string, IEnumerable<JiraIssueModel>>() : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration,
@@ -293,7 +294,7 @@ namespace SuperDumpService.Controllers {
 		private async Task<string> ReadCustomTextResult(DumpMetainfo dumpInfo) {
 			SDFileEntry customResultFile = dumpInfo.Files.FirstOrDefault(x => x.Type == SDFileType.CustomTextResult);
 			if (customResultFile == null) return null;
-			FileInfo file = dumpStorage.GetFile(dumpInfo.BundleId, dumpInfo.DumpId, customResultFile.FileName);
+			FileInfo file = dumpStorage.GetFile(dumpInfo.Id, customResultFile.FileName);
 			if (file == null || !file.Exists) return null;
 			return await System.IO.File.ReadAllTextAsync(file.FullName);
 		}
@@ -318,7 +319,7 @@ namespace SuperDumpService.Controllers {
 				logger.LogNotFound("DownloadFile: Bundle not found", HttpContext, "BundleId", bundleId);
 				return View(null);
 			}
-			var file = dumpStorage.GetFile(bundleId, dumpId, filename);
+			var file = dumpStorage.GetFile(new DumpIdentifier(bundleId, dumpId), filename);
 			if (file == null) {
 				logger.LogNotFound("DownloadFile: File not found", HttpContext, "Filename", filename);
 				throw new ArgumentException("could not find file");
@@ -337,7 +338,7 @@ namespace SuperDumpService.Controllers {
 		/// When normally requesting this, the content is direclty shown in the browser.
 		/// </summary>
 		private IActionResult ContentWithFilename(string content, string filename) {
-			ContentDisposition cd = new ContentDisposition {
+			var cd = new ContentDisposition {
 				FileName = filename,
 				Inline = true  // false = prompt the user for downloading;  true = browser to try to show the file inline
 			};
@@ -355,8 +356,9 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 			logger.LogDumpAccess("Rerun", HttpContext, bundleInfo, dumpId);
-			superDumpRepo.RerunAnalysis(bundleId, dumpId);
-			return View(new ReportViewModel(bundleId, dumpId));
+			var id = new DumpIdentifier(bundleId, dumpId);
+			superDumpRepo.RerunAnalysis(id);
+			return View(new ReportViewModel(id));
 		}
 	}
 }

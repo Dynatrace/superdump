@@ -18,7 +18,7 @@
 
 } else {
 	<div class="wrapper">
-		<h2>Dump Id: @Model.DumpId</h2>
+		<h2>Dump Id: @Model.Id.DumpId</h2>
 		@if (!Model.IsRelationshipsPopulated) {
 			<div>
 				<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Similarity repository</strong> is being populated right now. Similarities might not be complete yet.
@@ -36,8 +36,8 @@
 				@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
 					@using (Html.BeginForm("Rerun", "Home")) {
 						<div class="form-group text-right">
-							<input type="hidden" name="bundleId" value="@Model.BundleId" />
-							<input type="hidden" name="dumpId" value="@Model.DumpId" />
+							<input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
+							<input type="hidden" name="dumpId" value="@Model.Id.DumpId" />
 							<input type="submit" value="Rerun Analysis" class="btn btn-danger" />
 						</div>
 					}
@@ -76,7 +76,7 @@
 										@foreach (var rel in dupls.OrderByDescending(x => x.Value + (Model.UseJiraIntegration && Model.SimilarDumpIssues.ContainsKey(x.Key.BundleId) ? 100 : 0))) {
 											<li class="list-group-item">
 												<div class="small">(@rel.Key.Created)</div>
-												<a asp-controller="Similarity" asp-action="CompareDumps" asp-route-bundleId1="@Model.BundleId" asp-route-dumpId1="@Model.DumpId" asp-route-bundleId2="@rel.Key.BundleId" asp-route-dumpId2="@rel.Key.DumpId">
+												<a asp-controller="Similarity" asp-action="CompareDumps" asp-route-bundleId1="@Model.Id.BundleId" asp-route-dumpId1="@Model.Id.DumpId" asp-route-bundleId2="@rel.Key.Id.BundleId" asp-route-dumpId2="@rel.Key.Id.DumpId">
 													<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span>
 												</a>
 												<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
@@ -137,7 +137,7 @@
 									<ul class="flat">
 										@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
 											<li>
-												@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
+												@{Html.RenderPartial("_File", new FileViewModel(Model.Id, file));}
 											</li>
 										}
 									</ul>

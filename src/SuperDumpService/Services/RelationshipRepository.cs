@@ -15,12 +15,12 @@ namespace SuperDumpService.Services {
 
 		// stores relationships bi-directional. both directions should stay in sync
 		private readonly IDictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>> relationShips = new Dictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>>();
-		private readonly RelationshipStorageFilebased relationshipStorage;
+		private readonly IRelationshipStorage relationshipStorage;
 		private readonly DumpRepository dumpRepo;
 		private readonly IOptions<SuperDumpSettings> settings;
 		public bool IsPopulated { get; private set; } = false;
 
-		public RelationshipRepository(RelationshipStorageFilebased relationshipStorage, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) {
+		public RelationshipRepository(IRelationshipStorage relationshipStorage, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) {
 			this.relationshipStorage = relationshipStorage;
 			this.dumpRepo = dumpRepo;
 			this.settings = settings;

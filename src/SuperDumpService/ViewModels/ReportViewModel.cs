@@ -7,9 +7,7 @@ using SuperDumpService.Services;
 
 namespace SuperDumpService.ViewModels {
 	public class ReportViewModel {
-		public DumpIdentifier DumpIdentifier => new DumpIdentifier(BundleId, DumpId);
-		public string BundleId { get; set; }
-		public string DumpId { get; set; }
+		public DumpIdentifier Id { get; set; }
 		public string BundleFileName { get; set; }
 		public string DumpFileName { get; set; }
 		public DateTime TimeStamp { get; set; }
@@ -34,9 +32,8 @@ namespace SuperDumpService.ViewModels {
 		public bool IsRelationshipsPopulated { get; set; }
 		public bool IsJiraIssuesPopulated { get; set; }
 
-		public ReportViewModel(string bundleId, string dumpId) {
-			this.BundleId = bundleId;
-			this.DumpId = dumpId;
+		public ReportViewModel(DumpIdentifier id) {
+			this.Id = id;
 		}
 
 		private static readonly string[] sizeSuffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };

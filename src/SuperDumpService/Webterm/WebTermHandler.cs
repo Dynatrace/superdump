@@ -42,16 +42,16 @@ namespace SuperDump.Webterm {
 			}
 		}
 
-		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, string bundleId, string dumpId) {
+		private ConsoleAppManager StartCdb(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, bool is64Bit, DumpIdentifier id) {
 			string command = is64Bit ? settings.Value.WindowsInteractiveCommandx64 : settings.Value.WindowsInteractiveCommandx86;
 			if (string.IsNullOrEmpty(command)) throw new ArgumentException("WindowsInteractiveCommandx86/X64 not set.");
-			return RunConsoleApp(socketId, workingDir, dumpPath, command, bundleId, dumpId);
+			return RunConsoleApp(socketId, workingDir, dumpPath, command, id);
 		}
 
-		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command, string bundleId, string dumpId) {
+		private ConsoleAppManager RunConsoleApp(string socketId, DirectoryInfo workingDir, FileInfo dumpPath, string command, DumpIdentifier id) {
 
-			command = command.Replace("{bundleid}", bundleId);
-			command = command.Replace("{dumpid}", dumpId);
+			command = command.Replace("{bundleid}", id.BundleId);
+			command = command.Replace("{dumpid}", id.DumpId);
 			command = command.Replace("{dumppath}", dumpPath?.FullName);
 			command = command.Replace("{dumpname}", dumpPath?.Name);
 			command = command.Replace("{dumpdir}", workingDir?.FullName);
@@ -76,23 +76,23 @@ namespace SuperDump.Webterm {
 		}
 
 		// called by WebSocketManager
-		public void StartSession(string socketId, string bundleId, string dumpId, string initialCommand) {
+		public void StartSession(string socketId, DumpIdentifier id, string initialCommand) {
 			try {
-				System.Console.WriteLine($"StartSession ({socketId}): {bundleId}, {dumpId}");
-				if (string.IsNullOrEmpty(bundleId) || string.IsNullOrEmpty(dumpId)) {
+				System.Console.WriteLine($"StartSession ({socketId}): {id}");
+				if (string.IsNullOrEmpty(id.BundleId) || string.IsNullOrEmpty(id.DumpId)) {
 					return;
 				}
-				var dumpInfo = dumpRepo.Get(bundleId, dumpId);
-				var dumpFilePath = dumpRepo.GetDumpFilePath(bundleId, dumpId);
+				var dumpInfo = dumpRepo.Get(id);
+				var dumpFilePath = dumpRepo.GetDumpFilePath(id);
 				var dumpFilePathInfo = dumpFilePath != null ? new FileInfo(dumpFilePath) : null;
 				var workingDirectory = dumpFilePathInfo?.Directory;
 
-				var sdResult = dumpRepo.GetResult(bundleId, dumpId).Result;
+				var sdResult = dumpRepo.GetResult(id).Result;
 				bool is64bit = sdResult?.SystemContext.ProcessArchitecture.Contains("64") ?? true; // default to 64 bit in case it's not known
 				ConsoleAppManager mgr = null;
 				var initialCommands = new List<string>();
 				if (dumpInfo.DumpFileName.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
-					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, bundleId, dumpId);
+					mgr = StartCdb(socketId, workingDirectory, dumpFilePathInfo, is64bit, id);
 					initialCommands.Add(".cordll -ve -u -l"); // load DAC and SOS
 				} else {
 					throw new NotSupportedException($"file extension of '{dumpInfo.DumpFileName}' not supported for interactive mode.");

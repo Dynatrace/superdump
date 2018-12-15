@@ -4,8 +4,7 @@ using System.Collections.Generic;
 
 namespace SuperDumpService.ViewModels {
 	public class InteractiveViewModel {
-		public string BundleId { get; set; }
-		public string DumpId { get; set; }
+		public DumpIdentifier Id { get; set; }
 		public DumpMetainfo DumpInfo { get; set; }
 		public string Command { get; set; }
 	}

@@ -122,7 +122,7 @@ namespace SuperDumpService.Services {
 
 		private static long ComputeDumpFileSizeKb(BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
 			long dumpSize = -1;
-			string dumpDirectory = pathHelper.GetDumpDirectory(bundleInfo.BundleId, dumpInfo.DumpId);
+			string dumpDirectory = pathHelper.GetDumpDirectory(dumpInfo.Id);
 			if (!Directory.Exists(dumpDirectory)) {
 				return -1;
 			}

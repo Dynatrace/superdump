@@ -10,7 +10,7 @@ using SuperDump.Models;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
-		private readonly DumpStorageFilebased dumpStorage;
+		private readonly IDumpStorage dumpStorage;
 		private readonly DumpRepository dumpRepo;
 		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
@@ -20,7 +20,7 @@ namespace SuperDumpService.Services {
 		private readonly SimilarityService similarityService;
 
 		public AnalysisService(
-					DumpStorageFilebased dumpStorage,
+					IDumpStorage dumpStorage,
 					DumpRepository dumpRepo,
 					BundleRepository bundleRepo,
 					PathHelper pathHelper,
@@ -40,11 +40,11 @@ namespace SuperDumpService.Services {
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
-			string dumpFilePath = dumpStorage.GetDumpFilePath(dumpInfo.BundleId, dumpInfo.DumpId);
-			if (!File.Exists(dumpFilePath)) throw new DumpNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
+			string dumpFilePath = dumpStorage.GetDumpFilePath(dumpInfo.Id);
+			if (!File.Exists(dumpFilePath)) throw new DumpNotFoundException($"id: {dumpInfo.Id}, path: {dumpFilePath}");
 
-			string analysisWorkingDir = pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId);
-			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"bundleid: {dumpInfo.BundleId}, dumpid: {dumpInfo.DumpId}, path: {dumpFilePath}");
+			string analysisWorkingDir = pathHelper.GetDumpDirectory(dumpInfo.Id);
+			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"id: {dumpInfo.Id}, path: {dumpFilePath}");
 
 			// schedule actual analysis
 			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir)); // got a stackoverflow problem here.
@@ -59,7 +59,7 @@ namespace SuperDumpService.Services {
 			await BlockIfBundleRepoNotReady($"AnalysisService.Analyze for {dumpInfo.Id}");
 
 			try {
-				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Analyzing);
+				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Analyzing);
 
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
@@ -70,23 +70,23 @@ namespace SuperDumpService.Services {
 				}
 
 				// Re-fetch dump info as it was updated
-				dumpInfo = dumpRepo.Get(dumpInfo.BundleId, dumpInfo.DumpId);
+				dumpInfo = dumpRepo.Get(dumpInfo.Id);
 
 				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);
 
 				if (result != null) {
 					dumpRepo.WriteResult(dumpInfo.Id, result);
-					dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Finished);
+					dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Finished);
 
 					var bundle = bundleRepo.Get(dumpInfo.BundleId);
 					await elasticSearch.PushResultAsync(result, bundle, dumpInfo);
 				}
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
-				dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, e.ToString());
+				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed, e.ToString());
 			} finally {
 				if (settings.Value.DeleteDumpAfterAnalysis) {
-					dumpStorage.DeleteDumpFile(dumpInfo.BundleId, dumpInfo.DumpId);
+					dumpStorage.DeleteDumpFile(dumpInfo.Id);
 				}
 				await notifications.NotifyDumpAnalysisFinished(dumpInfo);
 				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
@@ -99,16 +99,16 @@ namespace SuperDumpService.Services {
 			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
 			string[] arguments = {
 				$"--dump \"{dumpFilePath}\"",
-				$"--out \"{pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)}\""
+				$"--out \"{pathHelper.GetJsonPath(dumpInfo.Id)}\""
 			};
 			using (var process = await ProcessRunner.Run(dumpselector, workingDir, arguments)) {
 				string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
 					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
 					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
 				Console.WriteLine(selectorLog);
-				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdumpselector.log"), selectorLog);
+				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdumpselector.log"), selectorLog);
 				if (process.ExitCode != 0) {
-					dumpRepo.SetDumpStatus(dumpInfo.BundleId, dumpInfo.DumpId, DumpStatus.Failed, selectorLog);
+					dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed, selectorLog);
 					throw new Exception(selectorLog);
 				}
 			}
@@ -118,7 +118,7 @@ namespace SuperDumpService.Services {
 
 		private async Task RunDebugDiagAnalysis(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			//--dump = "C:\superdump\data\dumps\hno3391\iwb0664\iwb0664.dmp"--out= "C:\superdump\data\dumps\hno3391\iwb0664\debugdiagout.mht"--symbolPath = "cache*c:\localsymbols;http://msdl.microsoft.com/download/symbols"--overwrite
-			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "DebugDiagAnalysis.mht");
+			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "DebugDiagAnalysis.mht");
 			string debugDiagExe = "SuperDump.DebugDiag.exe";
 
 			try {
@@ -130,8 +130,8 @@ namespace SuperDumpService.Services {
 						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
 						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
 					Console.WriteLine(log);
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "superdump.debugdiag.log"), log);
-					dumpRepo.AddFile(dumpInfo.BundleId, dumpInfo.DumpId, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdump.debugdiag.log"), log);
+					dumpRepo.AddFile(dumpInfo.Id, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
 				}
 			} catch (ProcessRunnerException e) {
 				if (e.InnerException is FileNotFoundException) {
@@ -155,8 +155,8 @@ namespace SuperDumpService.Services {
 			command = command.Replace("{dumpdir}", workingDir.FullName);
 			command = command.Replace("{dumppath}", dumpFilePath);
 			command = command.Replace("{dumpname}", Path.GetFileName(dumpFilePath));
-			command = command.Replace("{outputpath}", pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId));
-			command = command.Replace("{outputname}", Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.BundleId, dumpInfo.DumpId)));
+			command = command.Replace("{outputpath}", pathHelper.GetJsonPath(dumpInfo.Id));
+			command = command.Replace("{outputname}", Path.GetFileName(pathHelper.GetJsonPath(dumpInfo.Id)));
 
 			Utility.ExtractExe(command, out string executable, out string arguments);
 
@@ -166,10 +166,10 @@ namespace SuperDumpService.Services {
 				Console.WriteLine($"stderr: {process.StdErr}");
 
 				if (process.StdOut?.Length > 0) {
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.log"), process.StdOut);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "linux-analysis.log"), process.StdOut);
 				}
 				if (process.StdErr?.Length > 0) {
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.BundleId, dumpInfo.DumpId), "linux-analysis.err.log"), process.StdErr);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "linux-analysis.err.log"), process.StdErr);
 				}
 
 				if (process.ExitCode != 0) {

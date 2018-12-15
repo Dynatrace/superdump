@@ -2,13 +2,11 @@
 
 namespace SuperDumpService.ViewModels {
 	public class FileViewModel {
-		public string BundleId { get; private set; }
-		public string DumpId { get; private set; }
+		public DumpIdentifier Id { get; private set; }
 		public SDFileInfo File { get; private set; }
 
-		public FileViewModel(string bundleId, string dumpId, SDFileInfo file) {
-			this.BundleId = bundleId;
-			this.DumpId = dumpId;
+		public FileViewModel(DumpIdentifier id, SDFileInfo file) {
+			this.Id = id;
 			this.File = file;
 		}
 	}
