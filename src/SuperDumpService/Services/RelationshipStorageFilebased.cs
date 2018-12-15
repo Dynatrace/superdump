@@ -22,19 +22,19 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper;
 		}
 
-		public async Task StoreRelationships(DumpIdentifier dumpId, IDictionary<DumpIdentifier, double> relationships) {
+		public async Task StoreRelationships(DumpIdentifier id, IDictionary<DumpIdentifier, double> relationships) {
 			List<KeyValuePair<DumpIdentifier, double>> data = relationships.OrderByDescending(x => Math.Round(x.Value, 3)).ToList(); // use a list, otherwise complex key (DumpIdentifier) is problematic
-			await File.WriteAllTextAsync(pathHelper.GetRelationshipsPath(dumpId.BundleId, dumpId.DumpId), JsonConvert.SerializeObject(data));
+			await File.WriteAllTextAsync(pathHelper.GetRelationshipsPath(id), JsonConvert.SerializeObject(data));
 		}
 
-		public async Task<IDictionary<DumpIdentifier, double>> ReadRelationships(DumpIdentifier dumpId) {
-			string text = await File.ReadAllTextAsync(pathHelper.GetRelationshipsPath(dumpId.BundleId, dumpId.DumpId));
+		public async Task<IDictionary<DumpIdentifier, double>> ReadRelationships(DumpIdentifier id) {
+			string text = await File.ReadAllTextAsync(pathHelper.GetRelationshipsPath(id));
 			var data = JsonConvert.DeserializeObject<List<KeyValuePair<DumpIdentifier, double>>>(text);
 			return data.ToDictionary(x => x.Key, y => y.Value);
 		}
 
-		public void Wipe(DumpIdentifier dumpId) {
-			File.Delete(pathHelper.GetRelationshipsPath(dumpId.BundleId, dumpId.DumpId));
+		public void Wipe(DumpIdentifier id) {
+			File.Delete(pathHelper.GetRelationshipsPath(id));
 		}
 	}
 }

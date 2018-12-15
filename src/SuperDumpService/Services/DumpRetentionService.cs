@@ -46,7 +46,7 @@ namespace SuperDumpService.Services {
 		/// There is no exception handling because exceptions are visible in Hangfire as opposed to log messages.
 		/// </summary>
 		private void RemoveOldDumps(DumpMetainfo dump) {
-			string dumpDirectory = pathHelper.GetDumpDirectory(dump.BundleId, dump.DumpId);
+			string dumpDirectory = pathHelper.GetDumpDirectory(dump.Id);
 			if (!Directory.Exists(dumpDirectory)) {
 				return;
 			}

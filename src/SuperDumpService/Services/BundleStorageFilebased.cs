@@ -86,7 +86,7 @@ namespace SuperDumpService.Services {
 					metainfo.Created = dump.Created;
 					metainfo.Finished = dump.Created; // can't do better.
 					metainfo.Status = BundleStatus.Finished;
-					var fullresult = await dumpStorage.ReadResults(bundleId, dump.DumpId);
+					var fullresult = await dumpStorage.ReadResults(dump.Id);
 					if (fullresult != null) {
 						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.JiraIssue)) metainfo.CustomProperties["ref"] = fullresult.AnalysisInfo.JiraIssue;
 						if (!string.IsNullOrEmpty(fullresult.AnalysisInfo.FriendlyName)) metainfo.CustomProperties["note"] = fullresult.AnalysisInfo.FriendlyName;

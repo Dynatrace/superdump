@@ -42,7 +42,7 @@ namespace SuperDumpService.Services {
 		public async Task<string> GetMessage(DumpMetainfo dumpInfo) {
 			var model = new SlackMessageViewModel();
 
-			var res = await dumpRepo.GetResult(dumpInfo.BundleId, dumpInfo.DumpId);
+			var res = await dumpRepo.GetResult(dumpInfo.Id);
 			
 			var engine = new EngineFactory().ForEmbeddedResources(typeof(SlackMessageViewModel));
 			model.TopProperties.Add(dumpInfo.DumpType == DumpType.WindowsDump ? "Windows" : "Linux");

@@ -9,7 +9,7 @@
 (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy) ||
 Settings.Value.LdapAuthenticationSettings.ViewerDownloadableFiles.Any(f => f == Model.File.FileInfo.Name) &&
 AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.ViewerPolicy))) {
-<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.BundleId" asp-route-dumpId="@Model.DumpId" asp-route-filename="@Model.File.FileInfo.Name">
+<a asp-controller="Home" asp-action="DownloadFile" asp-route-bundleId="@Model.Id.BundleId" asp-route-dumpId="@Model.Id.DumpId" asp-route-filename="@Model.File.FileInfo.Name">
 	@Model.File.FileInfo.Name</a>
 <span class="filesize">(@SuperDumpService.Helpers.Utility.FormattedBytes(Model.File.SizeInBytes, 0))</span>
 } else {

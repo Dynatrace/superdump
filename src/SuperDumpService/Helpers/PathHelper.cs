@@ -47,10 +47,6 @@ namespace SuperDumpService.Helpers {
 			return Path.Combine(GetBundleDirectory(id.BundleId), id.DumpId);
 		}
 
-		public string GetDumpDirectory(string bundleId, string dumpId) {
-			return Path.Combine(GetBundleDirectory(bundleId), dumpId);
-		}
-
 		internal string GetDumpMiniInfoPath(DumpIdentifier id) {
 			return Path.Combine(GetDumpDirectory(id), "mini-info.json");
 		}
@@ -72,24 +68,24 @@ namespace SuperDumpService.Helpers {
 			Directory.CreateDirectory(GetHangfireDBDir());
 		}
 
-		public string GetJsonPath(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "superdump-result.json");
+		public string GetJsonPath(DumpIdentifier id) {
+			return Path.Combine(GetDumpDirectory(id), "superdump-result.json");
 		}
 
-		internal string GetJsonPathFallback(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), dumpId + ".json");
+		internal string GetJsonPathFallback(DumpIdentifier id) {
+			return Path.Combine(GetDumpDirectory(id), id.DumpId + ".json");
 		}
 
 		internal string GetBundleMetadataPath(string bundleId) {
 			return Path.Combine(GetBundleDirectory(bundleId), "bundleinfo.json");
 		}
 
-		internal string GetDumpMetadataPath(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "dumpinfo.json");
+		internal string GetDumpMetadataPath(DumpIdentifier id) {
+			return Path.Combine(GetDumpDirectory(id), "dumpinfo.json");
 		}
 
-		internal string GetRelationshipsPath(string bundleId, string dumpId) {
-			return Path.Combine(GetDumpDirectory(bundleId, dumpId), "relationships.json");
+		internal string GetRelationshipsPath(DumpIdentifier id) {
+			return Path.Combine(GetDumpDirectory(id), "relationships.json");
 		}
 
 		internal string GetIdenticRelationshipsPath(string bundleId) {

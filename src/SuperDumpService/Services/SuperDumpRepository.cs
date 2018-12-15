@@ -67,17 +67,17 @@ namespace SuperDumpService.Services {
 			return bundleRepo.Get(bundleId);
 		}
 
-		public DumpMetainfo GetDump(string bundleId, string dumpId) {
-			if (!string.IsNullOrEmpty(bundleId) && !string.IsNullOrEmpty(dumpId)) {
-				return dumpRepo.Get(bundleId, dumpId);
+		public DumpMetainfo GetDump(DumpIdentifier id) {
+			if (!string.IsNullOrEmpty(id.BundleId) && !string.IsNullOrEmpty(id.DumpId)) {
+				return dumpRepo.Get(id);
 			} else {
 				return null;
 			}
 		}
 
-		public void WipeAllExceptDump(string bundleId, string dumpId) {
-			var dumpdir = pathHelper.GetDumpDirectory(bundleId, dumpId);
-			var knownfiles = dumpRepo.GetFileNames(bundleId, dumpId);
+		public void WipeAllExceptDump(DumpIdentifier id) {
+			var dumpdir = pathHelper.GetDumpDirectory(id);
+			var knownfiles = dumpRepo.GetFileNames(id);
 			foreach (var file in Directory.EnumerateFiles(dumpdir)) {
 				bool shallDelete = true;
 				var match = knownfiles.SingleOrDefault(x => x.FileInfo.FullName == file);
@@ -154,7 +154,7 @@ namespace SuperDumpService.Services {
 					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
 					if (siblingFile.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
 					if (siblingFile.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
-					await dumpRepo.AddFileCopy(bundleId, dumpInfo.DumpId, siblingFile, SDFileType.SiblingFile);
+					await dumpRepo.AddFileCopy(dumpInfo.Id, siblingFile, SDFileType.SiblingFile);
 				}
 			}
 		}
@@ -207,16 +207,16 @@ namespace SuperDumpService.Services {
 			return true;
 		}
 
-		public void RerunAnalysis(string bundleId, string dumpId) {
-			var dumpFilePath = dumpRepo.GetDumpFilePath(bundleId, dumpId);
+		public void RerunAnalysis(DumpIdentifier id) {
+			var dumpFilePath = dumpRepo.GetDumpFilePath(id);
 			if (!File.Exists(dumpFilePath)) {
-				throw new DumpNotFoundException($"bundleid: {bundleId}, dumpid: {dumpId}, path: {dumpFilePath}");
+				throw new DumpNotFoundException($"id: {id}, path: {dumpFilePath}");
 			}
 
-			WipeAllExceptDump(bundleId, dumpId);
+			WipeAllExceptDump(id);
 
-			dumpRepo.ResetDumpTyp(new DumpIdentifier(bundleId, dumpId));
-			var dumpInfo = dumpRepo.Get(bundleId, dumpId);
+			dumpRepo.ResetDumpTyp(id);
+			var dumpInfo = dumpRepo.Get(id);
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
 		}
 	}
