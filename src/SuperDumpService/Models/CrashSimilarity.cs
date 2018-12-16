@@ -16,7 +16,7 @@ namespace SuperDumpService.Models {
 		// increment this version and mini-infos will be automatically re-created on the fly
 		//   version 1: initial version
 		//   version 2: removed ModuleName from stackframe comparison
-		//   version 2: hashes instead of strings. breaking change. need to re-create all mini-infos.
+		//   version 3: hashes instead of strings. breaking change. need to re-create all mini-infos.
 		public const int MiniInfoVersion = 3;
 
 		// there is a number of dimensions, each dimension has it's own similarity value of 0.0-1.0

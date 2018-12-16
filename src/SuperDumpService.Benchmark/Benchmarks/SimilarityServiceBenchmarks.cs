@@ -49,7 +49,7 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 
 			// populate miniinfo cache
 			for (int i = 0; i < N; i++) {
-				await this.dumpRepo.GetMiniInfo(new DumpIdentifier($"bundle{i}", $"dump{i}"));
+				await this.dumpRepo.GetMiniInfo(DumpIdentifier.Create($"bundle{i}", $"dump{i}"));
 			}
 			this.dumpRepo.SetIsPopulated();
 
@@ -92,7 +92,7 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 
 		[Benchmark]
 		public void ManySimilar() {
-			similarityService.CalculateSimilarity(dumpRepo.Get(new DumpIdentifier("bundle1", "dump1")), true, DateTime.MinValue);
+			similarityService.CalculateSimilarity(dumpRepo.Get(DumpIdentifier.Create("bundle1", "dump1")), true, DateTime.MinValue);
 		}
 	}
 }

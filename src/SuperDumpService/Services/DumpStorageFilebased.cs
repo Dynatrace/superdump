@@ -28,7 +28,7 @@ namespace SuperDumpService.Services {
 			var list = new List<DumpMetainfo>();
 			foreach (var dir in Directory.EnumerateDirectories(pathHelper.GetBundleDirectory(bundleId))) {
 				var dumpId = new DirectoryInfo(dir).Name;
-				var id = new DumpIdentifier(bundleId, dumpId);
+				var id = DumpIdentifier.Create(bundleId, dumpId);
 				var metainfoFilename = pathHelper.GetDumpMetadataPath(id);
 				if (!File.Exists(metainfoFilename)) {
 					// backwards compatibility, when Metadata files did not exist. read full json, then store metadata file
