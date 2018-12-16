@@ -31,18 +31,15 @@ namespace SuperDumpService.Controllers
 		[HttpGet]
 		public async Task<IActionResult> CompareDumps(string bundleId1, string dumpId1, string bundleId2, string dumpId2) {
 			try {
-				var id1 = new DumpIdentifier(bundleId1, dumpId1);
-				var id2 = new DumpIdentifier(bundleId2, dumpId2);
+				var id1 = DumpIdentifier.Create(bundleId1, dumpId1);
+				var id2 = DumpIdentifier.Create(bundleId2, dumpId2);
 
 				var res1 = await similarityService.GetOrCreateMiniInfo(id1);
 				var res2 = await similarityService.GetOrCreateMiniInfo(id2);
 
-				if (res1 == null || res2 == null) {
-					return View(new SimilarityModel($"could not compare dumps."));
-				}
 				logger.LogSimilarityEvent("CompareDumps", HttpContext, bundleId1, dumpId1, bundleId2, dumpId2);
 				var similarity = CrashSimilarity.Calculate(res1, res2);
-				return View(new SimilarityModel(new DumpIdentifier(bundleId1, dumpId2), new DumpIdentifier(bundleId2, dumpId2), similarity));
+				return View(new SimilarityModel(DumpIdentifier.Create(bundleId1, dumpId2), DumpIdentifier.Create(bundleId2, dumpId2), similarity));
 			} catch (Exception e) {
 				return View(new SimilarityModel($"exception while comparing: {e.ToString()}"));
 			}

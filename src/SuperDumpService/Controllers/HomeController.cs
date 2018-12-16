@@ -227,14 +227,14 @@ namespace SuperDumpService.Controllers {
 			}
 
 			logger.LogDumpAccess("Start Interactive Mode", HttpContext, bundleInfo, dumpId);
-			var id = new DumpIdentifier(bundleId, dumpId);
+			var id = DumpIdentifier.Create(bundleId, dumpId);
 			return View(new InteractiveViewModel() { Id = id, DumpInfo = dumpRepo.Get(id), Command = cmd });
 		}
 
 		[HttpGet(Name = "Report")]
 		public async Task<IActionResult> Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
-			var id = new DumpIdentifier(bundleId, dumpId);
+			var id = DumpIdentifier.Create(bundleId, dumpId);
 
 			var bundleInfo = superDumpRepo.GetBundle(bundleId);
 			if (bundleInfo == null) {
@@ -261,7 +261,7 @@ namespace SuperDumpService.Controllers {
 			// don't add relationships when the repo is not ready yet. it might take some time with large amounts.
 			IEnumerable<KeyValuePair<DumpMetainfo, double>> similarDumps =
 				!relationshipRepo.IsPopulated ? Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>() :
-				(await relationshipRepo.GetRelationShips(new DumpIdentifier(bundleId, dumpId)))
+				(await relationshipRepo.GetRelationShips(DumpIdentifier.Create(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
 
 			return base.View(new ReportViewModel(id) {
@@ -319,7 +319,7 @@ namespace SuperDumpService.Controllers {
 				logger.LogNotFound("DownloadFile: Bundle not found", HttpContext, "BundleId", bundleId);
 				return View(null);
 			}
-			var file = dumpStorage.GetFile(new DumpIdentifier(bundleId, dumpId), filename);
+			var file = dumpStorage.GetFile(DumpIdentifier.Create(bundleId, dumpId), filename);
 			if (file == null) {
 				logger.LogNotFound("DownloadFile: File not found", HttpContext, "Filename", filename);
 				throw new ArgumentException("could not find file");
@@ -356,7 +356,7 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 			logger.LogDumpAccess("Rerun", HttpContext, bundleInfo, dumpId);
-			var id = new DumpIdentifier(bundleId, dumpId);
+			var id = DumpIdentifier.Create(bundleId, dumpId);
 			superDumpRepo.RerunAnalysis(id);
 			return View(new ReportViewModel(id));
 		}

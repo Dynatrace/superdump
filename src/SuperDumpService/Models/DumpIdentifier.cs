@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SuperDumpService.Models {
 	public sealed class DumpIdentifier : IEquatable<DumpIdentifier> {
+		private static DumpIdentifierPool pool = new DumpIdentifierPool();
+
 		public string BundleId { get; }
 		public string DumpId { get; }
 
-		public DumpIdentifier(string bundleId, string dumpId) {
+		private DumpIdentifier(string bundleId, string dumpId) {
 			this.BundleId = bundleId;
 			this.DumpId = dumpId;
 		}
+
+		public static DumpIdentifier Create(string bundleId, string dumpId) => pool.Allocate(bundleId, dumpId);
 
 		public bool Equals(DumpIdentifier other) { // for IEquatable<Pair>
 			return Equals(BundleId, other.BundleId) && Equals(DumpId, other.DumpId);
@@ -45,6 +47,54 @@ namespace SuperDumpService.Models {
 		
 		public static bool operator!=(DumpIdentifier obj1, DumpIdentifier obj2) {
 			return !(obj1 == obj2);
+		}
+
+		/// <summary>
+		/// Ever-growing pool of DumpIdentifier objects
+		/// 
+		/// Goal is to allocate only one object per DumpIdentifier and re-use it throughout to save memory
+		/// ever-growing, because as of right now, every dump exists in memory
+		/// </summary>
+		private sealed class DumpIdentifierPool {
+			private Dictionary<int, DumpIdentifier> pool = new Dictionary<int, DumpIdentifier>();
+			private object sync = new object();
+
+			public DumpIdentifier Allocate(string bundleId, string dumpId) {
+				int hash = $"{bundleId}:{dumpId}".GetHashCode();
+				if (pool.TryGetValue(hash, out DumpIdentifier id)) return id; // fast path
+				lock (sync) {
+					if (pool.TryGetValue(hash, out DumpIdentifier id2)) return id2;
+					var newId = new DumpIdentifier(bundleId, dumpId);
+					pool.TryAdd(hash, newId);
+					return newId;
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// custom serializer to write in format "bundleId:dumpId"
+	/// uses object pool
+	/// </summary>
+	public class DumpIdentifierConverter : JsonConverter {
+		public override bool CanConvert(Type objectType) {
+			return (objectType == typeof(DumpIdentifier));
+		}
+
+		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
+			string s = (string)reader.Value;
+			if (s == null) return null;
+			var parts = s.Split(":");
+			if (parts.Length != 2) return null;
+			return DumpIdentifier.Create(parts[0], parts[1]);
+		}
+
+		public override bool CanWrite {
+			get { return true; }
+		}
+
+		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+			writer.WriteValue(value.ToString());
 		}
 	}
 }

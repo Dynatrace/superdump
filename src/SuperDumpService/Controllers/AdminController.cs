@@ -52,7 +52,7 @@ namespace SuperDumpService.Controllers {
 				return View(null);
 			}
 			logger.LogDumpAccess("TriggerSimilarityAnalysis", HttpContext, bundleInfo, dumpId);
-			similarityService.ScheduleSimilarityAnalysis(new DumpIdentifier(bundleId, dumpId), true, DateTime.MinValue);
+			similarityService.ScheduleSimilarityAnalysis(DumpIdentifier.Create(bundleId, dumpId), true, DateTime.MinValue);
 			return RedirectToAction("Report", "Home", new { bundleId = bundleId, dumpId = dumpId }); // View("/Home/Report", new ReportViewModel(bundleId, dumpId));
 		}
 

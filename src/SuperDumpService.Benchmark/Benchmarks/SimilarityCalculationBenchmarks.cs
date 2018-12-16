@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using SuperDumpService.Models;
+using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Benchmark.Benchmarks {
 
@@ -14,34 +16,32 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 			dump1 = new DumpMiniInfo {
 				DumpSimilarityInfoVersion = 2,
 				Exception = new ExceptionMiniInfo {
-					Message = "Thread in invalid state.",
-					Type = "System.Threading.ThreadStateException"
+					MessageHash = "Thread in invalid state.".GetStableHashCode(),
+					TypeHash = "System.Threading.ThreadStateException".GetStableHashCode()
 				},
 				FaultingThread = new ThreadMiniInfo {
-					DistinctModules = new string[] { "ntdll", "kernelbase", "ptsrv", "msvcr", "kernel" },
-					DistrinctFrames = new string[] { "ntalpcsendwaitreceiveport", "sendmessagetowerservice", "reportexceptioninternal", "rtlreportexceptionhelper", "rtlreportexception", "ldrpcalloutexceptionfilter", "ldrpprocessdetachnode", "ldrpunloadnode", "ldrpdecrementmoduleloadcountex", "ldrunloaddll", "freelibrary", "hookfreelibrary", "unknown", "exit", "basethreadinitthunk", "rtluserthreadstart" }
+					DistinctModuleHashes = new string[] { "ntdll", "kernelbase", "ptsrv", "msvcr", "kernel" }.Select(x => x.GetStableHashCode()).ToArray(),
+					DistinctFrameHashes = new string[] { "ntalpcsendwaitreceiveport", "sendmessagetowerservice", "reportexceptioninternal", "rtlreportexceptionhelper", "rtlreportexception", "ldrpcalloutexceptionfilter", "ldrpprocessdetachnode", "ldrpunloadnode", "ldrpdecrementmoduleloadcountex", "ldrunloaddll", "freelibrary", "hookfreelibrary", "unknown", "exit", "basethreadinitthunk", "rtluserthreadstart" }.Select(x => x.GetStableHashCode()).ToArray()
 				},
-				LastEvent = new SuperDump.Models.SDLastEvent {
-					Type = "EXCEPTION",
-					ThreadId = 177,
-					Description = "Break instruction exception - code 80000003 (first/second chance not available)"
+				LastEvent = new LastEventMiniInfo {
+					TypeHash = "EXCEPTION".GetStableHashCode(),
+					DescriptionHash = "Break instruction exception - code 80000003 (first/second chance not available)".GetStableHashCode()
 				}
 			};
 
 			dump2 = new DumpMiniInfo {
 				DumpSimilarityInfoVersion = 2,
 				Exception = new ExceptionMiniInfo {
-					Message = "Thread in invalid state.",
-					Type = "System.Threading.ThreadStateException"
+					MessageHash = "Thread in invalid state.".GetStableHashCode(),
+					TypeHash = "System.Threading.ThreadStateException".GetStableHashCode()
 				},
 				FaultingThread = new ThreadMiniInfo {
-					DistinctModules = new string[] { "someotherlibrary", "ntdll", "kernelbase", "ptsrv", "msvcr", "kernel" },
-					DistrinctFrames = new string[] { "someotherstackframe", "yetanotherunknown", "reportexceptioninternal", "rtlreportexceptionhelper", "rtlreportexception", "ldrpcalloutexceptionfilter", "ldrpprocessdetachnode", "ldrpunloadnode", "ldrpdecrementmoduleloadcountex", "ldrunloaddll", "freelibrary", "hookfreelibrary", "unknown", "exit", "basethreadinitthunk", "rtluserthreadstart" }
+					DistinctModuleHashes = new string[] { "someotherlibrary", "ntdll", "kernelbase", "ptsrv", "msvcr", "kernel" }.Select(x => x.GetStableHashCode()).ToArray(),
+					DistinctFrameHashes = new string[] { "someotherstackframe", "yetanotherunknown", "reportexceptioninternal", "rtlreportexceptionhelper", "rtlreportexception", "ldrpcalloutexceptionfilter", "ldrpprocessdetachnode", "ldrpunloadnode", "ldrpdecrementmoduleloadcountex", "ldrunloaddll", "freelibrary", "hookfreelibrary", "unknown", "exit", "basethreadinitthunk", "rtluserthreadstart" }.Select(x => x.GetStableHashCode()).ToArray()
 				},
-				LastEvent = new SuperDump.Models.SDLastEvent {
-					Type = "EXCEPTION",
-					ThreadId = 133,
-					Description = "Break instruction exception - code 80000003 (first/second chance not available)"
+				LastEvent = new LastEventMiniInfo {
+					TypeHash = "EXCEPTION".GetStableHashCode(),
+					DescriptionHash = "Break instruction exception - code 80000003 (first/second chance not available)".GetStableHashCode()
 				}
 			};
 
@@ -49,13 +49,12 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 				DumpSimilarityInfoVersion = 2,
 				Exception = null,
 				FaultingThread = new ThreadMiniInfo {
-					DistinctModules = new string[] { "clr", "mscorlib", "simpleinjector", "unknown", "lineosweb", "", "systemweb", "webengine", "iiscore", "kernel", "ntdll" },
-					DistrinctFrames = new string[] { "sigtypecontextequal", "eehashtablebasesigtypecontextconsteeinstantiationhashtablehelperfinditem", "eehashtablebasesigtypecontextconsteeinstantiationhashtablehelpergetvalue", "methodcallgraphpreparerrun", "preparemethoddesc", "reflectioninvocationpreparedelegatehelper", "reflectioninvocationpreparedelegate", "mscorlibdllunknown", "simpleinjectordllunknown", "unknown", "lineoswebdllunknown", "calldescrworkerinternal", "calldescrworkerwithhandler", "calldescrworkerreflectionwrapper", "runtimemethodhandleinvokemethod", "debuggerumcatchhandlerframe", "systemwebdllunknown", "inlinedcallframe", "wmgdhandlerprocessnotification", "wmgdhandlerdowork", "requestdowork", "cmgdenghttpmoduleonacquirerequeststate", "notificationcontextrequestdowork", "notificationcontextcallmodulesinternal", "notificationcontextcallmodules", "notificationmaindowork", "wcontextbasecontinuenotificationloop", "wcontextbaseindicatecompletion", "wmgdhandlerindicatecompletion", "mgdindicatecompletion", "domainneutralilstubclassilstubpinvoke", "ummthunkwrapper", "threaddoadcallback", "contexttransitionframe", "ummdoadcallback", "processnotificationcallback", "unmanagedperappdomaintpcountdispatchworkitem", "threadpoolmgrexecuteworkrequest", "threadpoolmgrworkerthreadstart", "threadintermediatethreadproc", "basethreadinitthunk", "rtluserthreadstart" }
+					DistinctModuleHashes = new string[] { "clr", "mscorlib", "simpleinjector", "unknown", "lineosweb", "", "systemweb", "webengine", "iiscore", "kernel", "ntdll" }.Select(x => x.GetStableHashCode()).ToArray(),
+					DistinctFrameHashes = new string[] { "sigtypecontextequal", "eehashtablebasesigtypecontextconsteeinstantiationhashtablehelperfinditem", "eehashtablebasesigtypecontextconsteeinstantiationhashtablehelpergetvalue", "methodcallgraphpreparerrun", "preparemethoddesc", "reflectioninvocationpreparedelegatehelper", "reflectioninvocationpreparedelegate", "mscorlibdllunknown", "simpleinjectordllunknown", "unknown", "lineoswebdllunknown", "calldescrworkerinternal", "calldescrworkerwithhandler", "calldescrworkerreflectionwrapper", "runtimemethodhandleinvokemethod", "debuggerumcatchhandlerframe", "systemwebdllunknown", "inlinedcallframe", "wmgdhandlerprocessnotification", "wmgdhandlerdowork", "requestdowork", "cmgdenghttpmoduleonacquirerequeststate", "notificationcontextrequestdowork", "notificationcontextcallmodulesinternal", "notificationcontextcallmodules", "notificationmaindowork", "wcontextbasecontinuenotificationloop", "wcontextbaseindicatecompletion", "wmgdhandlerindicatecompletion", "mgdindicatecompletion", "domainneutralilstubclassilstubpinvoke", "ummthunkwrapper", "threaddoadcallback", "contexttransitionframe", "ummdoadcallback", "processnotificationcallback", "unmanagedperappdomaintpcountdispatchworkitem", "threadpoolmgrexecuteworkrequest", "threadpoolmgrworkerthreadstart", "threadintermediatethreadproc", "basethreadinitthunk", "rtluserthreadstart" }.Select(x => x.GetStableHashCode()).ToArray()
 				},
-				LastEvent = new SuperDump.Models.SDLastEvent {
-					Type = "EXCEPTION",
-					ThreadId = 55,
-					Description = "Access violation - code c0000005 (first/second chance not available)"
+				LastEvent = new LastEventMiniInfo {
+					TypeHash = "EXCEPTION".GetStableHashCode(),
+					DescriptionHash = "Access violation - code c0000005 (first/second chance not available)".GetStableHashCode()
 				}
 			};
 		}
