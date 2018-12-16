@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -15,7 +16,7 @@ namespace SuperDumpService.Services {
 		private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
 
 		// stores relationships bi-directional. both directions should stay in sync
-		private readonly IDictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>> relationShips = new Dictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>>();
+		private readonly ConcurrentDictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>> relationShips = new ConcurrentDictionary<DumpIdentifier, IDictionary<DumpIdentifier, double>>();
 		private readonly IRelationshipStorage relationshipStorage;
 		private readonly DumpRepository dumpRepo;
 		private readonly IOptions<SuperDumpSettings> settings;
@@ -36,21 +37,24 @@ namespace SuperDumpService.Services {
 			await BlockIfBundleRepoNotReady("RelationshipRepository.Populate");
 
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
+			var sw = new Stopwatch(); sw.Start();
 			try {
-				foreach (var dump in dumpRepo.GetAll()) {
+				var tasks = dumpRepo.GetAll().Select(dump => Task.Run(async () => {
 					try {
 						relationShips[dump.Id] = await relationshipStorage.ReadRelationships(dump.Id);
-					} catch (FileNotFoundException) { 
+					} catch (FileNotFoundException) {
 						// ignore.
 					} catch (Exception e) {
 						Console.WriteLine("error reading relationship file: " + e.ToString());
 						relationshipStorage.Wipe(dump.Id);
 					}
-				}
+				}));
+				await Task.WhenAll(tasks);
 			} finally {
 				IsPopulated = true;
 				semaphoreSlim.Release();
 			}
+			sw.Stop(); Console.WriteLine($"Finished populating RelationshipRepository in {sw.Elapsed}");
 		}
 
 		/// <summary>
@@ -63,25 +67,23 @@ namespace SuperDumpService.Services {
 
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
-				await UpdateSimilarity0(dumpA, dumpB, similarity);
-				await UpdateSimilarity0(dumpB, dumpA, similarity);
+				UpdateSimilarity0(dumpA, dumpB, similarity);
+				UpdateSimilarity0(dumpB, dumpA, similarity);
 			} finally {
 				semaphoreSlim.Release();
 			}
 		}
 
-		private async Task UpdateSimilarity0(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
+		private void UpdateSimilarity0(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
 			if (relationShips.TryGetValue(dumpA, out IDictionary<DumpIdentifier, double> relationShip)) {
-				await UpdateRelationship(dumpA, dumpB, similarity, relationShip);
+				relationShip[dumpB] = similarity;
 			} else {
 				var dict = new Dictionary<DumpIdentifier, double>();
-				await UpdateRelationship(dumpA, dumpB, similarity, dict);
+				dict[dumpB] = similarity;
 				relationShips[dumpA] = dict;
 			}
-		}
 
-		private async Task UpdateRelationship(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity, IDictionary<DumpIdentifier, double> relationShip) {
-			relationShip[dumpB] = similarity;
+			// don't write to storage immediately. only mark it dirty.
 			MarkRelationshipDirty(dumpA);
 		}
 
