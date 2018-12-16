@@ -87,7 +87,7 @@ namespace SuperDumpService.Services {
 			return dumpInfo;
 		}
 
-		internal string GetDumpFilePath(DumpIdentifier id) {
+		public string GetDumpFilePath(DumpIdentifier id) {
 			return storage.GetDumpFilePath(id);
 		}
 
@@ -121,15 +121,15 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		internal async Task<SDResult> GetResultAndThrow(DumpIdentifier id) => await storage.ReadResultsAndThrow(id);
-		internal async Task<SDResult> GetResult(DumpIdentifier id) => await storage.ReadResults(id);
+		public async Task<SDResult> GetResultAndThrow(DumpIdentifier id) => await storage.ReadResultsAndThrow(id);
+		public async Task<SDResult> GetResult(DumpIdentifier id) => await storage.ReadResults(id);
 
-		internal bool MiniInfoExists(DumpIdentifier id) {
+		public bool MiniInfoExists(DumpIdentifier id) {
 			if (miniInfosLazyCache.ContainsKey(id)) return true;
 			return storage.MiniInfoExists(id);
 		}
 
-		internal async Task<DumpMiniInfo> GetMiniInfo(DumpIdentifier id) {
+		public async Task<DumpMiniInfo> GetMiniInfo(DumpIdentifier id) {
 			if (miniInfosLazyCache.TryGetValue(id, out var cachedMiniInfo)) {
 				return cachedMiniInfo;
 			}
@@ -138,20 +138,20 @@ namespace SuperDumpService.Services {
 			return miniInfo;
 		}
 
-		internal async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
+		public async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
 			miniInfosLazyCache.TryAdd(id, miniInfo);
 			await storage.StoreMiniInfo(id, miniInfo);
 		}
 
-		internal void WriteResult(DumpIdentifier id, SDResult result) {
+		public void WriteResult(DumpIdentifier id, SDResult result) {
 			storage.WriteResult(id, result);
 		}
 
-		internal IEnumerable<SDFileInfo> GetFileNames(DumpIdentifier id) {
+		public IEnumerable<SDFileInfo> GetFileNames(DumpIdentifier id) {
 			return storage.GetSDFileInfos(id);
 		}
 
-		internal void SetDumpStatus(DumpIdentifier id, DumpStatus status, string errorMessage = null) {
+		public void SetDumpStatus(DumpIdentifier id, DumpStatus status, string errorMessage = null) {
 			var dumpInfo = Get(id);
 			dumpInfo.Status = status;
 			dumpInfo.ErrorMessage = errorMessage;
@@ -165,19 +165,19 @@ namespace SuperDumpService.Services {
 			storage.Store(dumpInfo);
 		}
 
-		internal void SetDumpType(DumpIdentifier id, DumpType type) {
+		public void SetDumpType(DumpIdentifier id, DumpType type) {
 			DumpMetainfo dumpInfo = Get(id);
 			dumpInfo.DumpType = type;
 			storage.Store(dumpInfo);
 		}
 
-		internal async Task<FileInfo> AddFileCopy(DumpIdentifier id, FileInfo file, SDFileType type) {
+		public async Task<FileInfo> AddFileCopy(DumpIdentifier id, FileInfo file, SDFileType type) {
 			var newFile = await storage.AddFileCopy(id, file);
 			AddSDFile(id, file.Name, type);
 			return newFile;
 		}
 
-		internal void AddFile(DumpIdentifier id, string filename, SDFileType type) {
+		public void AddFile(DumpIdentifier id, string filename, SDFileType type) {
 			AddSDFile(id, filename, type);
 		}
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,10 +21,14 @@ namespace SuperDumpService.Services {
 		private readonly IOptions<SuperDumpSettings> settings;
 		public bool IsPopulated { get; private set; } = false;
 
+		private readonly HashSet<DumpIdentifier> dirtyDumps; // list of dumps that have updated relationships that are not written to disk yet
+		private readonly SemaphoreSlim flushSync = new SemaphoreSlim(1, 1);
+
 		public RelationshipRepository(IRelationshipStorage relationshipStorage, DumpRepository dumpRepo, IOptions<SuperDumpSettings> settings) {
 			this.relationshipStorage = relationshipStorage;
 			this.dumpRepo = dumpRepo;
 			this.settings = settings;
+			this.dirtyDumps = new HashSet<DumpIdentifier>();
 		}
 
 		public async Task Populate() {
@@ -48,6 +53,11 @@ namespace SuperDumpService.Services {
 			}
 		}
 
+		/// <summary>
+		/// updates similarity between two dumps (for both)
+		/// important: changes are not written to storage immediately.
+		///            call FlushDirtyRelationships to write relationships to storage!
+		/// </summary>
 		public async Task UpdateSimilarity(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
 			if (!settings.Value.SimilarityDetectionEnabled) return;
 
@@ -72,9 +82,42 @@ namespace SuperDumpService.Services {
 
 		private async Task UpdateRelationship(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity, IDictionary<DumpIdentifier, double> relationShip) {
 			relationShip[dumpB] = similarity;
+			MarkRelationshipDirty(dumpA);
+		}
 
-			// update storage
-			await relationshipStorage.StoreRelationships(dumpA, relationShip);
+		/// <summary>
+		/// 
+		/// </summary>
+		private void MarkRelationshipDirty(DumpIdentifier dumpA) {
+			lock (dirtyDumps) {
+				dirtyDumps.Add(dumpA);
+			}
+		}
+
+		/// <summary>
+		/// Write all relationships to disk that are marked as dirty
+		/// </summary>
+		public async Task FlushDirtyRelationships() {
+			// make sure only one flush can happen at the time
+
+			await flushSync.WaitAsync().ConfigureAwait(false);
+			try {
+				DumpIdentifier[] dirtyDumpsCopy;
+				lock (dirtyDumps) {
+					// copy list while synchonized
+					dirtyDumpsCopy = new DumpIdentifier[dirtyDumps.Count];
+					dirtyDumps.CopyTo(dirtyDumpsCopy, 0);
+					dirtyDumps.Clear();
+				}
+
+				// write all dirty relationships via tasks (in parallel)
+				var tasks = dirtyDumpsCopy.Select(id => Task.Run(async () => {
+					await relationshipStorage.StoreRelationships(id, await GetRelationShips(id));
+				}));
+				await Task.WhenAll(tasks);
+			} finally {
+				flushSync.Release();
+			}
 		}
 
 		public async Task WipeAll() {

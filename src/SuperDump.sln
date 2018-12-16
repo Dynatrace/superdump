@@ -39,6 +39,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SuperDump.Analyzer.Common",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test", "SuperDumpService.Test\SuperDumpService.Test.csproj", "{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Benchmark", "SuperDumpService.Benchmark\SuperDumpService.Benchmark.csproj", "{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems*{0dd4da67-4e55-4ee1-9030-5a69d8cdc6b4}*SharedItemsImports = 4
@@ -183,6 +185,18 @@ Global
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x64.Build.0 = Release|Any CPU
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x86.ActiveCfg = Release|Any CPU
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x86.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x64.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
