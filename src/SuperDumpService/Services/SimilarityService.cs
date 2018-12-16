@@ -148,6 +148,7 @@ namespace SuperDumpService.Services {
 					//Console.WriteLine($"CalculateSimilarity.Finished for {dumpA}/{dumpB} ({i} to go...); (elapsed: {sw.Elapsed}) (TID:{Thread.CurrentThread.ManagedThreadId})");
 					sw.Reset();
 				}
+				await relationShipRepo.FlushDirtyRelationships();
 				swTotal.Stop();
 				Console.WriteLine($"CalculateSimilarity.Finished for all {allDumps.Count()} dumps (total elapsed: {swTotal.Elapsed}); {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
 			} catch (Exception e) {

@@ -9,6 +9,8 @@ namespace SuperDumpService.Benchmarks.Fakes {
 	internal class FakeRelationshipStorage : IRelationshipStorage {
 		private readonly int WRITE_RELATIONSHIPS_DELAY_MS = 1;
 
+		public bool DelaysEnabled { get; set; }
+
 		public FakeRelationshipStorage() {
 		}
 
@@ -16,9 +18,8 @@ namespace SuperDumpService.Benchmarks.Fakes {
 			return Task.FromResult<IDictionary<DumpIdentifier, double>>(new Dictionary<DumpIdentifier, double>());
 		}
 
-		public Task StoreRelationships(DumpIdentifier dumpId, IDictionary<DumpIdentifier, double> relationships) {
-			Thread.Sleep(WRITE_RELATIONSHIPS_DELAY_MS);
-			return Task.Delay(0);
+		public async Task StoreRelationships(DumpIdentifier dumpId, IDictionary<DumpIdentifier, double> relationships) {
+			if (DelaysEnabled) await Task.Delay(WRITE_RELATIONSHIPS_DELAY_MS);
 		}
 
 		public void Wipe(DumpIdentifier dumpId) {

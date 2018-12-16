@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Options;
 using SuperDump.Models;
@@ -13,17 +14,18 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 	[ShortRunJob]
 	public class SimilarityServiceBenchmarks {
 
+		private readonly int N;
 		private readonly SimilarityService similarityService;
 		private readonly PathHelper pathHelper;
-		private readonly IDumpStorage dumpStorage;
+		private readonly FakeDumpStorage dumpStorage;
 		private readonly DumpRepository dumpRepo;
-		private readonly IRelationshipStorage relationshipStorage;
+		private readonly FakeRelationshipStorage relationshipStorage;
 		private readonly RelationshipRepository relationshipRepo;
 
 		public SimilarityServiceBenchmarks() {
 			/// fake a repository of N very similar dumps. Then let similarity calculation run
 			/// simulate filesystem access with Thread.Sleep in FakeDumpStorage
-			int n = 1000;
+			N = 2000;
 
 			var settings = Options.Create(new SuperDumpSettings {
 				SimilarityDetectionEnabled = true,
@@ -31,16 +33,29 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 			});
 
 			this.pathHelper = new PathHelper("", "", "");
-			this.dumpStorage = new FakeDumpStorage(CreateFakeDumps(n));
+			this.dumpStorage = new FakeDumpStorage(CreateFakeDumps(N));
 			this.dumpRepo = new DumpRepository(dumpStorage, pathHelper);
 			this.relationshipStorage = new FakeRelationshipStorage();
 			this.relationshipRepo = new RelationshipRepository(relationshipStorage, dumpRepo, settings);
 			this.similarityService = new SimilarityService(dumpRepo, relationshipRepo, settings);
+		}
 
-			for (int i = 0; i < n; i++) {
-				this.dumpRepo.PopulateForBundle($"bundle{i}");
+		[GlobalSetup]
+		public async Task GlobalSetup() {
+			// populate in-memory repository from fake storage
+			for (int i = 0; i < N; i++) {
+				await this.dumpRepo.PopulateForBundle($"bundle{i}");
+			}
+
+			// populate miniinfo cache
+			for (int i = 0; i < N; i++) {
+				await this.dumpRepo.GetMiniInfo(new DumpIdentifier($"bundle{i}", $"dump{i}"));
 			}
 			this.dumpRepo.SetIsPopulated();
+
+			// enable storage delay simulation
+			this.dumpStorage.DelaysEnabled = true;
+			this.relationshipStorage.DelaysEnabled = true;
 		}
 
 		private IEnumerable<FakeDump> CreateFakeDumps(int n) {
@@ -64,7 +79,8 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 				yield return new FakeDump {
 					MetaInfo = new DumpMetainfo { BundleId = $"bundle{i}", DumpId = $"dump{i}", Status = DumpStatus.Finished },
 					FileInfo = null,
-					Result = res
+					Result = res,
+					MiniInfo = CrashSimilarity.SDResultToMiniInfo(res)
 				};
 			}
 		}
