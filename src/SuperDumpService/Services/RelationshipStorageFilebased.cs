@@ -24,12 +24,12 @@ namespace SuperDumpService.Services {
 
 		public async Task StoreRelationships(DumpIdentifier id, IDictionary<DumpIdentifier, double> relationships) {
 			List<KeyValuePair<DumpIdentifier, double>> data = relationships.OrderByDescending(x => Math.Round(x.Value, 3)).ToList(); // use a list, otherwise complex key (DumpIdentifier) is problematic
-			await File.WriteAllTextAsync(pathHelper.GetRelationshipsPath(id), JsonConvert.SerializeObject(data));
+			await File.WriteAllTextAsync(pathHelper.GetRelationshipsPath(id), JsonConvert.SerializeObject(data, new DumpIdentifierConverter()));
 		}
 
 		public async Task<IDictionary<DumpIdentifier, double>> ReadRelationships(DumpIdentifier id) {
 			string text = await File.ReadAllTextAsync(pathHelper.GetRelationshipsPath(id));
-			var data = JsonConvert.DeserializeObject<List<KeyValuePair<DumpIdentifier, double>>>(text);
+			var data = JsonConvert.DeserializeObject<List<KeyValuePair<DumpIdentifier, double>>>(text, new DumpIdentifierConverter());
 			return data.ToDictionary(x => x.Key, y => y.Value);
 		}
 

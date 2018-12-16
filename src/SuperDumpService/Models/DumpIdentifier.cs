@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SuperDumpService.Models {
 	public sealed class DumpIdentifier : IEquatable<DumpIdentifier> {
@@ -67,6 +69,32 @@ namespace SuperDumpService.Models {
 					return newId;
 				}
 			}
+		}
+	}
+
+	/// <summary>
+	/// custom serializer to write in format "bundleId:dumpId"
+	/// uses object pool
+	/// </summary>
+	public class DumpIdentifierConverter : JsonConverter {
+		public override bool CanConvert(Type objectType) {
+			return (objectType == typeof(DumpIdentifier));
+		}
+
+		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
+			string s = (string)reader.Value;
+			if (s == null) return null;
+			var parts = s.Split(":");
+			if (parts.Length != 2) return null;
+			return DumpIdentifier.Create(parts[0], parts[1]);
+		}
+
+		public override bool CanWrite {
+			get { return true; }
+		}
+
+		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+			writer.WriteValue(value.ToString());
 		}
 	}
 }
