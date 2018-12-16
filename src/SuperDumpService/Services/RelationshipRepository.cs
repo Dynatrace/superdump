@@ -53,6 +53,11 @@ namespace SuperDumpService.Services {
 			}
 		}
 
+		/// <summary>
+		/// updates similarity between two dumps (for both)
+		/// important: changes are not written to storage immediately.
+		///            call FlushDirtyRelationships to write relationships to storage!
+		/// </summary>
 		public async Task UpdateSimilarity(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity) {
 			if (!settings.Value.SimilarityDetectionEnabled) return;
 
@@ -77,15 +82,13 @@ namespace SuperDumpService.Services {
 
 		private async Task UpdateRelationship(DumpIdentifier dumpA, DumpIdentifier dumpB, double similarity, IDictionary<DumpIdentifier, double> relationShip) {
 			relationShip[dumpB] = similarity;
-
-			// update storage
-			StoreRelationshipLazy(dumpA);
+			MarkRelationshipDirty(dumpA);
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		private void StoreRelationshipLazy(DumpIdentifier dumpA) {
+		private void MarkRelationshipDirty(DumpIdentifier dumpA) {
 			lock (dirtyDumps) {
 				dirtyDumps.Add(dumpA);
 			}

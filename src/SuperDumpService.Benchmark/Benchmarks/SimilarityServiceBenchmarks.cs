@@ -25,7 +25,7 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 		public SimilarityServiceBenchmarks() {
 			/// fake a repository of N very similar dumps. Then let similarity calculation run
 			/// simulate filesystem access with Thread.Sleep in FakeDumpStorage
-			N = 2000;
+			N = 1000;
 
 			var settings = Options.Create(new SuperDumpSettings {
 				SimilarityDetectionEnabled = true,
