@@ -45,7 +45,7 @@ namespace SuperDumpService.Services {
 					} catch (FileNotFoundException) {
 						// ignore.
 					} catch (Exception e) {
-						Console.WriteLine("error reading relationship file: " + e.ToString());
+						Console.WriteLine($"RelationshipRepository.Populate: Error reading relationship file for dump {dump.Id}: " + e.Message);
 						relationshipStorage.Wipe(dump.Id);
 					}
 				}));

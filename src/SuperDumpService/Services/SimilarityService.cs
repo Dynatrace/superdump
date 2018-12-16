@@ -80,9 +80,13 @@ namespace SuperDumpService.Services {
 
 		public async Task<DumpMiniInfo> GetOrCreateMiniInfo(DumpIdentifier id) {
 			if (dumpRepo.MiniInfoExists(id)) {
-				var loadedMiniInfo = await dumpRepo.GetMiniInfo(id);
-				if (loadedMiniInfo.DumpSimilarityInfoVersion == CrashSimilarity.MiniInfoVersion) {
-					return loadedMiniInfo;
+				try {
+					var loadedMiniInfo = await dumpRepo.GetMiniInfo(id);
+					if (loadedMiniInfo.DumpSimilarityInfoVersion == CrashSimilarity.MiniInfoVersion) {
+						return loadedMiniInfo;
+					}
+				} catch {
+					Console.WriteLine($"could not load miniinfo for {id}. will re-create it.");
 				}
 			}
 			
@@ -113,30 +117,23 @@ namespace SuperDumpService.Services {
 
 				var resultA = await GetOrCreateMiniInfo(dumpA.Id);
 
-				if (resultA == null) return; // no results found. do nothing.
-
 				var allDumps = dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderBy(x => x.Created);
 				Console.WriteLine($"starting CalculateSimilarity for {allDumps.Count()} dumps; {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
 
-				int i = allDumps.Count();
-				var sw = new Stopwatch();
-				foreach (var dumpB in allDumps) {
-					i--;
-					sw.Start();
+				var tasks = allDumps.Select(dumpB => Task.Run(async () => {
 					if (!force) {
 						var existingSimilarity = await relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id);
 						if (existingSimilarity != 0) {
 							// relationship already exists. skip!
 							// but make sure the relationship is stored bi-directional
 							await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, existingSimilarity);
-							continue; 
+							return; 
 						}
 					}
 
-					if (!PreSelectOnMetadata(dumpA, dumpB)) continue;
+					if (!PreSelectOnMetadata(dumpA, dumpB)) return;
 					var resultB = await GetOrCreateMiniInfo(dumpB.Id);
-					if (resultB == null) continue;
-					if (!PreSelectOnResults(resultA, resultB)) continue;
+					if (!PreSelectOnResults(resultA, resultB)) return;
 
 					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(resultA, resultB);
 
@@ -144,10 +141,10 @@ namespace SuperDumpService.Services {
 					if (crashSimilarity.OverallSimilarity > 0.6) {
 						await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity.OverallSimilarity);
 					}
-					sw.Stop();
 					//Console.WriteLine($"CalculateSimilarity.Finished for {dumpA}/{dumpB} ({i} to go...); (elapsed: {sw.Elapsed}) (TID:{Thread.CurrentThread.ManagedThreadId})");
-					sw.Reset();
-				}
+				}));
+				await Task.WhenAll(tasks);
+
 				await relationShipRepo.FlushDirtyRelationships();
 				swTotal.Stop();
 				Console.WriteLine($"CalculateSimilarity.Finished for all {allDumps.Count()} dumps (total elapsed: {swTotal.Elapsed}); {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
@@ -162,7 +159,7 @@ namespace SuperDumpService.Services {
 				&& dumpA.DumpType == dumpB.DumpType; // don't compare windows and linux dumps
 		}
 
-		private bool PreSelectOnResults(DumpMiniInfo resultA, DumpMiniInfo resultB) {
+		private bool PreSelectOnResults(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			return true; // no ideas on how to pre-select here yet.
 		}
 	}

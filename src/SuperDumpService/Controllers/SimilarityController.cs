@@ -37,9 +37,6 @@ namespace SuperDumpService.Controllers
 				var res1 = await similarityService.GetOrCreateMiniInfo(id1);
 				var res2 = await similarityService.GetOrCreateMiniInfo(id2);
 
-				if (res1 == null || res2 == null) {
-					return View(new SimilarityModel($"could not compare dumps."));
-				}
 				logger.LogSimilarityEvent("CompareDumps", HttpContext, bundleId1, dumpId1, bundleId2, dumpId2);
 				var similarity = CrashSimilarity.Calculate(res1, res2);
 				return View(new SimilarityModel(new DumpIdentifier(bundleId1, dumpId2), new DumpIdentifier(bundleId2, dumpId2), similarity));

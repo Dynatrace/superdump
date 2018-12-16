@@ -55,6 +55,7 @@ namespace SuperDumpService.Services {
 			return File.Exists(pathHelper.GetDumpMiniInfoPath(id));
 		}
 
+		// throws if miniinfo not found
 		public async Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id) {
 			return JsonConvert.DeserializeObject<DumpMiniInfo>(await File.ReadAllTextAsync(pathHelper.GetDumpMiniInfoPath(id)));
 		}

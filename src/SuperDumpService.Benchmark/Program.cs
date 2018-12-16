@@ -8,7 +8,7 @@ using SuperDumpService.Benchmark.Benchmarks;
 
 namespace SuperDumpService.Benchmark {
 	public class Program {
-		public static async Task Main(string[] args) {
+		public static void Main(string[] args) {
 
 			//var b = new SimilarityServiceBenchmarks();
 			//await b.GlobalSetup();
@@ -16,6 +16,10 @@ namespace SuperDumpService.Benchmark {
 			//b.ManySimilar();
 			//b.ManySimilar();
 			//b.ManySimilar();
+
+			//var x = new MiniInfoBenchmarks();
+			//x.GlobalSetup();
+			//x.CreateMiniInfo();
 
 			//BenchmarkRunner.Run<SimilarityCalculationBenchmarks>();
 			//BenchmarkRunner.Run<SimilarityServiceBenchmarks>();

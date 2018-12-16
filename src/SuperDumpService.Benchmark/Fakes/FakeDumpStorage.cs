@@ -11,7 +11,7 @@ using SuperDumpService.Services;
 namespace SuperDumpService.Benchmarks.Fakes {
 	internal class FakeDump {
 		public DumpMetainfo MetaInfo { get; set; }
-		public DumpMiniInfo MiniInfo { get; set; }
+		public DumpMiniInfo? MiniInfo { get; set; }
 		public SDResult Result { get; set; }
 		public SDFileInfo FileInfo { get; set; }
 
@@ -80,7 +80,7 @@ namespace SuperDumpService.Benchmarks.Fakes {
 
 		public async Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id) {
 			if (DelaysEnabled) await Task.Delay(READ_MINIINFO_DELAY_MS);
-			return await Task.FromResult(fakeDumpsDict[id].MiniInfo);
+			return await Task.FromResult(fakeDumpsDict[id].MiniInfo.Value);
 		}
 
 		public async Task<SDResult> ReadResults(DumpIdentifier id) {

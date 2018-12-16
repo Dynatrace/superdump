@@ -16,7 +16,8 @@ namespace SuperDumpService.Models {
 		// increment this version and mini-infos will be automatically re-created on the fly
 		//   version 1: initial version
 		//   version 2: removed ModuleName from stackframe comparison
-		public const int MiniInfoVersion = 2;
+		//   version 2: hashes instead of strings. breaking change. need to re-create all mini-infos.
+		public const int MiniInfoVersion = 3;
 
 		// there is a number of dimensions, each dimension has it's own similarity value of 0.0-1.0
 		private readonly IDictionary<string, double?> similarities = new Dictionary<string, double?>();
@@ -36,7 +37,7 @@ namespace SuperDumpService.Models {
 
 		// in the UI, we could even show a table, where each dimension is shown separately (?)
 
-		public static CrashSimilarity Calculate(DumpMiniInfo result, DumpMiniInfo otherResult) {
+		public static CrashSimilarity Calculate(in DumpMiniInfo result, in DumpMiniInfo otherResult) {
 			var similarity = new CrashSimilarity();
 
 			similarity.similarities[StacktraceKey] = CalculateStacktraceSimilarity(result, otherResult);
@@ -47,7 +48,7 @@ namespace SuperDumpService.Models {
 			return similarity;
 		}
 
-		private static double? CalculateStacktraceSimilarity(DumpMiniInfo resultA, DumpMiniInfo resultB) {
+		private static double? CalculateStacktraceSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			var errorThreadA = resultA.FaultingThread;
 			var errorThreadB = resultB.FaultingThread;
 
@@ -81,11 +82,11 @@ namespace SuperDumpService.Models {
 
 
 			// approach 3: let's start with a dead-simple alg. look how many frames of stack A appear in stack B and vice versa.
-			int AinBCount = CountAinB(errorThreadA.DistrinctFrames, errorThreadB.DistrinctFrames, FrameEquals);
-			int BinACount = CountAinB(errorThreadB.DistrinctFrames, errorThreadA.DistrinctFrames, FrameEquals);
+			int AinBCount = CountAinB(errorThreadA.Value.DistinctFrameHashes, errorThreadB.Value.DistinctFrameHashes, (a, b) => a == b);
+			int BinACount = CountAinB(errorThreadB.Value.DistinctFrameHashes, errorThreadA.Value.DistinctFrameHashes, (a, b) => a == b);
 
-			double ainb = AinBCount / (double)errorThreadA.DistrinctFrames.Length;
-			double bina = BinACount / (double)errorThreadB.DistrinctFrames.Length;
+			double ainb = AinBCount / (double)errorThreadA.Value.DistinctFrameHashes.Length;
+			double bina = BinACount / (double)errorThreadB.Value.DistinctFrameHashes.Length;
 
 			return Math.Min(ainb, bina);
 		}
@@ -98,27 +99,23 @@ namespace SuperDumpService.Models {
 			return count;
 		}
 
-		private static bool FrameEquals(string frameA, string frameB) {
-			return EqualsIgnoreNonAscii(frameA, frameB);
-		}
-
 		/// <summary>
 		/// Find the number of modules are the same in both stacks.
 		///
 		/// returns a number between 0.0 and 1.0, where 1.0 is full similarity, and 0.0 is no similarity
 		/// </summary>
-		private static double? CalculateModulesInStacktraceSimilarity(DumpMiniInfo resultA, DumpMiniInfo resultB) {
+		private static double? CalculateModulesInStacktraceSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			var errorThreadA = resultA.FaultingThread;
 			var errorThreadB = resultB.FaultingThread;
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
-			var modulesA = errorThreadA.DistinctModules;
-			var modulesB = errorThreadB.DistinctModules;
+			var modulesA = errorThreadA.Value.DistinctModuleHashes;
+			var modulesB = errorThreadB.Value.DistinctModuleHashes;
 
-			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => EqualsIgnoreNonAscii(a, b));
-			int BinACount = CountAinB(modulesB, modulesA, (a, b) => EqualsIgnoreNonAscii(a, b));
+			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => a == b);
+			int BinACount = CountAinB(modulesB, modulesA, (a, b) => a == b);
 
 			double ainb = AinBCount / (double)modulesA.Count();
 			double bina = BinACount / (double)modulesB.Count();
@@ -126,18 +123,14 @@ namespace SuperDumpService.Models {
 			return Math.Min(ainb, bina);
 		}
 
-		private static double? CalculateLastEventSimilarity(DumpMiniInfo resultA, DumpMiniInfo resultB) {
+		private static double? CalculateLastEventSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			var lastEventA = resultA.LastEvent;
 			var lastEventB = resultB.LastEvent;
 
-			// "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
-			if (lastEventA != null && lastEventA.Description.StartsWith("Break instruction exception")) lastEventA = null;
-			if (lastEventB != null && lastEventB.Description.StartsWith("Break instruction exception")) lastEventB = null;
-
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
-			if (!EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)) return 0.0;
-			return StringSimilarity(lastEventA.Description, lastEventB.Description);
+			if (lastEventA.Value.TypeHash != lastEventB.Value.TypeHash) return 0.0;
+			return lastEventA.Value.DescriptionHash == lastEventB.Value.DescriptionHash ? 1.0 : 0.0;
 		}
 
 		// relative similarity between two strings
@@ -145,15 +138,15 @@ namespace SuperDumpService.Models {
 			return Utility.LevenshteinSimilarity(StripNonAscii(description1), StripNonAscii(description2));
 		}
 
-		private static double? CalculateExceptionMessageSimilarity(DumpMiniInfo resultA, DumpMiniInfo resultB) {
+		private static double? CalculateExceptionMessageSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			var exceptionA = resultA.Exception;
 			var exceptionB = resultB.Exception;
 
 			if (exceptionA == null && exceptionB == null) return null; // no value in comparing if there are none
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
-			return EqualsIgnoreNonAscii(exceptionA.Type, exceptionB.Type)
-				&& EqualsIgnoreNonAscii(exceptionA.Message, exceptionB.Message)
+			return (exceptionA.Value.TypeHash == exceptionB.Value.TypeHash
+				&& exceptionA.Value.MessageHash == exceptionB.Value.MessageHash)
 				? 1.0
 				: 0.0;
 			// omit comparison of StackTrace for now. maybe implement at later point if it makes sense.
@@ -180,20 +173,29 @@ namespace SuperDumpService.Models {
 			var faultingThread = result.GetErrorOrLastExecutingThread();
 			if (faultingThread != null) {
 				miniinfo.FaultingThread = new ThreadMiniInfo() {
-					DistinctModules = faultingThread.StackTrace.Select(x => StripNonAscii(x.ModuleName)).Distinct().ToArray(),
-					DistrinctFrames = faultingThread.StackTrace.Select(x => StripNonAscii(x.MethodName)).Distinct().ToArray()
+					DistinctModuleHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.ModuleName).GetStableHashCode()).Distinct().ToArray(),
+					DistinctFrameHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.MethodName).GetStableHashCode()).Distinct().ToArray()
 				};
 			}
 
 			// lastevent
-			miniinfo.LastEvent = result.LastEvent;
+			if (result.LastEvent != null) {
+				if (result.LastEvent.Description.StartsWith("Break instruction exception")) {
+					miniinfo.LastEvent = null; // "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
+				} else { 
+					miniinfo.LastEvent = new LastEventMiniInfo {
+						TypeHash = result.LastEvent.Type?.GetStableHashCode(),
+						DescriptionHash = result.LastEvent.Description.GetStableHashCode()
+					};
+				}
+			}
 
 			// exception
 			var exception = result.GetErrorOrLastExecutingThread()?.LastException;
 			if (exception != null) {
 				miniinfo.Exception = new ExceptionMiniInfo() {
-					Type = exception.Type,
-					Message = exception.Message
+					TypeHash = exception.Type?.GetStableHashCode(),
+					MessageHash = exception.Message?.GetStableHashCode()
 				};
 			}
 
