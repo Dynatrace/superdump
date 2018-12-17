@@ -24,6 +24,7 @@ namespace SuperDumpService.Test.Fakes {
 		}
 
 		public Task<IEnumerable<JiraIssueModel>> GetJiraIssues(string bundleId) {
+			if (!jiraIssueStore.ContainsKey(bundleId)) return Task.FromResult< IEnumerable<JiraIssueModel>>(Enumerable.Empty<JiraIssueModel>());
 			return Task.FromResult<IEnumerable<JiraIssueModel>>(jiraIssueStore[bundleId]);
 		}
 	}

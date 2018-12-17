@@ -14,6 +14,10 @@ namespace SuperDumpService.Models {
 		public string ErrorMessage { get; set; }
 		public string FileHash { get; set; }
 		public string OriginalBundleId { get; set; }
+
+		public override string ToString() {
+			return BundleId;
+		}
 	}
 
 	public enum BundleStatus {
