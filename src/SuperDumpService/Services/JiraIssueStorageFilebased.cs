@@ -6,7 +6,7 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
-	public class JiraIssueStorageFilebased {
+	public class JiraIssueStorageFilebased : IJiraIssueStorage {
 		private readonly PathHelper pathHelper;
 
 		public JiraIssueStorageFilebased(PathHelper pathHelper) {

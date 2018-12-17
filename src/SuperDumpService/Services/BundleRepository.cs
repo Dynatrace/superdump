@@ -16,12 +16,12 @@ namespace SuperDumpService.Services {
 	public class BundleRepository {
 		private readonly object sync = new object();
 		private readonly ConcurrentDictionary<string, BundleMetainfo> bundles = new ConcurrentDictionary<string, BundleMetainfo>();
-		private readonly BundleStorageFilebased storage;
+		private readonly IBundleStorage storage;
 		private readonly DumpRepository dumpRepository;
 		public bool IsPopulated { get; private set; }
 
 
-		public BundleRepository(BundleStorageFilebased storage, DumpRepository dumpRepository) {
+		public BundleRepository(IBundleStorage storage, DumpRepository dumpRepository) {
 			this.storage = storage;
 			this.dumpRepository = dumpRepository;
 		}

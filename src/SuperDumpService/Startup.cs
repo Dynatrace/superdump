@@ -139,7 +139,7 @@ namespace SuperDumpService {
 			services.AddSingleton<SuperDumpRepository>();
 
 			services.AddSingleton<BundleRepository>();
-			services.AddSingleton<BundleStorageFilebased>();
+			services.AddSingleton<IBundleStorage, BundleStorageFilebased>();
 			services.AddSingleton<DumpRepository>();
 			services.AddSingleton<IDumpStorage, DumpStorageFilebased>();
 			services.AddSingleton<AnalysisService>();
@@ -153,10 +153,10 @@ namespace SuperDumpService {
 			services.AddSingleton<SimilarityService>();
 			services.AddSingleton<RelationshipRepository>();
 			services.AddSingleton<IRelationshipStorage, RelationshipStorageFilebased>();
-			services.AddSingleton<IdenticalDumpStorageFilebased>();
+			services.AddSingleton<IIdenticalDumpStorage, IdenticalDumpStorageFilebased>();
 			services.AddSingleton<IdenticalDumpRepository>();
-			services.AddSingleton<JiraApiService>();
-			services.AddSingleton<JiraIssueStorageFilebased>();
+			services.AddSingleton<IJiraApiService, JiraApiService>();
+			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddWebSocketManager();
 		}
