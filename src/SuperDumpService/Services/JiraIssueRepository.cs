@@ -61,7 +61,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<JiraIssueModel> GetIssues(string bundleId) {
-			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>());
+			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>())
+				.ToList();
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetAllIssuesByBundleIdWithoutWait(string bundleId) {

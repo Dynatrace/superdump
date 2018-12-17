@@ -38,8 +38,8 @@ namespace SuperDumpService.Test {
 
 			Assert.Collection(await jiraApiService.GetBulkIssues(new string[] { "JRA-1111", "JRA-2222", "JRA-3333" }),
 				item => Assert.Equal("JRA-1111", item.Key),
-				item => Assert.Equal("JRA-2222", item.Key),
-				item => Assert.Equal("JRA-3333", item.Key));
+				item => Assert.Equal("JRA-3333", item.Key),
+				item => Assert.Equal("JRA-2222", item.Key));
 		}
 
 		[Fact]
@@ -102,6 +102,18 @@ namespace SuperDumpService.Test {
 			Assert.Collection(jiraIssueRepository.GetIssues("bundle3"),
 				item => Assert.Equal("JRA-1111", item.Key),
 				item => Assert.Equal("JRA-5555", item.Key));
+
+
+			var res = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1", "bundle2", "bundle7", "bundle666" });
+			Assert.Equal(2, res.Count());
+
+			Assert.Collection(res["bundle1"],
+				item => Assert.Equal("JRA-1111", item.Key));
+
+			Assert.Collection(res["bundle2"],
+				item => Assert.Equal("JRA-2222", item.Key),
+				item => Assert.Equal("JRA-3333", item.Key),
+				item => Assert.Equal("JRA-4444", item.Key));
 		}
 
 		private IEnumerable<FakeDump> CreateFakeDumps() {
