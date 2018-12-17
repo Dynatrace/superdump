@@ -76,6 +76,9 @@ namespace SuperDumpService {
 
 			services.AddAntiforgery();
 
+			// asp.net core health checks
+			services.AddHealthChecks();
+
 			//configure DB
 			if (config.GetValue<bool>("UseInMemoryHangfireStorage")) {
 				services.AddHangfire(x => x.UseStorage(new Hangfire.MemoryStorage.MemoryStorage()));
@@ -244,6 +247,7 @@ namespace SuperDumpService {
 
 			app.UseSwagger();
 			app.UseSwaggerUi();
+			app.UseHealthChecks("/healthcheck");
 
 			LogProvider.SetCurrentLogProvider(new ColouredConsoleLogProvider());
 
