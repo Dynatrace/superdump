@@ -13,10 +13,10 @@ namespace SuperDumpService.Services {
 		private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
 
 		private readonly IDictionary<string, HashSet<string>> identicalDumps = new Dictionary<string, HashSet<string>>();
-		private readonly IdenticalDumpStorageFilebased identicalDumpStorage;
+		private readonly IIdenticalDumpStorage identicalDumpStorage;
 		private readonly BundleRepository bundleRepo;
 
-		public IdenticalDumpRepository(IdenticalDumpStorageFilebased identicalDumpStorage, BundleRepository bundleRepo) {
+		public IdenticalDumpRepository(IIdenticalDumpStorage identicalDumpStorage, BundleRepository bundleRepo) {
 			this.identicalDumpStorage = identicalDumpStorage;
 			this.bundleRepo = bundleRepo;
 		}

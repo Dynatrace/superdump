@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
-	public class JiraApiService {
+	public class JiraApiService : IJiraApiService {
 		private const string JsonMediaType = "application/json";
 		private const string JiraIssueFields = "status,resolution";
 		private readonly string[] JiraIssueFieldsArray = JiraIssueFields.Split(",");

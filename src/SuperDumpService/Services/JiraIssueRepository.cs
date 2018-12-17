@@ -15,9 +15,9 @@ namespace SuperDumpService.Services {
 	public class JiraIssueRepository {
 		private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
 
-		private readonly JiraApiService apiService;
+		private readonly IJiraApiService apiService;
 		private readonly BundleRepository bundleRepo;
-		private readonly JiraIssueStorageFilebased jiraIssueStorage;
+		private readonly IJiraIssueStorage jiraIssueStorage;
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIntegrationSettings settings;
 		private readonly ILogger<JiraIssueRepository> logger;
@@ -25,9 +25,9 @@ namespace SuperDumpService.Services {
 		public bool IsPopulated { get; private set; } = false;
 
 		public JiraIssueRepository(IOptions<SuperDumpSettings> settings,
-				JiraApiService apiService,
+				IJiraApiService apiService,
 				BundleRepository bundleRepo,
-				JiraIssueStorageFilebased jiraIssueStorage,
+				IJiraIssueStorage jiraIssueStorage,
 				IdenticalDumpRepository identicalDumpRepository,
 				ILoggerFactory loggerFactory) {
 			this.apiService = apiService;
@@ -61,7 +61,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<JiraIssueModel> GetIssues(string bundleId) {
-			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>());
+			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>())
+				.ToList();
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetAllIssuesByBundleIdWithoutWait(string bundleId) {

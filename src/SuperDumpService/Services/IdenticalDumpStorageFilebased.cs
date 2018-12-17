@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Services {
-	public class IdenticalDumpStorageFilebased {
+	public class IdenticalDumpStorageFilebased : IIdenticalDumpStorage {
 		private readonly PathHelper pathHelper;
 		private readonly IOptions<SuperDumpSettings> settings;
 

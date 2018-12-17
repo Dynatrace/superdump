@@ -13,7 +13,7 @@ namespace SuperDumpService.Services {
 	/// for writing and reading of bundles only
 	/// this implementation uses simple filebased storage
 	/// </summary>
-	public class BundleStorageFilebased {
+	public class BundleStorageFilebased : IBundleStorage {
 		private readonly IDumpStorage dumpStorage; // use this only for backward compat (populate bundleMetainfo from dumps)
 		private readonly PathHelper pathHelper;
 
@@ -58,7 +58,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		internal void Store(BundleMetainfo bundleInfo) {
+		public void Store(BundleMetainfo bundleInfo) {
 			Directory.CreateDirectory(pathHelper.GetBundleDirectory(bundleInfo.BundleId));
 			WriteMetainfoFile(bundleInfo, pathHelper.GetBundleMetadataPath(bundleInfo.BundleId));
 		}

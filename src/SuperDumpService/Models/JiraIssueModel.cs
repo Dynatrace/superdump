@@ -8,6 +8,11 @@ namespace SuperDumpService.Models {
 		public string Url { get; set; }
 		public JiraIssueFieldModel Fields { get; set; }
 
+		public JiraIssueModel() { }
+		public JiraIssueModel(string key) {
+			this.Key = key;
+		}
+
 		public string GetStatusName() {
 			return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
 		}
@@ -25,6 +30,10 @@ namespace SuperDumpService.Models {
 		public class JiraIssueStatusModel {
 			public string Name { get; set; }
 			public string Id { get; set; }
+		}
+
+		public override string ToString() {
+			return Key;
 		}
 	}
 }
