@@ -41,6 +41,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test", "Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Benchmark", "SuperDumpService.Benchmark\SuperDumpService.Benchmark.csproj", "{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpService.Test.Fakes", "SuperDumpService.Test.Fakes\SuperDumpService.Test.Fakes.csproj", "{C81E6045-4C5F-4978-A897-85B5F470B5F3}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.projitems*{0dd4da67-4e55-4ee1-9030-5a69d8cdc6b4}*SharedItemsImports = 4
@@ -197,6 +199,18 @@ Global
 		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x64.Build.0 = Release|Any CPU
 		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.ActiveCfg = Release|Any CPU
 		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x64.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x86.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x64.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x64.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x86.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

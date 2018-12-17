@@ -9,7 +9,7 @@ using SuperDumpService.Models;
 using SuperDumpService.Services;
 
 namespace SuperDumpService.Benchmarks.Fakes {
-	internal class FakeDump {
+	public class FakeDump {
 		public DumpMetainfo MetaInfo { get; set; }
 		public DumpMiniInfo? MiniInfo { get; set; }
 		public SDResult Result { get; set; }
@@ -17,7 +17,7 @@ namespace SuperDumpService.Benchmarks.Fakes {
 
 	}
 
-	internal class FakeDumpStorage : IDumpStorage {
+	public class FakeDumpStorage : IDumpStorage {
 		private readonly int READ_RESULT_DELAY_MS = 1;
 		private readonly int READ_MINIINFO_DELAY_MS = 1;
 		private readonly int WRITE_MINIINFO_DELAY_MS = 1;

@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
 
     <IsPackable>false</IsPackable>
+		<PreserveCompilationContext>true</PreserveCompilationContext><!-- needed for RazorLight -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SuperDump.Common\SuperDump.Common.csproj" />
     <ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj" />
+    <ProjectReference Include="..\SuperDumpService.Test.Fakes\SuperDumpService.Test.Fakes.csproj" />
     <ProjectReference Include="..\SuperDumpService\SuperDumpService.csproj" />
   </ItemGroup>
 
