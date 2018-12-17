@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SuperDump.Models;
-using SuperDumpService.Benchmarks.Fakes;
+using SuperDumpService.Test.Fakes;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;

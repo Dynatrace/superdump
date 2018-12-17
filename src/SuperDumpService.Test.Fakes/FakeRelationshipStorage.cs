@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
 
-namespace SuperDumpService.Benchmarks.Fakes {
+namespace SuperDumpService.Test.Fakes {
 	public class FakeRelationshipStorage : IRelationshipStorage {
 		private readonly int WRITE_RELATIONSHIPS_DELAY_MS = 1;
 
