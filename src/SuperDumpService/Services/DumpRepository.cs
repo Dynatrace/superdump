@@ -68,7 +68,6 @@ namespace SuperDumpService.Services {
 		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
-			var dict = new ConcurrentDictionary<string, DumpMetainfo>();
 			dumpId = CreateUniqueDumpId();
 			dumpInfo = new DumpMetainfo() {
 				BundleId = bundleId,
@@ -78,8 +77,8 @@ namespace SuperDumpService.Services {
 				Created = DateTime.Now,
 				Status = DumpStatus.Created
 			};
-			dict[dumpId] = dumpInfo;
-			dumps.TryAdd(bundleId, dict);
+			if (!dumps.ContainsKey(bundleId)) dumps[bundleId] = new ConcurrentDictionary<string, DumpMetainfo>();
+			dumps[bundleId][dumpId] = dumpInfo;
 			storage.Create(dumpInfo.Id);
 
 			FileInfo destFile = await storage.AddFileCopy(dumpInfo.Id, sourcePath);
