@@ -12,7 +12,11 @@ namespace SuperDumpService.Test.Fakes {
 		private readonly object sync = new object();
 
 		public void SetFakeJiraIssues(string bundleId, IEnumerable<JiraIssueModel> jiraIssueModels) {
-			jiraIssueStore[bundleId] = jiraIssueModels;
+			if (jiraIssueModels == null) {
+				jiraIssueStore.Remove(bundleId, out var x);
+			} else {
+				jiraIssueStore[bundleId] = jiraIssueModels;
+			}
 		}
 
 		public Task<IEnumerable<JiraIssueModel>> GetBulkIssues(IEnumerable<string> issueKeys) {
