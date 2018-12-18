@@ -138,20 +138,20 @@ namespace SuperDumpService.Services {
 				var allDumps = dumpRepo.GetAll().Where(x => x.Created >= timeFrom).OrderBy(x => x.Created);
 				Console.WriteLine($"starting CalculateSimilarity for {allDumps.Count()} dumps; {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
 
-				var tasks = allDumps.Select(dumpB => Task.Run(async () => {
+				foreach(var dumpB in allDumps) {
 					if (!force) {
 						var existingSimilarity = await relationShipRepo.GetRelationShip(dumpA.Id, dumpB.Id);
 						if (existingSimilarity != 0) {
 							// relationship already exists. skip!
 							// but make sure the relationship is stored bi-directional
 							await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, existingSimilarity);
-							return; 
+							continue; 
 						}
 					}
 
-					if (!PreSelectOnMetadata(dumpA, dumpB)) return;
+					if (!PreSelectOnMetadata(dumpA, dumpB)) continue;
 					var resultB = await GetOrCreateMiniInfo(dumpB.Id);
-					if (!PreSelectOnResults(resultA, resultB)) return;
+					if (!PreSelectOnResults(resultA, resultB)) continue;
 
 					CrashSimilarity crashSimilarity = CrashSimilarity.Calculate(resultA, resultB);
 
@@ -160,8 +160,7 @@ namespace SuperDumpService.Services {
 						await relationShipRepo.UpdateSimilarity(dumpA.Id, dumpB.Id, crashSimilarity.OverallSimilarity);
 					}
 					//Console.WriteLine($"CalculateSimilarity.Finished for {dumpA}/{dumpB} ({i} to go...); (elapsed: {sw.Elapsed}) (TID:{Thread.CurrentThread.ManagedThreadId})");
-				}));
-				await Task.WhenAll(tasks);
+				}
 
 				await relationShipRepo.FlushDirtyRelationships();
 				swTotal.Stop();
