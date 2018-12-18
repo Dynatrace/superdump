@@ -11,6 +11,7 @@ namespace SuperDumpService {
 		public int JiraBundleSearchLimit { get; set; }
 		public double JiraBundleSearchDelay { get; set; }
 		public TimeSpan JiraBundleSearchTimeSpan { get; set; }
+		public string JiraApiAuthUrl { get; set; }
 		public string JiraApiSearchUrl { get; set; }
 		public string JiraApiUsername { get; set; }
 		public string JiraApiPassword { get; set; }

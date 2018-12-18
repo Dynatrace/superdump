@@ -61,7 +61,6 @@ namespace SuperDumpService.Models {
 
 			public DumpIdentifier Allocate(string bundleId, string dumpId) {
 				int hash = $"{bundleId}:{dumpId}".GetHashCode();
-				if (pool.TryGetValue(hash, out DumpIdentifier id)) return id; // fast path
 				lock (sync) {
 					if (pool.TryGetValue(hash, out DumpIdentifier id2)) return id2;
 					var newId = new DumpIdentifier(bundleId, dumpId);

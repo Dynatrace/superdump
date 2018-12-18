@@ -68,6 +68,7 @@ namespace SuperDumpService.Test {
 			// population
 			await jiraIssueStorage.Store("bundle1", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111") });
 			await jiraIssueStorage.Store("bundle2", new List<JiraIssueModel> { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
+			await jiraIssueStorage.Store("bundle9", new List<JiraIssueModel> { new JiraIssueModel("JRA-9999") });
 
 			await bundleRepo.Populate();
 			await jiraIssueRepository.Populate();
@@ -81,14 +82,17 @@ namespace SuperDumpService.Test {
 				item => Assert.Equal("JRA-2222", item.Key),
 				item => Assert.Equal("JRA-3333", item.Key));
 
+			Assert.Collection(jiraIssueRepository.GetIssues("bundle9"),
+				item => Assert.Equal("JRA-9999", item.Key));
+
 			Assert.Empty(jiraIssueRepository.GetIssues("bundle3"));
 
 			// fake, that in jira some bundles have been referenced in new issues
-			jiraApiService.SetFakeJiraIssues("bundle1", new JiraIssueModel[] { new JiraIssueModel("JRA-1111") });
-			jiraApiService.SetFakeJiraIssues("bundle2", new JiraIssueModel[] { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333"), new JiraIssueModel("JRA-4444") });
-			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111"), new JiraIssueModel("JRA-5555") });
+			jiraApiService.SetFakeJiraIssues("bundle1", new JiraIssueModel[] { new JiraIssueModel("JRA-1111") }); // same
+			jiraApiService.SetFakeJiraIssues("bundle2", new JiraIssueModel[] { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-4444") }); // one added, one removed
+			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111"), new JiraIssueModel("JRA-5555") }); // new
+			jiraApiService.SetFakeJiraIssues("bundle9", null ); // removed jira issues
 
-			// trigger update of repository
 			await jiraIssueRepository.SearchBundleIssuesAsync(bundleRepo.GetAll(), true);
 
 			Assert.Collection(jiraIssueRepository.GetIssues("bundle1"),
@@ -96,15 +100,15 @@ namespace SuperDumpService.Test {
 
 			Assert.Collection(jiraIssueRepository.GetIssues("bundle2"),
 				item => Assert.Equal("JRA-2222", item.Key),
-				item => Assert.Equal("JRA-3333", item.Key),
 				item => Assert.Equal("JRA-4444", item.Key));
 
 			Assert.Collection(jiraIssueRepository.GetIssues("bundle3"),
 				item => Assert.Equal("JRA-1111", item.Key),
 				item => Assert.Equal("JRA-5555", item.Key));
 
+			Assert.Empty(jiraIssueRepository.GetIssues("bundle9"));
 
-			var res = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1", "bundle2", "bundle7", "bundle666" });
+			var res = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1", "bundle2", "bundle7", "bundle666", "bundle9" });
 			Assert.Equal(2, res.Count());
 
 			Assert.Collection(res["bundle1"],
@@ -112,8 +116,12 @@ namespace SuperDumpService.Test {
 
 			Assert.Collection(res["bundle2"],
 				item => Assert.Equal("JRA-2222", item.Key),
-				item => Assert.Equal("JRA-3333", item.Key),
 				item => Assert.Equal("JRA-4444", item.Key));
+
+
+			Assert.Empty(jiraIssueRepository.GetIssues("bundle7"));
+			Assert.Empty(jiraIssueRepository.GetIssues("bundle666"));
+			Assert.Empty(jiraIssueRepository.GetIssues("bundle9"));
 		}
 
 		private IEnumerable<FakeDump> CreateFakeDumps() {

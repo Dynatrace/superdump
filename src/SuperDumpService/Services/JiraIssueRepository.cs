@@ -21,7 +21,7 @@ namespace SuperDumpService.Services {
 		private readonly IdenticalDumpRepository identicalDumpRepository;
 		private readonly JiraIntegrationSettings settings;
 		private readonly ILogger<JiraIssueRepository> logger;
-		private readonly ConcurrentDictionary<string, IEnumerable<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IEnumerable<JiraIssueModel>>();
+		private readonly ConcurrentDictionary<string, IList<JiraIssueModel>> bundleIssues = new ConcurrentDictionary<string, IList<JiraIssueModel>>();
 		public bool IsPopulated { get; private set; } = false;
 
 		public JiraIssueRepository(IOptions<SuperDumpSettings> settings,
@@ -47,7 +47,7 @@ namespace SuperDumpService.Services {
 					try {
 						IEnumerable<JiraIssueModel> jiraIssues = await jiraIssueStorage.Read(bundle.BundleId);
 						if (jiraIssues != null) {
-							bundleIssues[bundle.BundleId] = jiraIssues;
+							bundleIssues[bundle.BundleId] = jiraIssues.ToList();
 						}
 					} catch (Exception e) {
 						logger.LogError("error reading jira-issue file: " + e.ToString());
@@ -61,7 +61,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<JiraIssueModel> GetIssues(string bundleId) {
-			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>())
+			return bundleIssues.GetValueOrDefault(bundleId, Enumerable.Empty<JiraIssueModel>().ToList())
 				.ToList();
 		}
 
@@ -85,7 +85,7 @@ namespace SuperDumpService.Services {
 		public async Task WipeJiraIssueCache() {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
-				foreach (KeyValuePair<string, IEnumerable<JiraIssueModel>> item in bundleIssues) {
+				foreach (KeyValuePair<string, IList<JiraIssueModel>> item in bundleIssues) {
 					jiraIssueStorage.Wipe(item.Key);
 				}
 				bundleIssues.Clear();
@@ -105,7 +105,7 @@ namespace SuperDumpService.Services {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				//Only update bundles with unresolved issues
-				IEnumerable<KeyValuePair<string, IEnumerable<JiraIssueModel>>> bundlesToRefresh =
+				IEnumerable<KeyValuePair<string, IList<JiraIssueModel>>> bundlesToRefresh =
 					bundleIssues.Where(bundle => bundle.Value.Any(issue => issue.GetStatusName() != "Resolved"));
 
 				if (!bundlesToRefresh.Any()) {
@@ -171,7 +171,7 @@ namespace SuperDumpService.Services {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
 				IEnumerable<BundleMetainfo> bundlesToSearch = force ? bundles : 
-					bundles.Where(bundle => !bundleIssues.TryGetValue(bundle.BundleId, out IEnumerable<JiraIssueModel> issues) || !issues.Any()); //All bundles without issues
+					bundles.Where(bundle => !bundleIssues.TryGetValue(bundle.BundleId, out IList<JiraIssueModel> issues) || !issues.Any()); //All bundles without issues
 
 				await Task.WhenAll(bundlesToSearch.Select(bundle => SearchBundleAsync(bundle, force)));
 			} finally {
@@ -180,26 +180,32 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task SearchBundleAsync(BundleMetainfo bundle, bool force) {
-			IEnumerable<JiraIssueModel> jiraIssues;
+			IList<JiraIssueModel> jiraIssues;
 			if (!force && bundle.CustomProperties.TryGetValue(settings.CustomPropertyJiraIssueKey, out string jiraIssue)) {
 				jiraIssues = new List<JiraIssueModel>() { new JiraIssueModel { Key = jiraIssue } };
 			} else {
-				jiraIssues = await apiService.GetJiraIssues(bundle.BundleId);
+				jiraIssues = (await apiService.GetJiraIssues(bundle.BundleId)).ToList();
 			}
 			if (jiraIssues.Any()) {
-				await jiraIssueStorage.Store(bundle.BundleId, bundleIssues[bundle.BundleId] = jiraIssues);
+				bundleIssues[bundle.BundleId] = jiraIssues;
+				await jiraIssueStorage.Store(bundle.BundleId, jiraIssues);
+			} else {
+				bundleIssues.Remove(bundle.BundleId, out var val);
+				await jiraIssueStorage.Store(bundle.BundleId, Enumerable.Empty<JiraIssueModel>());
 			}
 		}
 
-		private async Task SetBundleIssues(IEnumerable<KeyValuePair<string, IEnumerable<JiraIssueModel>>> bundlesToUpdate, IEnumerable<JiraIssueModel> refreshedIssues) {
+		private async Task SetBundleIssues(IEnumerable<KeyValuePair<string, IList<JiraIssueModel>>> bundlesToUpdate, IEnumerable<JiraIssueModel> refreshedIssues) {
 			var issueDictionary = refreshedIssues.ToDictionary(issue => issue.Key, issue => issue);
 
 			//Select the issues for each bundle and store them in the bundleIssues Dictionary
 			//I am not sure if this is the best way to do this
 			var fileStorageTasks = new List<Task>();
-			foreach (KeyValuePair<string, IEnumerable<JiraIssueModel>> bundle in bundlesToUpdate) {
-				IEnumerable<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]);
-				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
+			foreach (KeyValuePair<string, IList<JiraIssueModel>> bundle in bundlesToUpdate) {
+				if (issueDictionary.ContainsKey(bundle.Key)) {
+					IList<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]).ToList();
+					fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
+				}
 			}
 
 			await Task.WhenAll(fileStorageTasks);

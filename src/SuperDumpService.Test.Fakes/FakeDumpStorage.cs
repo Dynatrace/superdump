@@ -33,6 +33,8 @@ namespace SuperDumpService.Test.Fakes {
 
 		public bool DelaysEnabled { get; set; }
 
+		public FakeDumpStorage() : this(Enumerable.Empty<FakeDump>()) { }
+
 		public FakeDumpStorage(IEnumerable<FakeDump> fakeDumps) {
 			this.fakeDumpsDict = new Dictionary<DumpIdentifier, FakeDump>();
 			this.fakeBundlesDict = new Dictionary<string, FakeBundle>();
