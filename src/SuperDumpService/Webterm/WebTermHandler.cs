@@ -76,7 +76,11 @@ namespace SuperDump.Webterm {
 		}
 
 		// called by WebSocketManager
-		public void StartSession(string socketId, DumpIdentifier id, string initialCommand) {
+		public void StartSession(string socketId, string bundleId, string dumpId, string initialCommand) {
+			StartSession0(socketId, DumpIdentifier.Create(bundleId, dumpId), initialCommand);
+		}
+
+		public void StartSession0(string socketId, DumpIdentifier id, string initialCommand) {
 			try {
 				System.Console.WriteLine($"StartSession ({socketId}): {id}");
 				if (string.IsNullOrEmpty(id.BundleId) || string.IsNullOrEmpty(id.DumpId)) {

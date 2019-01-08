@@ -3,12 +3,12 @@ FROM microsoft/dotnet-framework:4.6.2
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Install .NET Core SDK
-ENV DOTNET_SDK_VERSION 2.0.0
-ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-win-x64.zip
-ENV DOTNET_SDK_DOWNLOAD_SHA C0942299437541C6B173F71213B43D2CC1E0EBC5C75F78948C0C6279A8D1C5B293999C93863392A4219F819B1DDD73D95112930B08EC8DDAA89918931E492DB0
+ENV ASPNETCORE_VERSION 2.2.0
+ENV ASPNETCORE_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/aspnetcore/Runtime/$ASPNETCORE_VERSION/aspnetcore-runtime-$ASPNETCORE_VERSION-win-x64.zip
+ENV ASPNETCORE_DOWNLOAD_SHA 0159f27762a0dd1fb7f7e4f85259c145d8e6964289f7477d6e9d5c03898afb38dca010f900e3ccb28e282514835a66d5546bbc1542b9da8c92dd3d2759c507de
 
-RUN Invoke-WebRequest $Env:DOTNET_SDK_DOWNLOAD_URL -OutFile dotnet.zip; \
-    if ((Get-FileHash dotnet.zip -Algorithm sha512).Hash -ne $Env:DOTNET_SDK_DOWNLOAD_SHA) { \
+RUN Invoke-WebRequest $Env:ASPNETCORE_DOWNLOAD_URL -OutFile dotnet.zip; \
+    if ((Get-FileHash dotnet.zip -Algorithm sha512).Hash -ne $Env:ASPNETCORE_DOWNLOAD_SHA) { \
         Write-Host 'CHECKSUM VERIFICATION FAILED!'; \
         exit 1; \
     }; \
@@ -17,24 +17,6 @@ RUN Invoke-WebRequest $Env:DOTNET_SDK_DOWNLOAD_URL -OutFile dotnet.zip; \
     Remove-Item -Force dotnet.zip
 
 RUN setx /M PATH $($Env:PATH + ';' + $Env:ProgramFiles + '\dotnet')
-
-# Trigger the population of the local package cache
-ENV NUGET_XMLDOC_MODE skip
-RUN New-Item -Type Directory warmup; \
-    cd warmup; \
-    dotnet new; \
-    cd ..; \
-    Remove-Item -Force -Recurse warmup
-
-# ASP.NET Core
-ENV ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL https://dist.asp.net/runtimestore/2.0.0/win-x64/aspnetcore.runtimestore.zip
-
-# set up the runtime store
-RUN Write-Host \"Downloading and extracting ${env:ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL}\"; \
-    Invoke-WebRequest $env:ASPNETCORE_RUNTIMESTORE_DOWNLOAD_URL -OutFile cache.zip; \
-    $env:DOTNET_HOME = $(Split-Path -Parent (Get-Command dotnet.exe).Source); \
-    Expand-Archive -Force cache.zip -DestinationPath $env:DOTNET_HOME; \
-    Remove-Item -Force cache.zip
 
 # Install Windows Debugging Tools
 ENV WINDBG_DOWNLOAD_URL https://download.microsoft.com/download/F/9/1/F91B5312-4385-4476-9688-055E3B1ED10F/windowssdk/winsdksetup.exe
@@ -51,7 +33,7 @@ RUN Invoke-WebRequest $Env:DEBUGDIAG_DOWNLOAD_URL -OutFile DebugDiagx64.msi; \
     Remove-Item -Force DebugDiagx64.msi
 
 # default MS symbol servers. override this with your own list if necessary.
-RUN mkdir C:/symbols
+RUN New-Item -ItemType directory -Path C:\symbols
 ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
 # needed, otherwise symbol servers are not reachable
 RUN "reg.exe" "add \"HKLM\Software\Microsoft\Symbol Server\" /v NoInternetProxy /t REG_DWORD /d 1 /f"
