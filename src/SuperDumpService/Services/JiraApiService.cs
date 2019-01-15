@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Microsoft.Extensions.Options;
@@ -38,6 +39,7 @@ namespace SuperDumpService.Services {
 		private const string JsonMediaType = "application/json";
 		private const string JiraIssueFields = "status,resolution";
 		private readonly string[] JiraIssueFieldsArray = JiraIssueFields.Split(",");
+		private readonly SemaphoreSlim authSync = new SemaphoreSlim(1, 1);
 
 		private readonly JiraIntegrationSettings settings;
 		private readonly HttpClient client;
@@ -81,10 +83,21 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task EnsureAuthentication() {
-			// reauthenticate every 10 minutes
-			if (Session == null || (DateTime.Now - Session.loginInfo.previousLoginTime).Minutes > 10) {
-				await Authenticate();
+			if (ShallAuthenticate()) {
+				await authSync.WaitAsync().ConfigureAwait(false);
+				try {
+					if (ShallAuthenticate()) {
+						await Authenticate();
+					}
+				} finally {
+					authSync.Release();
+				}
 			}
+		}
+
+		private bool ShallAuthenticate() {
+			// reauthenticate every 10 minutes
+			return Session == null || (DateTime.Now - Session.loginInfo.previousLoginTime).Minutes > 10;
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetJiraIssues(string bundleId) {
