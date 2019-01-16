@@ -19,7 +19,7 @@ namespace SuperDumpSelector {
 			try {
 				var result = Parser.Default.ParseArguments<Options>(args)
 					.WithParsed(options => {
-						var tracer = dynatraceSdk.TraceIncomingRemoteCall("Analyze", "SuperDumpSelector", "unknownserviceendpoint");
+						var tracer = dynatraceSdk.TraceIncomingRemoteCall("SelectBitness", "SuperDumpSelector.exe", "SuperDumpSelector.exe");
 						tracer.SetDynatraceStringTag(options.TraceTag);
 						tracer.Trace(() => RunAnalysis(options));
 					});
@@ -63,7 +63,7 @@ namespace SuperDumpSelector {
 		}
 
 		private static async Task RunSuperDump(FileInfo superDumpPath, string dumpfile, string outputfile, string dtTraceTag) {
-			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "SuperDump", "unknownserviceendpoint", ChannelType.OTHER, superDumpPath.FullName);
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "SuperDump.exe", "SuperDump.exe", ChannelType.OTHER, superDumpPath.FullName);
 			await tracer.TraceAsync(async () => {
 
 				string[] arguments = {
