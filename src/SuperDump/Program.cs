@@ -14,9 +14,6 @@ namespace SuperDump {
 		private static string OUTPUT_LOC;
 		public static string SYMBOL_PATH = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
 
-		// private static DumpContext context;
-		//private static DataTarget target;
-
 		private static int Main(string[] args) {
 			try {
 				var result = Parser.Default.ParseArguments<Options>(args)
