@@ -143,12 +143,6 @@ namespace SuperDumpService.Controllers {
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 
 			var similarDumps = (await similarityService.GetSimilarities(id)).Select(x => x.Key);
-
-			//var bundleInfos = similarDumpsBundleIds.Select(x => bundleRepo.Get(x)).Where(x => x != null);
-			//var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
-
-			//var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
-
 			var dumpViewModels = similarDumps.Select(x => ToDumpViewModel(x));
 
 			ViewData["message"] = $"Showing duplicates of {id}";
@@ -168,12 +162,6 @@ namespace SuperDumpService.Controllers {
 
 			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
 				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-
-				// TODO CN: I need to change this to just a list of dumps, not a list of bundles
-
-				//var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
-				//var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
-				// TODO CN: we now show all dumps of bundles that have been found. needs fixing.
 				var dumpViewModels = searchResults.Select(x => ToDumpViewModel(x));
 
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
@@ -187,11 +175,6 @@ namespace SuperDumpService.Controllers {
 					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			} else {
-				//var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
-
-				//var filtered = Search(searchFilter, bundles);
-				//filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
-
 				var dumps = dumpRepo.GetAll().Select(x => ToDumpViewModel(x));
 				var filtered = SearchDumps(searchFilter, dumps);
 
