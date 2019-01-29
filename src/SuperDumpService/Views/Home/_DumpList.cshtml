@@ -13,9 +13,13 @@
 		@foreach (var dump in @Model.Paged.OrderByDescending(dump => dump.DumpInfo.Created)) {
 			<tr>
 				<td>
+
 					<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.DumpInfo.DumpId (@System.IO.Path.GetFileName(dump.DumpInfo.DumpFileName))</a>
+					@if (dump.DumpInfo.Status != SuperDumpService.Models.DumpStatus.Finished) {
+						<span>(@dump.DumpInfo.Status)</span>
+					}
 					@if (dump.Similarities.AboveThresholdSimilarities().Any()) {
-						<span>(<a asp-controller="Home" asp-action="DumpDuplicates" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.Similarities.AboveThresholdSimilarities().Count() duplicates</a>)</span>
+						<div>(<a asp-controller="Home" asp-action="DumpDuplicates" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.Similarities.AboveThresholdSimilarities().Count() duplicates</a>)</div>
 					}
 				</td>
 				<td>

@@ -143,7 +143,7 @@ namespace SuperDumpService.Controllers {
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 
 			var similarDumps = (await similarityService.GetSimilarities(id)).Select(x => x.Key);
-			var dumpViewModels = similarDumps.Select(x => ToDumpViewModel(x));
+			var dumpViewModels = await Task.WhenAll(similarDumps.Select(x => ToDumpViewModel(x)));
 
 			ViewData["message"] = $"Showing duplicates of {id}";
 			return View("Dumps", new DumpsViewModel {
@@ -162,7 +162,7 @@ namespace SuperDumpService.Controllers {
 
 			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
 				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-				var dumpViewModels = searchResults.Select(x => ToDumpViewModel(x));
+				var dumpViewModels = await Task.WhenAll(searchResults.Select(x => ToDumpViewModel(x)));
 
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
 				return View(new DumpsViewModel {
@@ -175,7 +175,7 @@ namespace SuperDumpService.Controllers {
 					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			} else {
-				var dumps = dumpRepo.GetAll().Select(x => ToDumpViewModel(x));
+				var dumps = await Task.WhenAll(dumpRepo.GetAll().Select(x => ToDumpViewModel(x)));
 				var filtered = SearchDumps(searchFilter, dumps);
 
 				ViewData["searchFilter"] = searchFilter;
@@ -191,14 +191,15 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		private DumpViewModel ToDumpViewModel(ElasticSDResult elasticSDResult) {
-			return ToDumpViewModel(elasticSDResult.DumpIdentifier);
+		private async Task<DumpViewModel> ToDumpViewModel(ElasticSDResult elasticSDResult) {
+			return await ToDumpViewModel(elasticSDResult.DumpIdentifier);
 		}
-		private DumpViewModel ToDumpViewModel(DumpIdentifier id) {
-			return ToDumpViewModel(dumpRepo.Get(id));
+		private async Task<DumpViewModel> ToDumpViewModel(DumpIdentifier id) {
+			return await ToDumpViewModel(dumpRepo.Get(id));
 		}
-		private DumpViewModel ToDumpViewModel(DumpMetainfo dumpMetainfo) {
-			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)));
+		private async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo) {
+			var similarities = new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
+			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)), similarities);
 		}
 
 		[HttpGet(Name = "Elastic")]
@@ -214,25 +215,6 @@ namespace SuperDumpService.Controllers {
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
 			return portlessUrl + ":5601";
-		}
-
-		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
-			if (includeEmptyBundles) return bundles;
-
-			return bundles.Where(b => b.DumpInfos.Count() > 0);
-		}
-
-		private IEnumerable<BundleViewModel> SearchBundles(string searchFilter, IEnumerable<BundleViewModel> bundles) {
-			if (searchFilter == null) return bundles;
-
-			logger.LogSearch("Search", HttpContext, searchFilter);
-			return bundles.Where(b =>
-				b.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-				|| b.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
-				|| b.DumpInfos.Any(d =>
-					d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-					|| (d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
-				));
 		}
 
 		private IEnumerable<DumpViewModel> SearchDumps(string searchFilter, IEnumerable<DumpViewModel> dumps) {
