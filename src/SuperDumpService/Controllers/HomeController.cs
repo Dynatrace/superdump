@@ -201,14 +201,14 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public static async Task<DumpViewModel> ToDumpViewModel(ElasticSDResult elasticSDResult, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService) {
+		public static async Task<DumpViewModel> ToDumpViewModel(ElasticSDResult elasticSDResult, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
 			return await ToDumpViewModel(elasticSDResult.DumpIdentifier, dumpRepo, bundleRepo, similarityService);
 		}
-		public static async Task<DumpViewModel> ToDumpViewModel(DumpIdentifier id, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService) {
+		public static async Task<DumpViewModel> ToDumpViewModel(DumpIdentifier id, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
 			return await ToDumpViewModel(dumpRepo.Get(id), dumpRepo, bundleRepo, similarityService);
 		}
-		public static async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService) {
-			var similarities = new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
+		public static async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
+			var similarities = similarityService == null ? null : new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
 			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)), similarities);
 		}
 

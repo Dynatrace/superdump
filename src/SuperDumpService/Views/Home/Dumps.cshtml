@@ -95,7 +95,7 @@
 				$("cal-heatmap").innerHTML = "";
 				let cal = new CalHeatMap();
 				cal.init({
-					start: Date.now(),
+					start: new Date().setDate((new Date()).getDate() - 21),
 					range: 21,
 					domain: "day",
 					//subDomain: "day",

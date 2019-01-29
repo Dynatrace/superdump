@@ -108,36 +108,38 @@ namespace SuperDumpService.Controllers.Api {
 			}
 		}
 
-		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
+		//[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
 		[HttpGet("Heatmap")]
 		[ProducesResponseType(200)]
 		[ProducesResponseType(typeof(string), 404)]
 		public async Task<IActionResult> Heatmap(
-				[FromQuery]string start,
-				[FromQuery]string stop,
+				[FromQuery]DateTime start,
+				[FromQuery]DateTime stop,
 				[FromQuery]string searchFilter,
 				[FromQuery]string elasticSearchFilter,
 				[FromQuery]string duplBundleId, // in case of duplication search
 				[FromQuery]string duplDumpId    // in case of duplication search
 			) {
-			// todo: consider start and stop for perf optimization
 
 			IEnumerable<DumpViewModel> dumpViewModels = null;
 			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
 				// find duplicates of given bundleId+dumpId
 				var similarDumps = (await similarityService.GetSimilarities(DumpIdentifier.Create(duplBundleId, duplDumpId))).Select(x => x.Key);
-				dumpViewModels = await Task.WhenAll(similarDumps.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				dumpViewModels = await Task.WhenAll(similarDumps.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
 			} else if(!string.IsNullOrEmpty(elasticSearchFilter)) {
 				// run elasticsearch query
 				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-				dumpViewModels = await Task.WhenAll(searchResults.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				dumpViewModels = await Task.WhenAll(searchResults.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
 			} else {
 				// do plain search, or show all of searchFilter is empty
-				var allDumpViewModels = await Task.WhenAll(dumpRepo.GetAll().Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				var allDumpViewModels = await Task.WhenAll(dumpRepo.GetAll().Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
 				dumpViewModels = HomeController.SearchDumps(searchFilter, allDumpViewModels);
 			}
 
-			var dumps = dumpViewModels.ToLookup(x => x.DumpInfo.Created.ToUnixTimestamp()); // group by day / 60 / 60 / 24
+			// timefilter
+			dumpViewModels = dumpViewModels.Where(x => x.DumpInfo.Created >= start && x.DumpInfo.Created <= stop);
+
+			var dumps = dumpViewModels.ToLookup(x => (x.DumpInfo.Created.ToUnixTimestamp() / 3600) * 3600); // group by hour
 			return Content(ToCalHeatmapJson(dumps), "application/json");
 		}
 
