@@ -14,9 +14,6 @@ namespace SuperDump {
 		private static string OUTPUT_LOC;
 		public static string SYMBOL_PATH = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
 
-		private static DumpContext context;
-		private static DataTarget target;
-
 		private static int Main(string[] args) {
 			try {
 				var result = Parser.Default.ParseArguments<Options>(args)
@@ -24,7 +21,7 @@ namespace SuperDump {
 						RunAnalysis(options);
 					});
 			} catch (Exception e) {
-				context.WriteError($"Exception happened: {e}");
+				Console.Error.WriteLine($"Exception happened: {e}");
 				return 1;
 			}
 			return 0;
@@ -36,7 +33,7 @@ namespace SuperDump {
 			} else {
 				Environment.SetEnvironmentVariable("_NT_DEBUGGER_EXTENSION_PATH", @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\WINXP;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\winext;C:\Program Files (x86)\Windows Kits\10\Debuggers\x86;");
 			}
-			using (context = new DumpContext()) {
+			using (var context = new DumpContext()) {
 				Console.WriteLine("SuperDump - Windows dump analysis tool");
 				Console.WriteLine("--------------------------");
 				//check if symbol path is set
@@ -54,10 +51,10 @@ namespace SuperDump {
 				context.Printer = new FilePrinter(logfile.FullName);
 
 				if (File.Exists(absoluteDumpFile)) {
-					LoadDump(absoluteDumpFile);
+					LoadDump(context, absoluteDumpFile);
 
 					// do this as early as possible, as some WinDbg commands help us get the right DAC files
-					RunSafe(nameof(WinDbgAnalyzer), () => {
+					RunSafe(context, nameof(WinDbgAnalyzer), () => {
 						var windbgAnalyzer = new WinDbgAnalyzer(context, Path.Combine(context.DumpDirectory, "windbg.log"));
 						windbgAnalyzer.Analyze();
 					});
@@ -67,10 +64,10 @@ namespace SuperDump {
 					analysisResult.IsManagedProcess = context.Target.ClrVersions.Count > 0;
 
 					if (analysisResult.IsManagedProcess) {
-						SetupCLRRuntime();
+						SetupCLRRuntime(context);
 					}
 
-					RunSafe(nameof(ExceptionAnalyzer), () => {
+					RunSafe(context, nameof(ExceptionAnalyzer), () => {
 						var sysInfo = new SystemAnalyzer(context);
 						analysisResult.SystemContext = sysInfo.systemInfo;
 
@@ -90,11 +87,11 @@ namespace SuperDump {
 						sysInfo.PrintModuleList();
 					});
 
-					RunSafe(nameof(ExceptionAnalyzer), () => {
+					RunSafe(context, nameof(ExceptionAnalyzer), () => {
 						var exceptionAnalyzer = new ExceptionAnalyzer(context, analysisResult);
 					});
 
-					RunSafe(nameof(ThreadAnalyzer), () => {
+					RunSafe(context, nameof(ThreadAnalyzer), () => {
 						context.WriteInfo("--- Thread analysis ---");
 						ThreadAnalyzer threadAnalyzer = new ThreadAnalyzer(context);
 						analysisResult.ExceptionRecord = threadAnalyzer.exceptions;
@@ -107,7 +104,7 @@ namespace SuperDump {
 						threadAnalyzer.PrintCompleteStackTrace();
 					});
 
-					RunSafe(nameof(MemoryAnalyzer), () => {
+					RunSafe(context, nameof(MemoryAnalyzer), () => {
 						var memoryAnalyzer = new MemoryAnalyzer(context);
 						analysisResult.MemoryInformation = memoryAnalyzer.memDict;
 						analysisResult.BlockingObjects = memoryAnalyzer.blockingObjects;
@@ -116,7 +113,7 @@ namespace SuperDump {
 					});
 
 					// this analyzer runs after all others to put tags onto taggableitems
-					RunSafe(nameof(TagAnalyzer), () => {
+					RunSafe(context, nameof(TagAnalyzer), () => {
 						var tagAnalyzer = new TagAnalyzer(analysisResult);
 						tagAnalyzer.Analyze();
 					});
@@ -132,9 +129,9 @@ namespace SuperDump {
 			}
 		}
 
-		private static void LoadDump(string absoluteDumpFile) {
+		private static void LoadDump(DumpContext context, string absoluteDumpFile) {
 			try {
-				target = DataTarget.LoadCrashDump(absoluteDumpFile, CrashDumpReader.ClrMD);
+				var target = DataTarget.LoadCrashDump(absoluteDumpFile, CrashDumpReader.ClrMD);
 
 				// attention: CLRMD needs symbol path to be ";" separated. srv*url1*url2*url3 won't work.
 
@@ -161,12 +158,12 @@ namespace SuperDump {
 			}
 		}
 
-		private static void SetupCLRRuntime() {
+		private static void SetupCLRRuntime(DumpContext context) {
 			// for .NET specific
 			try {
 				string dac = null;
 				context.DacLocation = dac;
-				context.Runtime = target.CreateRuntime(ref dac);
+				context.Runtime = context.Target.CreateRuntime(ref dac);
 				context.WriteInfo("created runtime with version " + context.Runtime.ClrInfo.Version);
 				context.Heap = context.Runtime.Heap;
 			} catch (FileNotFoundException ex) {
@@ -203,7 +200,7 @@ namespace SuperDump {
 		/// Executes the action, catches any exception and logs it
 		/// </summary>
 		[HandleProcessCorruptedStateExceptions] // some operations out of our control (WinDbg ExecuteCommand) cause AccessViolationExceptions in some cases. Be brave and try to continute to run. This attribute allows an exception-handler to catch it.
-		private static void RunSafe(string name, Action action) {
+		private static void RunSafe(DumpContext context, string name, Action action) {
 			try {
 				action();
 			} catch (Exception e) {
