@@ -110,11 +110,12 @@ namespace SuperDumpService.Controllers {
 			throw new Exception($"bundleid '{bundleId}' does not exist in repository");
 		}
 
-		private async Task<IEnumerable<DumpListViewModel>> GetDumpListViewModels(string bundleId) {
+		private async Task<IEnumerable<DumpViewModel>> GetDumpListViewModels(string bundleId) {
+			var bundleInfo = bundleRepo.Get(bundleId);
 			if (relationshipRepo.IsPopulated) {
-				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpListViewModel(x, new Similarities(await similarityService.GetSimilarities(x.Id)))));
+				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpViewModel(x, new BundleViewModel(bundleInfo), new Similarities(await similarityService.GetSimilarities(x.Id)))));
 			}
-			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x));
+			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
 
 		[HttpPost]
@@ -137,22 +138,24 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public async Task<IActionResult> OverviewDuplicates(string bundleId, string dumpId, int page = 1, int pagesize = 50) {
-			logger.LogDefault("Overview", HttpContext);
+		public async Task<IActionResult> DumpDuplicates(string bundleId, string dumpId, int page = 1, int pagesize = 50) {
+			logger.LogDefault("DumpDuplicates", HttpContext);
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 
-			var similarDumpsBundleIds = (await similarityService.GetSimilarities(id)).Select(x => x.Key.BundleId).Distinct().Where(bid => bid != null);
+			var similarDumps = (await similarityService.GetSimilarities(id)).Select(x => x.Key);
 
-			var bundleInfos = similarDumpsBundleIds.Select(x => bundleRepo.Get(x)).Where(x => x != null);
-			var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
+			//var bundleInfos = similarDumpsBundleIds.Select(x => bundleRepo.Get(x)).Where(x => x != null);
+			//var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
 
-			var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
+			//var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
+
+			var dumpViewModels = similarDumps.Select(x => ToDumpViewModel(x));
 
 			ViewData["message"] = $"Showing duplicates of {id}";
-			return View("Overview", new OverviewViewModel {
-				All = foundBundles,
-				Filtered = foundBundles, // filtered is wrong here
-				Paged = foundBundles.ToPagedList(pagesize, page),
+			return View("Dumps", new DumpsViewModel {
+				All = dumpViewModels,
+				Filtered = dumpViewModels, // filtered is wrong here
+				Paged = dumpViewModels.ToPagedList(pagesize, page),
 				KibanaUrl = KibanaUrl(),
 				IsPopulated = bundleRepo.IsPopulated,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
@@ -160,37 +163,41 @@ namespace SuperDumpService.Controllers {
 			});
 		}
 
-		public async Task<IActionResult> Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
-			logger.LogDefault("Overview", HttpContext);
+		public async Task<IActionResult> Dumps(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
+			logger.LogDefault("Dumps", HttpContext);
 
 			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
 				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
 
 				// TODO CN: I need to change this to just a list of dumps, not a list of bundles
 
-				var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
-				var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
+				//var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
+				//var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
 				// TODO CN: we now show all dumps of bundles that have been found. needs fixing.
+				var dumpViewModels = searchResults.Select(x => ToDumpViewModel(x));
 
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
-				return View(new OverviewViewModel {
-					All = foundBundles,
-					Filtered = foundBundles, // filtered is wrong here
-					Paged = foundBundles.ToPagedList(pagesize, page),
+				return View(new DumpsViewModel {
+					All = dumpViewModels,
+					Filtered = dumpViewModels, // filtered is wrong here
+					Paged = dumpViewModels.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
 					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
 					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			} else {
-				var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
+				//var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
 
-				var filtered = Search(searchFilter, bundles);
-				filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
+				//var filtered = Search(searchFilter, bundles);
+				//filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
+
+				var dumps = dumpRepo.GetAll().Select(x => ToDumpViewModel(x));
+				var filtered = SearchDumps(searchFilter, dumps);
 
 				ViewData["searchFilter"] = searchFilter;
-				return View(new OverviewViewModel {
-					All = bundles,
+				return View(new DumpsViewModel {
+					All = dumps,
 					Filtered = filtered,
 					Paged = filtered.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
@@ -199,6 +206,16 @@ namespace SuperDumpService.Controllers {
 					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
 				});
 			}
+		}
+
+		private DumpViewModel ToDumpViewModel(ElasticSDResult elasticSDResult) {
+			return ToDumpViewModel(elasticSDResult.DumpIdentifier);
+		}
+		private DumpViewModel ToDumpViewModel(DumpIdentifier id) {
+			return ToDumpViewModel(dumpRepo.Get(id));
+		}
+		private DumpViewModel ToDumpViewModel(DumpMetainfo dumpMetainfo) {
+			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)));
 		}
 
 		[HttpGet(Name = "Elastic")]
@@ -222,7 +239,7 @@ namespace SuperDumpService.Controllers {
 			return bundles.Where(b => b.DumpInfos.Count() > 0);
 		}
 
-		private IEnumerable<BundleViewModel> Search(string searchFilter, IEnumerable<BundleViewModel> bundles) {
+		private IEnumerable<BundleViewModel> SearchBundles(string searchFilter, IEnumerable<BundleViewModel> bundles) {
 			if (searchFilter == null) return bundles;
 
 			logger.LogSearch("Search", HttpContext, searchFilter);
@@ -233,6 +250,18 @@ namespace SuperDumpService.Controllers {
 					d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
 					|| (d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
 				));
+		}
+
+		private IEnumerable<DumpViewModel> SearchDumps(string searchFilter, IEnumerable<DumpViewModel> dumps) {
+			if (searchFilter == null) return dumps;
+
+			logger.LogSearch("Search", HttpContext, searchFilter);
+			return dumps.Where(d =>
+				   d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+				|| d.DumpInfo.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+				|| d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
+				|| d.BundleViewModel.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+			);
 		}
 
 		public IActionResult GetReport() {
