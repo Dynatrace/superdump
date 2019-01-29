@@ -137,6 +137,29 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
+		public async Task<IActionResult> OverviewDuplicates(string bundleId, string dumpId, int page = 1, int pagesize = 50) {
+			logger.LogDefault("Overview", HttpContext);
+			var id = DumpIdentifier.Create(bundleId, dumpId);
+
+			var similarDumpsBundleIds = (await similarityService.GetSimilarities(id)).Select(x => x.Key.BundleId).Distinct().Where(bid => bid != null);
+
+			var bundleInfos = similarDumpsBundleIds.Select(x => bundleRepo.Get(x)).Where(x => x != null);
+			var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
+
+			var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
+
+			ViewData["message"] = $"Showing duplicates of {id}";
+			return View("Overview", new OverviewViewModel {
+				All = foundBundles,
+				Filtered = foundBundles, // filtered is wrong here
+				Paged = foundBundles.ToPagedList(pagesize, page),
+				KibanaUrl = KibanaUrl(),
+				IsPopulated = bundleRepo.IsPopulated,
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
+			});
+		}
+
 		public async Task<IActionResult> Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
 			logger.LogDefault("Overview", HttpContext);
 

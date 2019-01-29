@@ -23,7 +23,7 @@
 							<li>
 								<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.DumpInfo.DumpId (@System.IO.Path.GetFileName(dump.DumpInfo.DumpFileName))</a>
 								@if (dump.Similarities.AboveThresholdSimilarities().Any()) {
-									<span>(@dump.Similarities.AboveThresholdSimilarities().Count() duplicates)</span>
+									<span>(<a asp-controller="Home" asp-action="OverviewDuplicates" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.Similarities.AboveThresholdSimilarities().Count() duplicates</a>)</span>
 								}
 							</li>
 						}
