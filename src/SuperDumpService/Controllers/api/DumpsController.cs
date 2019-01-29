@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Linq;
+using System.Text;
+using SuperDumpService.ViewModels;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -22,12 +24,22 @@ namespace SuperDumpService.Controllers.Api {
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
 		private readonly ILogger<DumpsController> logger;
+		private readonly SimilarityService similarityService;
+		private readonly ElasticSearchService elasticService;
 
-		public DumpsController(SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, ILoggerFactory loggerFactory) {
+		public DumpsController(
+				SuperDumpRepository superDumpRepo,
+				BundleRepository bundleRepo,
+				DumpRepository dumpRepo,
+				ILoggerFactory loggerFactory,
+				SimilarityService similarityService,
+				ElasticSearchService elasticService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			logger = loggerFactory.CreateLogger<DumpsController>();
+			this.similarityService = similarityService;
+			this.elasticService = elasticService;
 		}
 
 		/// <summary>
@@ -94,6 +106,63 @@ namespace SuperDumpService.Controllers.Api {
 				var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(x => "'" + x.Exception.Message + "'"));
 				return BadRequest($"Invalid request, check if value was set: {errors}");
 			}
+		}
+
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
+		[HttpGet("Heatmap")]
+		[ProducesResponseType(200)]
+		[ProducesResponseType(typeof(string), 404)]
+		public async Task<IActionResult> Heatmap(
+				[FromQuery]string start,
+				[FromQuery]string stop,
+				[FromQuery]string searchFilter,
+				[FromQuery]string elasticSearchFilter,
+				[FromQuery]string duplBundleId, // in case of duplication search
+				[FromQuery]string duplDumpId    // in case of duplication search
+			) {
+			// todo: consider start and stop for perf optimization
+
+			IEnumerable<DumpViewModel> dumpViewModels = null;
+			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
+				// find duplicates of given bundleId+dumpId
+				var similarDumps = (await similarityService.GetSimilarities(DumpIdentifier.Create(duplBundleId, duplDumpId))).Select(x => x.Key);
+				dumpViewModels = await Task.WhenAll(similarDumps.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+			} else if(!string.IsNullOrEmpty(elasticSearchFilter)) {
+				// run elasticsearch query
+				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
+				dumpViewModels = await Task.WhenAll(searchResults.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+			} else {
+				// do plain search, or show all of searchFilter is empty
+				var allDumpViewModels = await Task.WhenAll(dumpRepo.GetAll().Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				dumpViewModels = HomeController.SearchDumps(searchFilter, allDumpViewModels);
+			}
+
+			var dumps = dumpViewModels.ToLookup(x => x.DumpInfo.Created.ToUnixTimestamp()); // group by day / 60 / 60 / 24
+			return Content(ToCalHeatmapJson(dumps), "application/json");
+		}
+
+		/// <summary>
+		/// cal-heatmap data: 
+		///
+		///   {
+		///     "timestamp": value,
+		///     "timestamp2": value2,
+		///     ...
+		///   }
+		/// 
+		/// custom serialization to avoid the hassle of json converters for this simple format
+		/// </summary>
+		private static string ToCalHeatmapJson(ILookup<int, DumpViewModel> dumps) {
+			var sb = new StringBuilder();
+			sb.Append("{");
+			int i = 0;
+			foreach (var group in dumps.OrderBy(x => x.Key)) {
+				if (i > 0) sb.Append(", ");
+				sb.Append("\"" + group.Key + "\": " + group.Count());
+				i++;
+			}
+			sb.Append("}");
+			return sb.ToString();
 		}
 	}
 }

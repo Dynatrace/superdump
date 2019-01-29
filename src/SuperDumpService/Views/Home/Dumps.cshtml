@@ -80,12 +80,28 @@
 			<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Jira issue repository</strong> is populated right now. Linked jira issues might not be complete yet.
 		</div>
 	}
-	<p>Showing @Model.Filtered.Count() dumps.</p>
+	<p>Showing @Model.Filtered.Count() dumps.
+		@if (ViewData["duplBundleId"] != null) {
+			<span>(duplicates of <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@ViewData["duplBundleId"]" asp-route-dumpId="@ViewData["duplDumpId"]">@ViewData["duplBundleId"]:@ViewData["duplDumpId"]</a>)</span>
+		}
+	</p>
 	<div class="panel-body">
 		<div id="cal-heatmap"></div>
 		<script type="text/javascript">
-			var cal = new CalHeatMap();
-			cal.init({});
+			
+			calHeatMap3weeks();
+
+			function calHeatMap3weeks() {
+				$("cal-heatmap").innerHTML = "";
+				let cal = new CalHeatMap();
+				cal.init({
+					start: Date.now(),
+					range: 21,
+					domain: "day",
+					//subDomain: "day",
+					data: window.location.protocol + "//" + window.location.host + "/api/Dumps/Heatmap?start={{d:start}}&stop={{d:end}}&searchFilter=@ViewData["searchFilter"]&elasticSearchFilter=@ViewData["elasticSearchFilter"]&duplBundleId=@ViewData["duplBundleId"]&duplDumpId=@ViewData["duplDumpId"]"
+				});
+			}
 		</script>
 	</div>
 	@{Html.RenderPartial("_DumpList", Model);}

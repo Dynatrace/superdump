@@ -19,7 +19,7 @@
 						<span>(@dump.DumpInfo.Status)</span>
 					}
 					@if (dump.Similarities.AboveThresholdSimilarities().Any()) {
-						<div>(<a asp-controller="Home" asp-action="DumpDuplicates" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">@dump.Similarities.AboveThresholdSimilarities().Count() duplicates</a>)</div>
+						<div>(<a asp-controller="Home" asp-action="Dumps" asp-route-duplBundleId="@dump.DumpInfo.BundleId" asp-route-duplDumpId="@dump.DumpInfo.DumpId">@dump.Similarities.AboveThresholdSimilarities().Count() duplicates</a>)</div>
 					}
 				</td>
 				<td>
