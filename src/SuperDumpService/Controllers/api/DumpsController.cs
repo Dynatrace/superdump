@@ -124,7 +124,7 @@ namespace SuperDumpService.Controllers.Api {
 			IEnumerable<DumpViewModel> dumpViewModels = null;
 			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
 				// find duplicates of given bundleId+dumpId
-				var similarDumps = (await similarityService.GetSimilarities(DumpIdentifier.Create(duplBundleId, duplDumpId))).Select(x => x.Key);
+				var similarDumps = new Similarities(await similarityService.GetSimilarities(DumpIdentifier.Create(duplBundleId, duplDumpId))).AboveThresholdSimilarities().Select(x => x.Key);
 				dumpViewModels = await Task.WhenAll(similarDumps.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
 			} else if(!string.IsNullOrEmpty(elasticSearchFilter)) {
 				// run elasticsearch query

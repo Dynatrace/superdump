@@ -153,7 +153,7 @@ namespace SuperDumpService.Controllers {
 				// find duplicates of given bundleId+dumpId
 				var id = DumpIdentifier.Create(duplBundleId, duplDumpId);
 
-				var similarDumps = (await similarityService.GetSimilarities(id)).Select(x => x.Key);
+				var similarDumps = new Similarities(await similarityService.GetSimilarities(id)).AboveThresholdSimilarities().Select(x => x.Key);
 				var dumpViewModels = await Task.WhenAll(similarDumps.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
 				var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
 
