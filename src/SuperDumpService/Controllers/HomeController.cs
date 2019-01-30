@@ -155,13 +155,14 @@ namespace SuperDumpService.Controllers {
 
 				var similarDumps = (await similarityService.GetSimilarities(id)).Select(x => x.Key);
 				var dumpViewModels = await Task.WhenAll(similarDumps.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
 
 				ViewData["duplBundleId"] = id.BundleId;
 				ViewData["duplDumpId"] = id.DumpId;
 				return View(new DumpsViewModel {
-					All = dumpViewModels,
-					Filtered = dumpViewModels, // filtered is wrong here
-					Paged = dumpViewModels.ToPagedList(pagesize, page),
+					All = dumpViewModelsOrdered,
+					Filtered = dumpViewModelsOrdered, // filtered is wrong here
+					Paged = dumpViewModelsOrdered.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
 					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
@@ -171,12 +172,13 @@ namespace SuperDumpService.Controllers {
 				// run elasticsearch query
 				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
 				var dumpViewModels = await Task.WhenAll(searchResults.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
+				var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
 
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
 				return View(new DumpsViewModel {
-					All = dumpViewModels,
-					Filtered = dumpViewModels, // filtered is wrong here
-					Paged = dumpViewModels.ToPagedList(pagesize, page),
+					All = dumpViewModelsOrdered,
+					Filtered = dumpViewModelsOrdered, // filtered is wrong here
+					Paged = dumpViewModelsOrdered.ToPagedList(pagesize, page),
 					KibanaUrl = KibanaUrl(),
 					IsPopulated = bundleRepo.IsPopulated,
 					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
@@ -186,7 +188,7 @@ namespace SuperDumpService.Controllers {
 				// do plain search, or show all of searchFilter is empty
 				logger.LogSearch("Search", HttpContext, searchFilter);
 				var dumps = await Task.WhenAll(dumpRepo.GetAll().Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
-				var filtered = SearchDumps(searchFilter, dumps);
+				var filtered = SearchDumps(searchFilter, dumps).OrderByDescending(x => x.DumpInfo.Created);
 
 				ViewData["searchFilter"] = searchFilter;
 				return View(new DumpsViewModel {
