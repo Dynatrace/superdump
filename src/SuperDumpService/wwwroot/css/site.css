@@ -111,9 +111,9 @@
 	width: 70%;
 }
 
-.table > tbody {
-    font-family: Courier New, Courier, monospace;
-    font-size: 12px;
+.superdump-report .table > tbody {
+	font-family: Courier New, Courier, monospace;
+	font-size: 12px;
 }
 
 .table > tbody > tr.custom-native > td {
