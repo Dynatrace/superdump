@@ -159,6 +159,7 @@ namespace SuperDumpService {
 			services.AddSingleton<IJiraApiService, JiraApiService>();
 			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
+			services.AddSingleton<SearchService>();
 
 			var sdk = OneAgentSdkFactory.CreateInstance();
 			sdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));

@@ -24,8 +24,7 @@ namespace SuperDumpService.Controllers.Api {
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
 		private readonly ILogger<DumpsController> logger;
-		private readonly SimilarityService similarityService;
-		private readonly ElasticSearchService elasticService;
+		private readonly SearchService searchService;
 
 		public DumpsController(
 				SuperDumpRepository superDumpRepo,
@@ -33,13 +32,13 @@ namespace SuperDumpService.Controllers.Api {
 				DumpRepository dumpRepo,
 				ILoggerFactory loggerFactory,
 				SimilarityService similarityService,
-				ElasticSearchService elasticService) {
+				ElasticSearchService elasticService,
+				SearchService searchService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			logger = loggerFactory.CreateLogger<DumpsController>();
-			this.similarityService = similarityService;
-			this.elasticService = elasticService;
+			this.searchService = searchService;
 		}
 
 		/// <summary>
@@ -124,16 +123,13 @@ namespace SuperDumpService.Controllers.Api {
 			IEnumerable<DumpViewModel> dumpViewModels = null;
 			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
 				// find duplicates of given bundleId+dumpId
-				var similarDumps = new Similarities(await similarityService.GetSimilarities(DumpIdentifier.Create(duplBundleId, duplDumpId))).AboveThresholdSimilarities().Select(x => x.Key);
-				dumpViewModels = await Task.WhenAll(similarDumps.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
+				dumpViewModels = await searchService.SearchDuplicates(DumpIdentifier.Create(duplBundleId, duplDumpId), false);
 			} else if(!string.IsNullOrEmpty(elasticSearchFilter)) {
 				// run elasticsearch query
-				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-				dumpViewModels = await Task.WhenAll(searchResults.Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
+				dumpViewModels = await searchService.SearchByElasticFilter(elasticSearchFilter, false);
 			} else {
 				// do plain search, or show all of searchFilter is empty
-				var allDumpViewModels = await Task.WhenAll(dumpRepo.GetAll().Select(x => HomeController.ToDumpViewModel(x, dumpRepo, bundleRepo)));
-				dumpViewModels = HomeController.SearchDumps(searchFilter, allDumpViewModels);
+				dumpViewModels = await searchService.SearchBySimpleFilter(searchFilter, false);
 			}
 
 			// timefilter

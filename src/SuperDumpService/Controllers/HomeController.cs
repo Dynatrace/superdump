@@ -21,19 +21,19 @@ namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.ViewerPolicy)]
 	public class HomeController : Controller {
-		private IHostingEnvironment environment;
-		public SuperDumpRepository superDumpRepo;
-		public BundleRepository bundleRepo;
-		public DumpRepository dumpRepo;
-		public IDumpStorage dumpStorage;
-		public SuperDumpSettings settings;
+		private readonly IHostingEnvironment environment;
+		private readonly SuperDumpRepository superDumpRepo;
+		private readonly BundleRepository bundleRepo;
+		private readonly DumpRepository dumpRepo;
+		private readonly IDumpStorage dumpStorage;
+		private readonly SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
 		private readonly SimilarityService similarityService;
-		private readonly ElasticSearchService elasticService;
 		private readonly ILogger<HomeController> logger;
 		private readonly IAuthorizationHelper authorizationHelper;
 		private readonly JiraIssueRepository jiraIssueRepository;
+		private readonly SearchService searchService;
 
 		public HomeController(IHostingEnvironment environment, 
 				SuperDumpRepository superDumpRepo, 
@@ -47,7 +47,8 @@ namespace SuperDumpService.Controllers {
 				ElasticSearchService elasticService,
 				ILoggerFactory loggerFactory, 
 				IAuthorizationHelper authorizationHelper,
-				JiraIssueRepository jiraIssueRepository) {
+				JiraIssueRepository jiraIssueRepository,
+				SearchService searchService) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -57,10 +58,10 @@ namespace SuperDumpService.Controllers {
 			this.pathHelper = pathHelper;
 			this.relationshipRepo = relationshipRepo;
 			this.similarityService = similarityService;
-			this.elasticService = elasticService;
 			logger = loggerFactory.CreateLogger<HomeController>();
 			this.authorizationHelper = authorizationHelper;
 			this.jiraIssueRepository = jiraIssueRepository;
+			this.searchService = searchService;
 		}
 
 		public IActionResult Index() {
@@ -149,69 +150,35 @@ namespace SuperDumpService.Controllers {
 			) {
 			logger.LogDefault("Dumps", HttpContext);
 
+			IOrderedEnumerable<DumpViewModel> dumpViewModels = null;
+
 			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
 				// find duplicates of given bundleId+dumpId
 				var id = DumpIdentifier.Create(duplBundleId, duplDumpId);
-
-				var similarDumps = new Similarities(await similarityService.GetSimilarities(id)).AboveThresholdSimilarities().Select(x => x.Key);
-				var dumpViewModels = await Task.WhenAll(similarDumps.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
-				var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
-
-				ViewData["duplBundleId"] = id.BundleId;
-				ViewData["duplDumpId"] = id.DumpId;
-				return View(new DumpsViewModel {
-					All = dumpViewModelsOrdered,
-					Filtered = dumpViewModelsOrdered, // filtered is wrong here
-					Paged = dumpViewModelsOrdered.ToPagedList(pagesize, page),
-					KibanaUrl = KibanaUrl(),
-					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
-				});
+				logger.LogSearch("Duplicates", HttpContext, id.ToString());
+				dumpViewModels = await searchService.SearchDuplicates(id);
+				ViewData["duplBundleId"] = duplBundleId;
+				ViewData["duplDumpId"] = duplDumpId;
 			} else if (!string.IsNullOrEmpty(elasticSearchFilter)) {
 				// run elasticsearch query
-				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-				var dumpViewModels = await Task.WhenAll(searchResults.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
-				var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
-
+				logger.LogSearch("Search", HttpContext, elasticSearchFilter);
+				dumpViewModels = await searchService.SearchByElasticFilter(elasticSearchFilter);
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
-				return View(new DumpsViewModel {
-					All = dumpViewModelsOrdered,
-					Filtered = dumpViewModelsOrdered, // filtered is wrong here
-					Paged = dumpViewModelsOrdered.ToPagedList(pagesize, page),
-					KibanaUrl = KibanaUrl(),
-					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
-				});
 			} else {
 				// do plain search, or show all of searchFilter is empty
 				logger.LogSearch("Search", HttpContext, searchFilter);
-				var dumps = await Task.WhenAll(dumpRepo.GetAll().Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, similarityService)));
-				var filtered = SearchDumps(searchFilter, dumps).OrderByDescending(x => x.DumpInfo.Created);
-
+				dumpViewModels = await searchService.SearchBySimpleFilter(searchFilter);
 				ViewData["searchFilter"] = searchFilter;
-				return View(new DumpsViewModel {
-					All = dumps,
-					Filtered = filtered,
-					Paged = filtered.ToPagedList(pagesize, page),
-					KibanaUrl = KibanaUrl(),
-					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
-				});
 			}
-		}
 
-		public static async Task<DumpViewModel> ToDumpViewModel(ElasticSDResult elasticSDResult, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
-			return await ToDumpViewModel(elasticSDResult.DumpIdentifier, dumpRepo, bundleRepo, similarityService);
-		}
-		public static async Task<DumpViewModel> ToDumpViewModel(DumpIdentifier id, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
-			return await ToDumpViewModel(dumpRepo.Get(id), dumpRepo, bundleRepo, similarityService);
-		}
-		public static async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
-			var similarities = similarityService == null ? null : new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
-			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)), similarities);
+			return View(new DumpsViewModel {
+				Filtered = dumpViewModels,
+				Paged = dumpViewModels.ToPagedList(pagesize, page),
+				KibanaUrl = KibanaUrl(),
+				IsPopulated = bundleRepo.IsPopulated,
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
+			});
 		}
 
 		[HttpGet(Name = "Elastic")]
@@ -227,16 +194,6 @@ namespace SuperDumpService.Controllers {
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
 			return portlessUrl + ":5601";
-		}
-
-		public static IEnumerable<DumpViewModel> SearchDumps(string searchFilter, IEnumerable<DumpViewModel> dumps) {
-			if (searchFilter == null) return dumps;
-			return dumps.Where(d =>
-				   d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-				|| d.DumpInfo.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-				|| d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-				|| d.BundleViewModel.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
-			);
 		}
 
 		public IActionResult GetReport() {

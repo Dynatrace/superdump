@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace SuperDumpService.ViewModels {
 	public class DumpsViewModel {
-		public IEnumerable<DumpViewModel> All { get; set; }
 		public IEnumerable<DumpViewModel> Filtered { get; set; }
 		public IPagedList<DumpViewModel> Paged { get; set; }
 		public bool IsPopulated { get; set; }
