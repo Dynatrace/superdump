@@ -101,7 +101,7 @@
 					//subDomain: "day",
 					data: window.location.protocol + "//" + window.location.host
 						+ "/api/Dumps/Heatmap?start={{d:start}}&stop={{d:end}}&searchFilter=@System.Web.HttpUtility.UrlEncode((string)ViewData["searchFilter"])"
-						+ "&elasticSearchFilter=@System.Web.HttpUtility.UrlEncode((string)ViewData["elasticSearchFilter"])"
+						+ "&elasticSearchFilter=@Html.Raw(System.Web.HttpUtility.UrlEncode((string)ViewData["elasticSearchFilter"]))"
 						+ "&duplBundleId=@ViewData["duplBundleId"]&duplDumpId=@ViewData["duplDumpId"]"
 				});
 			}

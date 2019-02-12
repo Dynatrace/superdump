@@ -31,7 +31,8 @@ namespace SuperDumpService.Services {
 
 		public async Task<IOrderedEnumerable<DumpViewModel>> SearchByElasticFilter(string elasticSearchFilter, bool includeSimilarities = true) {
 			var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
-			var dumpViewModels = await Task.WhenAll(searchResults.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, includeSimilarities ? similarityService : null)));
+			IEnumerable<DumpViewModel> dumpViewModels = await Task.WhenAll(searchResults.Select(x => ToDumpViewModel(x, dumpRepo, bundleRepo, includeSimilarities ? similarityService : null)));
+			dumpViewModels = dumpViewModels.Where(x => x != null); // if elasticsearch contains entries that arent found in repo, just filter those null entries
 			var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
 			return dumpViewModelsOrdered;
 		}
@@ -52,6 +53,7 @@ namespace SuperDumpService.Services {
 		}
 
 		private static async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo, DumpRepository dumpRepo, BundleRepository bundleRepo, SimilarityService similarityService = null) {
+			if (dumpMetainfo == null) return null;
 			var similarities = similarityService == null ? null : new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
 			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)), similarities);
 		}
