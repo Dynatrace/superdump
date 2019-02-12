@@ -107,7 +107,16 @@ namespace SuperDumpService.Controllers.Api {
 			}
 		}
 
-		//[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
+		/// <summary>
+		/// Returns a calendar heatmap (count of found dumps per hour)
+		/// 
+		/// Can always be filtered by time (via <param name="start"/>, <param name="stop"/>)
+		/// Search can either filter by
+		///    - <param name="searchFilter">simple search query</param>
+		///    - <param name="elasticSearchFilter">elasticsearch query</param>
+		///    - duplicates of a specific dump by setting <param name="duplBundleId"/> and <param name="duplDumpId"/>
+		/// </summary>
+		/// <returns>json that corresponds to https://cal-heatmap.com/#data-format</returns>
 		[HttpGet("Heatmap")]
 		[ProducesResponseType(200)]
 		[ProducesResponseType(typeof(string), 404)]
@@ -132,14 +141,18 @@ namespace SuperDumpService.Controllers.Api {
 				dumpViewModels = await searchService.SearchBySimpleFilter(searchFilter, false);
 			}
 
-			// timefilter
+			// apply timefilter
 			dumpViewModels = dumpViewModels.Where(x => x.DumpInfo.Created >= start && x.DumpInfo.Created <= stop);
 
-			var dumps = dumpViewModels.ToLookup(x => (x.DumpInfo.Created.ToUnixTimestamp() / 3600) * 3600); // group by hour
+			int groupTime = (int)TimeSpan.FromHours(1).TotalSeconds; // group by hour
+			var dumps = dumpViewModels.ToLookup(x => (x.DumpInfo.Created.ToUnixTimestamp() / groupTime) * groupTime);
 			return Content(ToCalHeatmapJson(dumps), "application/json");
 		}
 
 		/// <summary>
+		/// serialization for cal-heatmap format (https://cal-heatmap.com/#data-format)
+		/// custom implementation to avoid the hassle of json converters for this simple format
+		/// 
 		/// cal-heatmap data: 
 		///
 		///   {
@@ -148,7 +161,6 @@ namespace SuperDumpService.Controllers.Api {
 		///     ...
 		///   }
 		/// 
-		/// custom serialization to avoid the hassle of json converters for this simple format
 		/// </summary>
 		private static string ToCalHeatmapJson(ILookup<int, DumpViewModel> dumps) {
 			var sb = new StringBuilder();
