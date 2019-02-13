@@ -31,8 +31,6 @@ namespace SuperDumpService.Controllers.Api {
 				BundleRepository bundleRepo,
 				DumpRepository dumpRepo,
 				ILoggerFactory loggerFactory,
-				SimilarityService similarityService,
-				ElasticSearchService elasticService,
 				SearchService searchService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
