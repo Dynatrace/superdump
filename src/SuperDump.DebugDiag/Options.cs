@@ -24,5 +24,8 @@ namespace SuperDump.DebugDiag {
 
 		[Option("analysis", HelpText = "List of DebugDiag analysis rules", Separator = ',')]
 		public IEnumerable<string> AnalysisRules { get; set; }
+
+		[Option("tracetag", HelpText = "dynatrace tracetag", Required = false)]
+		public string TraceTag { get; set; }
 	}
 }

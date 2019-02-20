@@ -7,6 +7,8 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using System.Diagnostics;
 using SuperDump.Models;
+using Dynatrace.OneAgent.Sdk.Api;
+using Dynatrace.OneAgent.Sdk.Api.Enums;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
@@ -18,6 +20,7 @@ namespace SuperDumpService.Services {
 		private readonly NotificationService notifications;
 		private readonly ElasticSearchService elasticSearch;
 		private readonly SimilarityService similarityService;
+		private readonly IOneAgentSdk dynatraceSdk;
 
 		public AnalysisService(
 					IDumpStorage dumpStorage,
@@ -27,7 +30,8 @@ namespace SuperDumpService.Services {
 					IOptions<SuperDumpSettings> settings,
 					NotificationService notifications,
 					ElasticSearchService elasticSearch,
-					SimilarityService similarityService
+					SimilarityService similarityService,
+					IOneAgentSdk dynatraceSdk
 				) {
 			this.dumpStorage = dumpStorage;
 			this.dumpRepo = dumpRepo;
@@ -37,6 +41,7 @@ namespace SuperDumpService.Services {
 			this.notifications = notifications;
 			this.elasticSearch = elasticSearch;
 			this.similarityService = similarityService;
+			this.dynatraceSdk = dynatraceSdk;
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -95,23 +100,27 @@ namespace SuperDumpService.Services {
 
 		private async Task AnalyzeWindows(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string dumpselector = "SuperDumpSelector.exe"; // should be on PATH
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "SuperDumpSelector", "unknownserviceendpoint", ChannelType.OTHER, dumpselector);
 
-			Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
-			string[] arguments = {
-				$"--dump \"{dumpFilePath}\"",
-				$"--out \"{pathHelper.GetJsonPath(dumpInfo.Id)}\""
-			};
-			using (var process = await ProcessRunner.Run(dumpselector, workingDir, arguments)) {
-				string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
-					$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
-					$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
-				Console.WriteLine(selectorLog);
-				File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdumpselector.log"), selectorLog);
-				if (process.ExitCode != 0) {
-					dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed, selectorLog);
-					throw new Exception(selectorLog);
+			await tracer.TraceAsync(async () => {
+				Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
+				string[] arguments = {
+					$"--dump \"{dumpFilePath}\"",
+					$"--out \"{pathHelper.GetJsonPath(dumpInfo.Id)}\"",
+					$"--tracetag \"{tracer.GetDynatraceStringTag()}\""
+				};
+				using (var process = await ProcessRunner.Run(dumpselector, workingDir, arguments)) {
+					string selectorLog = $"SuperDumpSelector exited with error code {process.ExitCode}" +
+						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+					Console.WriteLine(selectorLog);
+					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdumpselector.log"), selectorLog);
+					if (process.ExitCode != 0) {
+						dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed, selectorLog);
+						throw new Exception(selectorLog);
+					}
 				}
-			}
+			});
 
 			await RunDebugDiagAnalysis(dumpInfo, workingDir, dumpFilePath);
 		}
@@ -121,18 +130,23 @@ namespace SuperDumpService.Services {
 			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "DebugDiagAnalysis.mht");
 			string debugDiagExe = "SuperDump.DebugDiag.exe";
 
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "DebugDiag", "unknownserviceendpoint", ChannelType.OTHER, debugDiagExe);
 			try {
-				using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,
-					$"--dump=\"{dumpFilePath}\"",
-					$"--out=\"{reportFilePath}\"",
-					"--overwrite")) {
-					string log = $"debugDiagExe exited with error code {process.ExitCode}" +
-						$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
-						$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
-					Console.WriteLine(log);
-					File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdump.debugdiag.log"), log);
-					dumpRepo.AddFile(dumpInfo.Id, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
-				}
+				await tracer.TraceAsync(async () => {
+					using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,
+						$"--dump=\"{dumpFilePath}\"",
+						$"--out=\"{reportFilePath}\"",
+						"--overwrite",
+						$"--tracetag \"{tracer.GetDynatraceStringTag()}\""
+					)) {
+						string log = $"debugDiagExe exited with error code {process.ExitCode}" +
+							$"{Environment.NewLine}{Environment.NewLine}stdout:{Environment.NewLine}{process.StdOut}" +
+							$"{Environment.NewLine}{Environment.NewLine}stderr:{Environment.NewLine}{process.StdErr}";
+						Console.WriteLine(log);
+						File.WriteAllText(Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "superdump.debugdiag.log"), log);
+						dumpRepo.AddFile(dumpInfo.Id, "DebugDiagAnalysis.mht", SDFileType.DebugDiagResult);
+					}
+				});
 			} catch (ProcessRunnerException e) {
 				if (e.InnerException is FileNotFoundException) {
 					Console.Error.WriteLine($"{debugDiagExe} not found. Check BinPath setting in appsettings.json.");

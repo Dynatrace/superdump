@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Dynatrace.OneAgent.Sdk.Api;
 using Hangfire;
 using Hangfire.Annotations;
 using Hangfire.Dashboard;
@@ -158,6 +159,11 @@ namespace SuperDumpService {
 			services.AddSingleton<IJiraApiService, JiraApiService>();
 			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
+
+			var sdk = OneAgentSdkFactory.CreateInstance();
+			sdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
+			services.AddSingleton<IOneAgentSdk>(sdk);
+
 			services.AddWebSocketManager();
 		}
 
@@ -276,6 +282,22 @@ namespace SuperDumpService {
 
 		public bool Authorize([NotNull] DashboardContext context) {
 			return authorizationHelper.CheckPolicy(context.GetHttpContext().User, LdapCookieAuthenticationExtension.AdminPolicy);
+		}
+	}
+
+	public class DynatraceSdkLogger : ILoggingCallback {
+		private readonly ILogger _logger;
+
+		public DynatraceSdkLogger(ILogger logger) {
+			this._logger = logger;
+		}
+
+		public void Error(string message) {
+			_logger.LogError("DynatraceSdk: " + message);
+		}
+
+		public void Warn(string message) {
+			_logger.LogWarning("DynatraceSdk: " + message);
 		}
 	}
 }

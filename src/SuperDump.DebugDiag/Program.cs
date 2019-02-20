@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using DebugDiag.DotNet;
+using Dynatrace.OneAgent.Sdk.Api;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,15 +12,17 @@ using System.Threading.Tasks;
 
 namespace SuperDump.DebugDiag {
 	class Program {
+		private static IOneAgentSdk dynatraceSdk = OneAgentSdkFactory.CreateInstance();
 		private static Stopwatch stopwatch = new Stopwatch();
 
 		[STAThread]
 		static void Main(string[] args) {
 			var result = Parser.Default.ParseArguments<Options>(args)
 				.WithParsed(options => {
-					RunAnalysis(options);
+					var tracer = dynatraceSdk.TraceIncomingRemoteCall("Analyze", "SuperDump", "unknownserviceendpoint");
+					tracer.SetDynatraceStringTag(options.TraceTag);
+					tracer.Trace(() => RunAnalysis(options));
 				});
-			
 		}
 
 		private static void PrintError(string msg, params object []args) {
