@@ -9,6 +9,7 @@ using System.Diagnostics;
 using SuperDump.Models;
 using Dynatrace.OneAgent.Sdk.Api;
 using Dynatrace.OneAgent.Sdk.Api.Enums;
+using Dynatrace.OneAgent.Sdk.Api.Infos;
 
 namespace SuperDumpService.Services {
 	public class AnalysisService {
@@ -20,7 +21,9 @@ namespace SuperDumpService.Services {
 		private readonly NotificationService notifications;
 		private readonly ElasticSearchService elasticSearch;
 		private readonly SimilarityService similarityService;
+
 		private readonly IOneAgentSdk dynatraceSdk;
+		private readonly IMessagingSystemInfo messagingSystemInfo;
 
 		public AnalysisService(
 					IDumpStorage dumpStorage,
@@ -42,6 +45,7 @@ namespace SuperDumpService.Services {
 			this.elasticSearch = elasticSearch;
 			this.similarityService = similarityService;
 			this.dynatraceSdk = dynatraceSdk;
+			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "analysis", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
 		}
 
 		public void ScheduleDumpAnalysis(DumpMetainfo dumpInfo) {
@@ -52,12 +56,20 @@ namespace SuperDumpService.Services {
 			if (!Directory.Exists(analysisWorkingDir)) throw new DirectoryNotFoundException($"id: {dumpInfo.Id}, path: {dumpFilePath}");
 
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir)); // got a stackoverflow problem here.
+			var outgoingMessageTracer = dynatraceSdk.TraceOutgoingMessage(messagingSystemInfo);
+			outgoingMessageTracer.Trace(() => {
+				string jobId = Hangfire.BackgroundJob.Enqueue<AnalysisService>(repo => Analyze(dumpInfo, dumpFilePath, analysisWorkingDir, outgoingMessageTracer.GetDynatraceByteTag()));
+				outgoingMessageTracer.SetVendorMessageId(jobId);
+			});
 		}
 
 		[Hangfire.Queue("analysis", Order = 2)]
-		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
-			AsyncHelper.RunSync(() => AnalyzeAsync(dumpInfo, dumpFilePath, analysisWorkingDir));
+		public void Analyze(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir, byte[] dynatraceTag = null) {
+			var processTracer = dynatraceSdk.TraceIncomingMessageProcess(messagingSystemInfo);
+			processTracer.SetDynatraceByteTag(dynatraceTag);
+			processTracer.Trace(() => {
+				AsyncHelper.RunSync(() => AnalyzeAsync(dumpInfo, dumpFilePath, analysisWorkingDir));
+			});
 		}
 
 		public async Task AnalyzeAsync(DumpMetainfo dumpInfo, string dumpFilePath, string analysisWorkingDir) {
@@ -100,7 +112,7 @@ namespace SuperDumpService.Services {
 
 		private async Task AnalyzeWindows(DumpMetainfo dumpInfo, DirectoryInfo workingDir, string dumpFilePath) {
 			string dumpselector = "SuperDumpSelector.exe"; // should be on PATH
-			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "SuperDumpSelector", "unknownserviceendpoint", ChannelType.OTHER, dumpselector);
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", dumpselector, dumpselector, ChannelType.OTHER, dumpselector);
 
 			await tracer.TraceAsync(async () => {
 				Console.WriteLine($"launching '{dumpselector}' '{dumpFilePath}'");
@@ -130,7 +142,7 @@ namespace SuperDumpService.Services {
 			string reportFilePath = Path.Combine(pathHelper.GetDumpDirectory(dumpInfo.Id), "DebugDiagAnalysis.mht");
 			string debugDiagExe = "SuperDump.DebugDiag.exe";
 
-			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", "DebugDiag", "unknownserviceendpoint", ChannelType.OTHER, debugDiagExe);
+			var tracer = dynatraceSdk.TraceOutgoingRemoteCall("Analyze", debugDiagExe, debugDiagExe, ChannelType.OTHER, debugDiagExe);
 			try {
 				await tracer.TraceAsync(async () => {
 					using (var process = await ProcessRunner.Run(debugDiagExe, workingDir,

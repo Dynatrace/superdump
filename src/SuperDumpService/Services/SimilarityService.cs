@@ -13,6 +13,9 @@ using System.Threading;
 using Hangfire.Storage.Monitoring;
 using Hangfire.Storage;
 using Hangfire;
+using Dynatrace.OneAgent.Sdk.Api;
+using Dynatrace.OneAgent.Sdk.Api.Infos;
+using Dynatrace.OneAgent.Sdk.Api.Enums;
 
 namespace SuperDumpService.Services {
 	public class Relationship {
@@ -31,10 +34,17 @@ namespace SuperDumpService.Services {
 		private readonly RelationshipRepository relationShipRepo;
 		private readonly IOptions<SuperDumpSettings> settings;
 
-		public SimilarityService(DumpRepository dumpRepo, RelationshipRepository relationShipRepository, IOptions<SuperDumpSettings> settings) {
+		private readonly IOneAgentSdk dynatraceSdk;
+		private readonly IMessagingSystemInfo messagingSystemInfo;
+
+		public SimilarityService(DumpRepository dumpRepo, RelationshipRepository relationShipRepository, IOptions<SuperDumpSettings> settings,
+					IOneAgentSdk dynatraceSdk) {
 			this.dumpRepo = dumpRepo;
 			this.relationShipRepo = relationShipRepository;
 			this.settings = settings;
+
+			this.dynatraceSdk = dynatraceSdk;
+			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "similarityanalysis", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
 		}
 
 		public async Task<IDictionary<DumpIdentifier, double>> GetSimilarities(DumpIdentifier dumpId) {
@@ -67,7 +77,11 @@ namespace SuperDumpService.Services {
 			if (!settings.Value.SimilarityDetectionEnabled) return;
 
 			// schedule actual analysis
-			Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, force, timeFrom));
+			var outgoingMessageTracer = dynatraceSdk.TraceOutgoingMessage(messagingSystemInfo);
+			outgoingMessageTracer.Trace(() => {
+				string jobId = Hangfire.BackgroundJob.Enqueue<SimilarityService>(repo => repo.CalculateSimilarity(dumpInfo, force, timeFrom, outgoingMessageTracer.GetDynatraceByteTag()));
+				outgoingMessageTracer.SetVendorMessageId(jobId);
+			});
 		}
 
 		public void CleanQueue() {
@@ -101,8 +115,12 @@ namespace SuperDumpService.Services {
 		}
 
 		[Hangfire.Queue("similarityanalysis", Order = 3)]
-		public void CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom) {
-			AsyncHelper.RunSync(() => CalculateSimilarityAsync(dumpA, force, timeFrom));
+		public void CalculateSimilarity(DumpMetainfo dumpA, bool force, DateTime timeFrom, byte[] dynatraceTag = null) {
+			var processTracer = dynatraceSdk.TraceIncomingMessageProcess(messagingSystemInfo);
+			processTracer.SetDynatraceByteTag(dynatraceTag);
+			processTracer.Trace(() => 
+				AsyncHelper.RunSync(() => CalculateSimilarityAsync(dumpA, force, timeFrom))
+			);
 		}
 
 		public async Task CalculateSimilarityAsync(DumpMetainfo dumpA, bool force, DateTime timeFrom) {

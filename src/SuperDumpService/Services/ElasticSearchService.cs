@@ -1,4 +1,8 @@
-﻿using Elasticsearch.Net;
+﻿using Dynatrace.OneAgent.Sdk.Api;
+using Dynatrace.OneAgent.Sdk.Api.Enums;
+using Dynatrace.OneAgent.Sdk.Api.Infos;
+using Elasticsearch.Net;
+using Hangfire;
 using Microsoft.Extensions.Options;
 using Nest;
 using SuperDump.Models;
@@ -23,10 +27,17 @@ namespace SuperDumpService.Services {
 		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
 
-		public ElasticSearchService(DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
+		private readonly IOneAgentSdk dynatraceSdk;
+		private readonly IMessagingSystemInfo messagingSystemInfo;
+
+		public ElasticSearchService(DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings,
+					IOneAgentSdk dynatraceSdk) {
 			this.dumpRepo = dumpRepo ?? throw new NullReferenceException("DumpRepository must not be null!");
 			this.bundleRepo = bundleRepo ?? throw new NullReferenceException("BundleRepository must not be null!");
 			this.pathHelper = pathHelper ?? throw new NullReferenceException("PathHelper must not be null!");
+
+			this.dynatraceSdk = dynatraceSdk;
+			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "analysis", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
 
 			string host = settings.Value.ElasticSearchHost;
 			if (string.IsNullOrEmpty(host)) {
@@ -47,9 +58,21 @@ namespace SuperDumpService.Services {
 			return list.Skip(pageNumber * 1000).Take(1000);
 		}
 
+		public void QueuePushAllResults(bool clean) {
+			var outgoingMessageTracer = dynatraceSdk.TraceOutgoingMessage(messagingSystemInfo);
+			outgoingMessageTracer.Trace(() => {
+				string jobId = BackgroundJob.Enqueue(() => PushAllResults(clean, outgoingMessageTracer.GetDynatraceByteTag()));
+				outgoingMessageTracer.SetVendorMessageId(jobId);
+			});
+		}
+
 		[Hangfire.Queue("elasticsearch", Order = 3)]
-		public void PushAllResults(bool clean) {
-			AsyncHelper.RunSync(() => PushAllResultsAsync(clean));
+		public void PushAllResults(bool clean, byte[] dynatraceTag = null) {
+			var processTracer = dynatraceSdk.TraceIncomingMessageProcess(messagingSystemInfo);
+			processTracer.SetDynatraceByteTag(dynatraceTag);
+			processTracer.Trace(() => 
+				AsyncHelper.RunSync(() => PushAllResultsAsync(clean))
+			);
 		}
 
 		public async Task PushAllResultsAsync(bool clean) {
