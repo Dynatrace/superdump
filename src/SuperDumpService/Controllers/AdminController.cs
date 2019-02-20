@@ -129,7 +129,7 @@ namespace SuperDumpService.Controllers {
 		[HttpPost]
 		public IActionResult PushElasticSearch(bool clean) {
 			logger.LogElasticClean("PushElasticSearch", HttpContext, clean);
-			BackgroundJob.Enqueue(() => elasticService.PushAllResults(clean));
+			elasticService.QueuePushAllResults(clean);
 			return View("Overview");
 		}
 	}

@@ -15,6 +15,9 @@ using System.Threading.Tasks;
 using SuperDump;
 using SuperDumpService.Controllers;
 using SuperDump.Models;
+using Dynatrace.OneAgent.Sdk.Api;
+using Dynatrace.OneAgent.Sdk.Api.Infos;
+using Dynatrace.OneAgent.Sdk.Api.Enums;
 
 namespace SuperDumpService.Services {
 	public class SuperDumpRepository {
@@ -29,6 +32,9 @@ namespace SuperDumpService.Services {
 		private readonly PathHelper pathHelper;
 		private readonly IdenticalDumpRepository identicalRepository;
 
+		private readonly IOneAgentSdk dynatraceSdk;
+		private readonly IMessagingSystemInfo messagingSystemInfo;
+
 		public SuperDumpRepository(
 				IOptions<SuperDumpSettings> settings,
 				BundleRepository bundleRepo,
@@ -38,7 +44,8 @@ namespace SuperDumpService.Services {
 				SymStoreService symStoreService,
 				UnpackService unpackService,
 				PathHelper pathHelper,
-				IdenticalDumpRepository identicalRepository) {
+				IdenticalDumpRepository identicalRepository,
+				IOneAgentSdk dynatraceSdk) {
 			this.settings = settings;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -49,6 +56,9 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper;
 			this.identicalRepository = identicalRepository;
 			pathHelper.PrepareDirectories();
+
+			this.dynatraceSdk = dynatraceSdk;
+			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "download", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
 		}
 
 		public async Task<SDResult> GetResultAndThrow(DumpIdentifier id) {
@@ -160,12 +170,20 @@ namespace SuperDumpService.Services {
 		}
 
 		private void ScheduleDownload(string bundleId, string url, string filename) {
-			Hangfire.BackgroundJob.Enqueue<SuperDumpRepository>(repo => DownloadAndScheduleProcessFile(bundleId, url, filename));
+			var outgoingMessageTracer = dynatraceSdk.TraceOutgoingMessage(messagingSystemInfo);
+			outgoingMessageTracer.Trace(() => {
+				string jobId = Hangfire.BackgroundJob.Enqueue<SuperDumpRepository>(repo => DownloadAndScheduleProcessFile(bundleId, url, filename, outgoingMessageTracer.GetDynatraceByteTag()));
+				outgoingMessageTracer.SetVendorMessageId(jobId);
+			});
 		}
 
 		[Hangfire.Queue("download", Order = 1)]
-		public void DownloadAndScheduleProcessFile(string bundleId, string url, string filename) {
-			AsyncHelper.RunSync(() => DownloadAndScheduleProcessFileAsync(bundleId, url, filename));
+		public void DownloadAndScheduleProcessFile(string bundleId, string url, string filename, byte[] dynatraceTag = null) {
+			var processTracer = dynatraceSdk.TraceIncomingMessageProcess(messagingSystemInfo);
+			processTracer.SetDynatraceByteTag(dynatraceTag);
+			processTracer.Trace(() => 
+				AsyncHelper.RunSync(() => DownloadAndScheduleProcessFileAsync(bundleId, url, filename))
+			);
 		}
 
 		public async Task DownloadAndScheduleProcessFileAsync(string bundleId, string url, string filename) {

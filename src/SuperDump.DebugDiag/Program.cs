@@ -19,7 +19,7 @@ namespace SuperDump.DebugDiag {
 		static void Main(string[] args) {
 			var result = Parser.Default.ParseArguments<Options>(args)
 				.WithParsed(options => {
-					var tracer = dynatraceSdk.TraceIncomingRemoteCall("Analyze", "SuperDump", "unknownserviceendpoint");
+					var tracer = dynatraceSdk.TraceIncomingRemoteCall("DebugDiagAnalysis", "SuperDump.DebugDiag.exe", "SuperDump.DebugDiag.exe");
 					tracer.SetDynatraceStringTag(options.TraceTag);
 					tracer.Trace(() => RunAnalysis(options));
 				});
