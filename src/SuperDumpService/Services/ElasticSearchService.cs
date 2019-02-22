@@ -37,7 +37,7 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper ?? throw new NullReferenceException("PathHelper must not be null!");
 
 			this.dynatraceSdk = dynatraceSdk;
-			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "analysis", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
+			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "elasticsearch", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
 
 			string host = settings.Value.ElasticSearchHost;
 			if (string.IsNullOrEmpty(host)) {
