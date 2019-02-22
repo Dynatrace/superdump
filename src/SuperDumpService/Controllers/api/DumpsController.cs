@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Linq;
+using System.Text;
+using SuperDumpService.ViewModels;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -22,12 +24,19 @@ namespace SuperDumpService.Controllers.Api {
 		public BundleRepository bundleRepo;
 		public DumpRepository dumpRepo;
 		private readonly ILogger<DumpsController> logger;
+		private readonly SearchService searchService;
 
-		public DumpsController(SuperDumpRepository superDumpRepo, BundleRepository bundleRepo, DumpRepository dumpRepo, ILoggerFactory loggerFactory) {
+		public DumpsController(
+				SuperDumpRepository superDumpRepo,
+				BundleRepository bundleRepo,
+				DumpRepository dumpRepo,
+				ILoggerFactory loggerFactory,
+				SearchService searchService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			logger = loggerFactory.CreateLogger<DumpsController>();
+			this.searchService = searchService;
 		}
 
 		/// <summary>
@@ -94,6 +103,74 @@ namespace SuperDumpService.Controllers.Api {
 				var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(x => "'" + x.Exception.Message + "'"));
 				return BadRequest($"Invalid request, check if value was set: {errors}");
 			}
+		}
+
+		/// <summary>
+		/// Returns a calendar heatmap (count of found dumps per hour)
+		/// 
+		/// Can always be filtered by time (via <param name="start"/>, <param name="stop"/>)
+		/// Search can either filter by
+		///    - <param name="searchFilter">simple search query</param>
+		///    - <param name="elasticSearchFilter">elasticsearch query</param>
+		///    - duplicates of a specific dump by setting <param name="duplBundleId"/> and <param name="duplDumpId"/>
+		/// </summary>
+		/// <returns>json that corresponds to https://cal-heatmap.com/#data-format</returns>
+		[HttpGet("Heatmap")]
+		[ProducesResponseType(200)]
+		[ProducesResponseType(typeof(string), 404)]
+		public async Task<IActionResult> Heatmap(
+				[FromQuery]DateTime start,
+				[FromQuery]DateTime stop,
+				[FromQuery]string searchFilter,
+				[FromQuery]string elasticSearchFilter,
+				[FromQuery]string duplBundleId, // in case of duplication search
+				[FromQuery]string duplDumpId    // in case of duplication search
+			) {
+
+			IEnumerable<DumpViewModel> dumpViewModels = null;
+			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
+				// find duplicates of given bundleId+dumpId
+				dumpViewModels = await searchService.SearchDuplicates(DumpIdentifier.Create(duplBundleId, duplDumpId), false);
+			} else if(!string.IsNullOrEmpty(elasticSearchFilter)) {
+				// run elasticsearch query
+				dumpViewModels = await searchService.SearchByElasticFilter(elasticSearchFilter, false);
+			} else {
+				// do plain search, or show all of searchFilter is empty
+				dumpViewModels = await searchService.SearchBySimpleFilter(searchFilter, false);
+			}
+
+			// apply timefilter
+			dumpViewModels = dumpViewModels.Where(x => x.DumpInfo.Created >= start && x.DumpInfo.Created <= stop);
+
+			int groupTime = (int)TimeSpan.FromHours(1).TotalSeconds; // group by hour
+			var dumps = dumpViewModels.ToLookup(x => (x.DumpInfo.Created.ToUnixTimestamp() / groupTime) * groupTime);
+			return Content(ToCalHeatmapJson(dumps), "application/json");
+		}
+
+		/// <summary>
+		/// serialization for cal-heatmap format (https://cal-heatmap.com/#data-format)
+		/// custom implementation to avoid the hassle of json converters for this simple format
+		/// 
+		/// cal-heatmap data: 
+		///
+		///   {
+		///     "timestamp": value,
+		///     "timestamp2": value2,
+		///     ...
+		///   }
+		/// 
+		/// </summary>
+		private static string ToCalHeatmapJson(ILookup<int, DumpViewModel> dumps) {
+			var sb = new StringBuilder();
+			sb.Append("{");
+			int i = 0;
+			foreach (var group in dumps.OrderBy(x => x.Key)) {
+				if (i > 0) sb.Append(", ");
+				sb.Append("\"" + group.Key + "\": " + group.Count());
+				i++;
+			}
+			sb.Append("}");
+			return sb.ToString();
 		}
 	}
 }

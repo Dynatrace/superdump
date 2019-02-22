@@ -21,19 +21,19 @@ namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.ViewerPolicy)]
 	public class HomeController : Controller {
-		private IHostingEnvironment environment;
-		public SuperDumpRepository superDumpRepo;
-		public BundleRepository bundleRepo;
-		public DumpRepository dumpRepo;
-		public IDumpStorage dumpStorage;
-		public SuperDumpSettings settings;
+		private readonly IHostingEnvironment environment;
+		private readonly SuperDumpRepository superDumpRepo;
+		private readonly BundleRepository bundleRepo;
+		private readonly DumpRepository dumpRepo;
+		private readonly IDumpStorage dumpStorage;
+		private readonly SuperDumpSettings settings;
 		private readonly PathHelper pathHelper;
 		private readonly RelationshipRepository relationshipRepo;
 		private readonly SimilarityService similarityService;
-		private readonly ElasticSearchService elasticService;
 		private readonly ILogger<HomeController> logger;
 		private readonly IAuthorizationHelper authorizationHelper;
 		private readonly JiraIssueRepository jiraIssueRepository;
+		private readonly SearchService searchService;
 
 		public HomeController(IHostingEnvironment environment, 
 				SuperDumpRepository superDumpRepo, 
@@ -47,7 +47,8 @@ namespace SuperDumpService.Controllers {
 				ElasticSearchService elasticService,
 				ILoggerFactory loggerFactory, 
 				IAuthorizationHelper authorizationHelper,
-				JiraIssueRepository jiraIssueRepository) {
+				JiraIssueRepository jiraIssueRepository,
+				SearchService searchService) {
 			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
@@ -57,10 +58,10 @@ namespace SuperDumpService.Controllers {
 			this.pathHelper = pathHelper;
 			this.relationshipRepo = relationshipRepo;
 			this.similarityService = similarityService;
-			this.elasticService = elasticService;
 			logger = loggerFactory.CreateLogger<HomeController>();
 			this.authorizationHelper = authorizationHelper;
 			this.jiraIssueRepository = jiraIssueRepository;
+			this.searchService = searchService;
 		}
 
 		public IActionResult Index() {
@@ -110,11 +111,12 @@ namespace SuperDumpService.Controllers {
 			throw new Exception($"bundleid '{bundleId}' does not exist in repository");
 		}
 
-		private async Task<IEnumerable<DumpListViewModel>> GetDumpListViewModels(string bundleId) {
+		private async Task<IEnumerable<DumpViewModel>> GetDumpListViewModels(string bundleId) {
+			var bundleInfo = bundleRepo.Get(bundleId);
 			if (relationshipRepo.IsPopulated) {
-				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpListViewModel(x, new Similarities(await similarityService.GetSimilarities(x.Id)))));
+				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpViewModel(x, new BundleViewModel(bundleInfo), new Similarities(await similarityService.GetSimilarities(x.Id)))));
 			}
-			return dumpRepo.Get(bundleId).Select(x => new DumpListViewModel(x));
+			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
 
 		[HttpPost]
@@ -137,45 +139,46 @@ namespace SuperDumpService.Controllers {
 			}
 		}
 
-		public async Task<IActionResult> Overview(int page = 1, int pagesize = 50, string searchFilter = null, bool includeEmptyBundles = false, string elasticSearchFilter = null) {
-			logger.LogDefault("Overview", HttpContext);
+		public async Task<IActionResult> Dumps(
+				int page = 1, 
+				int pagesize = 50, 
+				string searchFilter = null, 
+				bool includeEmptyBundles = false, 
+				string elasticSearchFilter = null,
+				string duplBundleId = null,
+				string duplDumpId = null
+			) {
+			logger.LogDefault("Dumps", HttpContext);
 
-			if (!string.IsNullOrEmpty(elasticSearchFilter)) {
-				var searchResults = elasticService.SearchDumpsByJson(elasticSearchFilter).ToList();
+			IOrderedEnumerable<DumpViewModel> dumpViewModels = null;
 
-				// TODO CN: I need to change this to just a list of dumps, not a list of bundles
-
-				var bundleInfos = searchResults.Select(x => x.BundleId).Distinct().Where(bundleId => bundleId != null).Select(x => bundleRepo.Get(x)).Where(x => x != null);
-				var foundBundles = (await Task.WhenAll(bundleInfos.Select(async x => new BundleViewModel(x, await GetDumpListViewModels(x.BundleId))))).OrderByDescending(b => b.Created);
-				// TODO CN: we now show all dumps of bundles that have been found. needs fixing.
-
+			if (!string.IsNullOrEmpty(duplBundleId) && !string.IsNullOrEmpty(duplDumpId)) {
+				// find duplicates of given bundleId+dumpId
+				var id = DumpIdentifier.Create(duplBundleId, duplDumpId);
+				logger.LogSearch("Duplicates", HttpContext, id.ToString());
+				dumpViewModels = await searchService.SearchDuplicates(id);
+				ViewData["duplBundleId"] = duplBundleId;
+				ViewData["duplDumpId"] = duplDumpId;
+			} else if (!string.IsNullOrEmpty(elasticSearchFilter)) {
+				// run elasticsearch query
+				logger.LogSearch("Search", HttpContext, elasticSearchFilter);
+				dumpViewModels = await searchService.SearchByElasticFilter(elasticSearchFilter);
 				ViewData["elasticSearchFilter"] = elasticSearchFilter;
-				return View(new OverviewViewModel {
-					All = foundBundles,
-					Filtered = foundBundles, // filtered is wrong here
-					Paged = foundBundles.ToPagedList(pagesize, page),
-					KibanaUrl = KibanaUrl(),
-					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
-				});
 			} else {
-				var bundles = (await Task.WhenAll(bundleRepo.GetAll().Select(async r => new BundleViewModel(r, await GetDumpListViewModels(r.BundleId))))).OrderByDescending(b => b.Created);
-
-				var filtered = Search(searchFilter, bundles);
-				filtered = ExcludeEmptyBundles(includeEmptyBundles, filtered);
-
+				// do plain search, or show all of searchFilter is empty
+				logger.LogSearch("Search", HttpContext, searchFilter);
+				dumpViewModels = await searchService.SearchBySimpleFilter(searchFilter);
 				ViewData["searchFilter"] = searchFilter;
-				return View(new OverviewViewModel {
-					All = bundles,
-					Filtered = filtered,
-					Paged = filtered.ToPagedList(pagesize, page),
-					KibanaUrl = KibanaUrl(),
-					IsPopulated = bundleRepo.IsPopulated,
-					IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-					IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
-				});
 			}
+
+			return View(new DumpsViewModel {
+				Filtered = dumpViewModels,
+				Paged = dumpViewModels.ToPagedList(pagesize, page),
+				KibanaUrl = KibanaUrl(),
+				IsPopulated = bundleRepo.IsPopulated,
+				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
+			});
 		}
 
 		[HttpGet(Name = "Elastic")]
@@ -191,25 +194,6 @@ namespace SuperDumpService.Controllers {
 				portlessUrl = portlessUrl.Substring(0, colon);
 			}
 			return portlessUrl + ":5601";
-		}
-
-		private IEnumerable<BundleViewModel> ExcludeEmptyBundles(bool includeEmptyBundles, IEnumerable<BundleViewModel> bundles) {
-			if (includeEmptyBundles) return bundles;
-
-			return bundles.Where(b => b.DumpInfos.Count() > 0);
-		}
-
-		private IEnumerable<BundleViewModel> Search(string searchFilter, IEnumerable<BundleViewModel> bundles) {
-			if (searchFilter == null) return bundles;
-
-			logger.LogSearch("Search", HttpContext, searchFilter);
-			return bundles.Where(b =>
-				b.BundleId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-				|| b.CustomProperties.Any(cp => cp.Value != null && cp.Value.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
-				|| b.DumpInfos.Any(d =>
-					d.DumpInfo.DumpId.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)
-					|| (d.DumpInfo.DumpFileName != null && d.DumpInfo.DumpFileName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
-				));
 		}
 
 		public IActionResult GetReport() {

@@ -61,6 +61,8 @@ namespace SuperDumpService.Services {
 			return eResult;
 		}
 
+		public DumpIdentifier DumpIdentifier => DumpIdentifier.Create(BundleId, DumpId);
+
 		[Keyword(Name = "Id")]
 		public string Id {
 			get {
