@@ -12,6 +12,11 @@ What SuperDump is not:
 
   * A replacement for in-depth analysis tools such as WinDbg.
   * A windows kernel dump analysis tool.
+  
+Maintainer: Christoph Neumüller ([christoph.neumueller@dynatrace.com][chnmail], [https://twitter.com/discostu105][chntwitter])
+
+[chnmail]: mailto:christoph.neumueller@dynatrace.com
+[chntwitter]: https://twitter.com/discostu105
 
 Docker
 =============
@@ -124,7 +129,7 @@ Build
 
 State of the project
 ====================
-SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it.
+SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it. This project is considered "cummunity supported". No full-fledged support (with SLA's) is provided by Dynatrace.
 
 Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
 
