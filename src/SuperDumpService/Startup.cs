@@ -31,12 +31,12 @@ namespace SuperDumpService {
 	public class Startup {
 		private readonly IHostingEnvironment env;
 		private readonly IConfiguration config;
-		private readonly ILoggerFactory loggerFactory;
+		private readonly ILoggerFactory startupLoggerFactory;
 
-		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory loggerFactory) {
+		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory startupLoggerFactory) {
 			this.env = env;
 			this.config = config;
-			this.loggerFactory = loggerFactory;
+			this.startupLoggerFactory = startupLoggerFactory;
 		}
 
 		// This method gets called by the runtime. Use this method to add services to the container.
@@ -162,7 +162,7 @@ namespace SuperDumpService {
 			services.AddSingleton<SearchService>();
 
 			var sdk = OneAgentSdkFactory.CreateInstance();
-			sdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
+			sdk.SetLoggingCallback(new DynatraceSdkLogger(startupLoggerFactory.CreateLogger<DynatraceSdkLogger>()));
 			services.AddSingleton<IOneAgentSdk>(sdk);
 
 			services.AddWebSocketManager();
