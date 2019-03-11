@@ -29,14 +29,12 @@ using WebSocketManager;
 
 namespace SuperDumpService {
 	public class Startup {
-		private readonly IHostingEnvironment env;
+		private readonly IWebHostEnvironment env;
 		private readonly IConfiguration config;
-		private readonly ILoggerFactory loggerFactory;
 
-		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory loggerFactory) {
+		public Startup(IWebHostEnvironment env, IConfiguration config) {
 			this.env = env;
 			this.config = config;
-			this.loggerFactory = loggerFactory;
 		}
 
 		// This method gets called by the runtime. Use this method to add services to the container.
@@ -101,7 +99,8 @@ namespace SuperDumpService {
 			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 1024L * 1024L * maxUploadSizeMB);
 
 			// Add framework services.
-			services.AddMvc();
+			services.AddMvc()
+				.AddNewtonsoftJson();
 			//services.AddCors();
 			services.AddSwaggerGen();
 
@@ -160,9 +159,9 @@ namespace SuperDumpService {
 			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddSingleton<SearchService>();
-
+			
 			var sdk = OneAgentSdkFactory.CreateInstance();
-			sdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
+			sdk.SetLoggingCallback(new DynatraceSdkLogger(services.BuildServiceProvider().GetService<ILogger<DynatraceSdkLogger>>()));
 			services.AddSingleton<IOneAgentSdk>(sdk);
 
 			services.AddWebSocketManager();
@@ -176,21 +175,6 @@ namespace SuperDumpService {
 			if (settings.Value.UseJiraIntegration) {
 				Task.Run(async () => await app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
 			}
-
-			// configure Logger
-			loggerFactory.AddConsole(config.GetSection("Logging"));
-
-			var fileLogConfig = config.GetSection("FileLogging");
-			var logPath = Path.GetDirectoryName(fileLogConfig.GetValue<string>("PathFormat"));
-			Directory.CreateDirectory(logPath);
-			loggerFactory.AddFile(config.GetSection("FileLogging"));
-
-			if (settings.Value.UseAllRequestLogging) {
-				loggerFactory.AddFile(config.GetSection("RequestFileLogging"));
-			}
-
-			loggerFactory.AddDebug();
-
 
 			if (settings.Value.UseHttpsRedirection) {
 				app.UseHttpsRedirection();
@@ -206,13 +190,13 @@ namespace SuperDumpService {
 					}));
 			}
 
-			if (settings.Value.UseAllRequestLogging) {
-				ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
-				app.Use(async (context, next) => {
-					logger.LogRequest(context);
-					await next.Invoke();
-				});
-			}
+			//if (settings.Value.UseAllRequestLogging) {
+			//	//ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
+			//	app.Use(async (context, next) => {
+			//		logger.LogRequest(context);
+			//		await next.Invoke();
+			//	});
+			//}
 
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions {
 				Authorization = new[] { new CustomAuthorizeFilter(authorizationHelper) }
@@ -258,7 +242,7 @@ namespace SuperDumpService {
 
 			LogProvider.SetCurrentLogProvider(new ColouredConsoleLogProvider());
 
-			if (env.IsDevelopment()) {
+			if (env.EnvironmentName == "Development") {
 				app.UseDeveloperExceptionPage();
 				BrowserLinkExtensions.UseBrowserLink(app); // using the extension method directly somehow did not work in .NET Core 2.0 (ambiguous extension method)
 			} else {
