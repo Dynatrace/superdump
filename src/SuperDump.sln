@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{F1C07791-3C2A-400E-8505-87F0AA3D21EC}"
 	ProjectSection(SolutionItems) = preProject
 		..\conf\appsettings.json = ..\conf\appsettings.json
+		..\conf\appsettings.json.template = ..\conf\appsettings.json.template
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump", "SuperDump\SuperDump.csproj", "{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}"
@@ -37,6 +38,10 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SuperDump.Analyzer.Common", "SuperDump.Analyzer.Common\SuperDump.Analyzer.Common.shproj", "{EA333D99-767A-472B-A272-B44C659023C0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test", "SuperDumpService.Test\SuperDumpService.Test.csproj", "{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Benchmark", "SuperDumpService.Benchmark\SuperDumpService.Benchmark.csproj", "{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpService.Test.Fakes", "SuperDumpService.Test.Fakes\SuperDumpService.Test.Fakes.csproj", "{C81E6045-4C5F-4978-A897-85B5F470B5F3}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -182,6 +187,30 @@ Global
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x64.Build.0 = Release|Any CPU
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x86.ActiveCfg = Release|Any CPU
 		{2DA2E3F2-D0B5-4DA3-8574-0587956F100E}.Release|x86.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x64.Build.0 = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}.Release|x86.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x64.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Debug|x86.Build.0 = Debug|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x64.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x64.Build.0 = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x86.ActiveCfg = Release|Any CPU
+		{C81E6045-4C5F-4978-A897-85B5F470B5F3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

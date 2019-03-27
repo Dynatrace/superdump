@@ -1,4 +1,7 @@
-﻿<nav class="navbar navbar-default navbar-fixed-top navbar-expand-lg ">
+﻿@using SuperDumpService.Helpers
+@inject IAuthorizationHelper AuthorizationHelper
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-expand-lg" id="mainNavbar">
 	<div class="container row">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -11,12 +14,16 @@
 		</div>
 		<div class="navbar-collapse collapse">
 			<ul class="nav navbar-nav">
-				<li><a asp-area="" asp-controller="Home" asp-action="Overview">Overview</a></li>
-				<li><a href="/hangfire">Hangfire</a></li>
+				<li><a asp-area="" asp-controller="Home" asp-action="Dumps">Dumps</a></li>
+				@if (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.AdminPolicy)) {
+					<li><a href="/hangfire">Hangfire</a></li>
+					<li><a asp-area="" asp-controller="Admin" asp-action="Overview">Admin</a></li>
+				}
 				<li><a href="/swagger/ui">API Doc</a></li>
 				<li><a asp-area="" asp-controller="Home" asp-action="Elastic">Elastic</a></li>
 				<li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
 			</ul>
+			<partial name="_LoginPartial" />
 		</div>
 	</div>
 </nav>

@@ -35,7 +35,7 @@ namespace SuperDumpService.Helpers {
 				Timeout = new TimeSpan(0, 0, 10)
 			};
 			try {
-				HttpResponseMessage resTask = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri)).Result;
+				HttpResponseMessage resTask = AsyncHelper.RunSync(() => client.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri)));
 				if (string.IsNullOrEmpty(filename)) {
 					try {
 						filename = resTask.Content.Headers.ContentDisposition.FileName.Replace("\"", "");
@@ -244,11 +244,109 @@ namespace SuperDumpService.Helpers {
 			}
 			return distance[currentRow, m];
 		}
+
+		public static async Task BlockUntil(Func<bool> predicate) {
+			while (!predicate()) {
+				await Task.Delay(500);
+			}
+		}
+
 	}
 
 	public static class StringExtensions {
 		public static bool Contains(this string source, string toCheck, StringComparison comp) {
 			return source.IndexOf(toCheck, comp) >= 0;
+		}
+	}
+
+	public static class IEnumerableExtensions {
+
+		// borrowed from https://stackoverflow.com/questions/15414347/how-to-loop-through-ienumerable-in-batches
+		public static IEnumerable<IEnumerable<T>> Batch<T>(
+		this IEnumerable<T> source, int size) {
+			T[] bucket = null;
+			var count = 0;
+
+			foreach (var item in source) {
+				if (bucket == null)
+					bucket = new T[size];
+
+				bucket[count++] = item;
+
+				if (count != size)
+					continue;
+
+				yield return bucket.Select(x => x);
+
+				bucket = null;
+				count = 0;
+			}
+
+			// Return the last bucket with all remaining elements
+			if (bucket != null && count > 0) {
+				yield return bucket.Take(count);
+			}
+		}
+	}
+
+	public static class AsyncHelper {
+		private static readonly TaskFactory _taskFactory = new
+			TaskFactory(CancellationToken.None,
+						TaskCreationOptions.None,
+						TaskContinuationOptions.None,
+						TaskScheduler.Default);
+
+		public static TResult RunSync<TResult>(Func<Task<TResult>> func)
+			=> _taskFactory
+				.StartNew(func)
+				.Unwrap()
+				.GetAwaiter()
+				.GetResult();
+
+		public static void RunSync(Func<Task> func)
+			=> _taskFactory
+				.StartNew(func)
+				.Unwrap()
+				.GetAwaiter()
+				.GetResult();
+	}
+
+	public static class StringExtensionMethods {
+		public static int GetStableHashCode(this string str) {
+			unchecked {
+				int hash1 = 5381;
+				int hash2 = hash1;
+
+				for (int i = 0; i < str.Length && str[i] != '\0'; i += 2) {
+					hash1 = ((hash1 << 5) + hash1) ^ str[i];
+					if (i == str.Length - 1 || str[i + 1] == '\0')
+						break;
+					hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+				}
+
+				return hash1 + (hash2 * 1566083941);
+			}
+		}
+	}
+
+	public static class DateTimeExtensions {
+
+		/// <summary>
+		/// Converts a given DateTime into a Unix timestamp
+		/// </summary>
+		/// <param name="value">Any DateTime</param>
+		/// <returns>The given DateTime in Unix timestamp format</returns>
+		public static int ToUnixTimestamp(this DateTime value) {
+			return (int)Math.Truncate((value.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
+		}
+
+		/// <summary>
+		/// Gets a Unix timestamp representing the current moment
+		/// </summary>
+		/// <param name="ignored">Parameter ignored</param>
+		/// <returns>Now expressed as a Unix timestamp</returns>
+		public static int UnixTimestamp(this DateTime ignored) {
+			return (int)Math.Truncate((DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
 		}
 	}
 }

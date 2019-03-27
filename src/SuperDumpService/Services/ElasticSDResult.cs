@@ -5,28 +5,46 @@ using SuperDumpService.Models;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace SuperDumpService.Services {
 	public class ElasticSDResult {
+		public static ElasticSDResult FromResultOrDefault(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
+			try {
+				return FromResult(result, bundleInfo, dumpInfo, pathHelper);
+			} catch (Exception e) {
+				Console.Error.WriteLine($"ElasticSDResult.FromResult failed for {dumpInfo.Id}: {e.ToString()}");
+			}
+			return null;
+		}
+
 		public static ElasticSDResult FromResult(SDResult result, BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
-			ElasticSDResult eResult = new ElasticSDResult() {
+			if (result == null) throw new ArgumentNullException("result");
+			var eResult = new ElasticSDResult() {
 				BundleId = dumpInfo.BundleId,
 				DumpId = dumpInfo.DumpId,
 				Timestamp = dumpInfo.Created,
 				Type = dumpInfo.DumpType.ToString(),
 				Executable = (result.SystemContext as SDCDSystemContext)?.FileName ?? "",
 				IsManaged = result.IsManagedProcess,
-				ProcessArchitecture = result.SystemContext.ProcessArchitecture,
-				SystemArchitecture = result.SystemContext.SystemArchitecture,
-				NrThreads = result.ThreadInformation.Count,
+				ProcessArchitecture = result.SystemContext?.ProcessArchitecture,
+				SystemArchitecture = result.SystemContext?.SystemArchitecture,
+				NrThreads = result.ThreadInformation != null ? result.ThreadInformation.Count : 0,
 				LastEventDescription = result.LastEvent?.Description,
-				LoadedModules = result.SystemContext.DistinctModules().Select(m => m.FileName).Aggregate("", (m1, m2) => m1 + " " + m2),
-				LoadedModulesVersioned = result.SystemContext.DistinctModules().Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
-				DynatraceLoadedModulesVersioned = result.SystemContext.DistinctModules().Where(m => m.Tags.Contains(SDTag.DynatraceAgentTag)).Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
+				LoadedModules = result.SystemContext?.DistinctModules().Select(m => m.FileName).Aggregate("", (m1, m2) => m1 + " " + m2),
+				LoadedModulesVersioned = result.SystemContext?.DistinctModules().Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
+				DynatraceLoadedModulesVersioned = result.SystemContext?.DistinctModules().Where(m => m.Tags.Contains(SDTag.DynatraceAgentTag)).Select(m => $"{m.FileName}:{m.Version ?? "-"}").Aggregate("", (m1, m2) => m1 + " " + m2),
 				ExitType = result.LastEvent?.Type ?? ""
 			};
+
 			bundleInfo.CustomProperties.TryGetValue("ref", out string reference);
 			eResult.Reference = reference;
+			
+			bundleInfo.CustomProperties.TryGetValue("tenantId", out string tenantId);
+			eResult.TenantId = tenantId;
+
+			eResult.FaultingStacktrace = result.GetErrorOrLastExecutingThread()?.ToText();
+			eResult.Stacktraces = ""; // TODO
 
 			if (dumpInfo.Finished != null && dumpInfo.Started != null) {
 				int durationSecs = (int)dumpInfo.Finished.Subtract(dumpInfo.Started).TotalSeconds;
@@ -42,6 +60,8 @@ namespace SuperDumpService.Services {
 			}
 			return eResult;
 		}
+
+		public DumpIdentifier DumpIdentifier => DumpIdentifier.Create(BundleId, DumpId);
 
 		[Keyword(Name = "Id")]
 		public string Id {
@@ -85,14 +105,26 @@ namespace SuperDumpService.Services {
 		public string LoadedModules { get; set; }
 		[Text(Name = "loadedModulesVersioned", Fielddata = true, Analyzer = "whitespace")]
 		public string LoadedModulesVersioned { get; set; }
+
+		/** dynatrace specific **/
 		[Text(Name = "dynatraceLoadedModulesVersioned", Fielddata = true, Analyzer = "whitespace")]
 		public string DynatraceLoadedModulesVersioned { get; set; }
+		[Keyword(Name = "tenantId")]
+		public string TenantId { get; set; }
+		/** dynatrace specific **/
+
 		[Number(Name = "dumpSize")]
 		public long DumpSizeKb { get; set; }
 
+		[Text(Name = "faultingStacktrace")]
+		public string FaultingStacktrace { get; set; }
+
+		[Text(Name = "stacktraces")]
+		public string Stacktraces { get; set; }
+
 		private static long ComputeDumpFileSizeKb(BundleMetainfo bundleInfo, DumpMetainfo dumpInfo, PathHelper pathHelper) {
 			long dumpSize = -1;
-			string dumpDirectory = pathHelper.GetDumpDirectory(bundleInfo.BundleId, dumpInfo.DumpId);
+			string dumpDirectory = pathHelper.GetDumpDirectory(dumpInfo.Id);
 			if (!Directory.Exists(dumpDirectory)) {
 				return -1;
 			}
@@ -108,6 +140,17 @@ namespace SuperDumpService.Services {
 				return -1;
 			}
 			return dumpSize / 1024;
+		}
+	}
+
+	public static class SDThreadExtensions {
+		public static string ToText(this SDThread thread) {
+			if (thread == null) return string.Empty;
+			var sb = new StringBuilder();
+			foreach(var frame in thread.StackTrace) {
+				sb.AppendLine(frame.ToString());
+			}
+			return sb.ToString();
 		}
 	}
 }

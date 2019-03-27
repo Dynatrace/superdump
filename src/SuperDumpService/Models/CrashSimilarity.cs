@@ -12,9 +12,15 @@ namespace SuperDumpService.Models {
 		// this class is supposed to only consider similarities of features that identify the "problem", or "reason for the crash".
 		// other features that might be similar between two dumps, but don't give information about the crash reason, should not be added here.
 
+		// indicates the version, MinInfos are built. if sematics in similarity detection changes, 
+		// increment this version and mini-infos will be automatically re-created on the fly
+		//   version 1: initial version
+		//   version 2: removed ModuleName from stackframe comparison
+		//   version 3: hashes instead of strings. breaking change. need to re-create all mini-infos.
+		public const int MiniInfoVersion = 3;
+
 		// there is a number of dimensions, each dimension has it's own similarity value of 0.0-1.0
 		private readonly IDictionary<string, double?> similarities = new Dictionary<string, double?>();
-
 		private const string StacktraceKey = "STACKTRACE";
 		private const string ModulesInStacktraceKey = "STACKTRACE_MODULES";
 		private const string LastEventKey = "LASTEVENT";
@@ -31,7 +37,7 @@ namespace SuperDumpService.Models {
 
 		// in the UI, we could even show a table, where each dimension is shown separately (?)
 
-		public static CrashSimilarity Calculate(SDResult result, SDResult otherResult) {
+		public static CrashSimilarity Calculate(in DumpMiniInfo result, in DumpMiniInfo otherResult) {
 			var similarity = new CrashSimilarity();
 
 			similarity.similarities[StacktraceKey] = CalculateStacktraceSimilarity(result, otherResult);
@@ -42,9 +48,9 @@ namespace SuperDumpService.Models {
 			return similarity;
 		}
 
-		private static double? CalculateStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
-			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
+		private static double? CalculateStacktraceSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
+			var errorThreadA = resultA.FaultingThread;
+			var errorThreadB = resultB.FaultingThread;
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
@@ -76,11 +82,11 @@ namespace SuperDumpService.Models {
 
 
 			// approach 3: let's start with a dead-simple alg. look how many frames of stack A appear in stack B and vice versa.
-			int AinBCount = CountAinB(errorThreadA.StackTrace, errorThreadB.StackTrace, FrameEquals);
-			int BinACount = CountAinB(errorThreadB.StackTrace, errorThreadA.StackTrace, FrameEquals);
+			int AinBCount = CountAinB(errorThreadA.Value.DistinctFrameHashes, errorThreadB.Value.DistinctFrameHashes, (a, b) => a == b);
+			int BinACount = CountAinB(errorThreadB.Value.DistinctFrameHashes, errorThreadA.Value.DistinctFrameHashes, (a, b) => a == b);
 
-			double ainb = AinBCount / (double)errorThreadA.StackTrace.Count;
-			double bina = BinACount / (double)errorThreadB.StackTrace.Count;
+			double ainb = AinBCount / (double)errorThreadA.Value.DistinctFrameHashes.Length;
+			double bina = BinACount / (double)errorThreadB.Value.DistinctFrameHashes.Length;
 
 			return Math.Min(ainb, bina);
 		}
@@ -93,28 +99,23 @@ namespace SuperDumpService.Models {
 			return count;
 		}
 
-		private static bool FrameEquals(SDCombinedStackFrame frameA, SDCombinedStackFrame frameB) {
-			return EqualsIgnoreNonAscii(frameA.ModuleName, frameB.ModuleName)
-				&& EqualsIgnoreNonAscii(frameA.MethodName, frameB.MethodName);
-		}
-
 		/// <summary>
 		/// Find the number of modules are the same in both stacks.
 		///
 		/// returns a number between 0.0 and 1.0, where 1.0 is full similarity, and 0.0 is no similarity
 		/// </summary>
-		private static double? CalculateModulesInStacktraceSimilarity(SDResult resultA, SDResult resultB) {
-			var errorThreadA = resultA.GetErrorOrLastExecutingThread();
-			var errorThreadB = resultB.GetErrorOrLastExecutingThread();
+		private static double? CalculateModulesInStacktraceSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
+			var errorThreadA = resultA.FaultingThread;
+			var errorThreadB = resultB.FaultingThread;
 
 			if (errorThreadA == null && errorThreadB == null) return null; // no value in comparing if there are none
 			if (errorThreadA == null ^ errorThreadB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
-			var modulesA = errorThreadA.StackTrace.Select(x => x.ModuleName).Distinct();
-			var modulesB = errorThreadB.StackTrace.Select(x => x.ModuleName).Distinct();
+			var modulesA = errorThreadA.Value.DistinctModuleHashes;
+			var modulesB = errorThreadB.Value.DistinctModuleHashes;
 
-			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => EqualsIgnoreNonAscii(a, b));
-			int BinACount = CountAinB(modulesB, modulesA, (a, b) => EqualsIgnoreNonAscii(a, b));
+			int AinBCount = CountAinB(modulesA, modulesB, (a, b) => a == b);
+			int BinACount = CountAinB(modulesB, modulesA, (a, b) => a == b);
 
 			double ainb = AinBCount / (double)modulesA.Count();
 			double bina = BinACount / (double)modulesB.Count();
@@ -122,18 +123,14 @@ namespace SuperDumpService.Models {
 			return Math.Min(ainb, bina);
 		}
 
-		private static double? CalculateLastEventSimilarity(SDResult resultA, SDResult resultB) {
+		private static double? CalculateLastEventSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
 			var lastEventA = resultA.LastEvent;
 			var lastEventB = resultB.LastEvent;
 
-			// "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
-			if (lastEventA != null && lastEventA.Description.StartsWith("Break instruction exception")) lastEventA = null;
-			if (lastEventB != null && lastEventB.Description.StartsWith("Break instruction exception")) lastEventB = null;
-
 			if (lastEventA == null && lastEventB == null) return null; // no value in comparing empty lastevent
 			if (lastEventA == null ^ lastEventB == null) return 0; // one of the results has NO lastevent, while the other one does. let's define this as not-similar
-			if (!EqualsIgnoreNonAscii(lastEventA.Type, lastEventB.Type)) return 0.0;
-			return StringSimilarity(lastEventA.Description, lastEventB.Description);
+			if (lastEventA.Value.TypeHash != lastEventB.Value.TypeHash) return 0.0;
+			return lastEventA.Value.DescriptionHash == lastEventB.Value.DescriptionHash ? 1.0 : 0.0;
 		}
 
 		// relative similarity between two strings
@@ -141,15 +138,15 @@ namespace SuperDumpService.Models {
 			return Utility.LevenshteinSimilarity(StripNonAscii(description1), StripNonAscii(description2));
 		}
 
-		private static double? CalculateExceptionMessageSimilarity(SDResult resultA, SDResult resultB) {
-			var exceptionA = resultA.GetErrorOrLastExecutingThread()?.LastException;
-			var exceptionB = resultB.GetErrorOrLastExecutingThread()?.LastException;
+		private static double? CalculateExceptionMessageSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
+			var exceptionA = resultA.Exception;
+			var exceptionB = resultB.Exception;
 
 			if (exceptionA == null && exceptionB == null) return null; // no value in comparing if there are none
 			if (exceptionA == null ^ exceptionB == null) return 0; // one result has an error thread, while the other one does not. inequal.
 
-			return EqualsIgnoreNonAscii(exceptionA.Type, exceptionB.Type)
-				&& EqualsIgnoreNonAscii(exceptionA.Message, exceptionB.Message)
+			return (exceptionA.Value.TypeHash == exceptionB.Value.TypeHash
+				&& exceptionA.Value.MessageHash == exceptionB.Value.MessageHash)
 				? 1.0
 				: 0.0;
 			// omit comparison of StackTrace for now. maybe implement at later point if it makes sense.
@@ -160,12 +157,51 @@ namespace SuperDumpService.Models {
 		/// even modules contain addresses in some cases. also lastevent or exception text.
 		/// </summary>
 		private static bool EqualsIgnoreNonAscii(string s1, string s2) {
+			if (s1 == null && s2 == null) return true;
 			if (s1 == null || s2 == null) return false;
 			return StripNonAscii(s1).Equals(StripNonAscii(s2), StringComparison.OrdinalIgnoreCase);
 		}
 
 		private static string StripNonAscii(string str) {
 			return new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
+		}
+
+		public static DumpMiniInfo SDResultToMiniInfo(SDResult result) {
+			var miniinfo = new DumpMiniInfo();
+
+			// modules & stackframes
+			var faultingThread = result.GetErrorOrLastExecutingThread();
+			if (faultingThread != null) {
+				miniinfo.FaultingThread = new ThreadMiniInfo() {
+					DistinctModuleHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.ModuleName).GetStableHashCode()).Distinct().ToArray(),
+					DistinctFrameHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.MethodName).GetStableHashCode()).Distinct().ToArray()
+				};
+			}
+
+			// lastevent
+			if (result.LastEvent != null) {
+				if (result.LastEvent.Description.StartsWith("Break instruction exception")) {
+					miniinfo.LastEvent = null; // "break instruction" as a lastevent is so generic, it's practically useless. treat it as if there was no information at all.
+				} else { 
+					miniinfo.LastEvent = new LastEventMiniInfo {
+						TypeHash = result.LastEvent.Type?.GetStableHashCode(),
+						DescriptionHash = result.LastEvent.Description.GetStableHashCode()
+					};
+				}
+			}
+
+			// exception
+			var exception = result.GetErrorOrLastExecutingThread()?.LastException;
+			if (exception != null) {
+				miniinfo.Exception = new ExceptionMiniInfo() {
+					TypeHash = exception.Type?.GetStableHashCode(),
+					MessageHash = exception.Message?.GetStableHashCode()
+				};
+			}
+
+			miniinfo.DumpSimilarityInfoVersion = MiniInfoVersion;
+
+			return miniinfo;
 		}
 	}
 }

@@ -16,25 +16,35 @@ namespace SuperDumpService.Services {
 	public class BundleRepository {
 		private readonly object sync = new object();
 		private readonly ConcurrentDictionary<string, BundleMetainfo> bundles = new ConcurrentDictionary<string, BundleMetainfo>();
-		private readonly BundleStorageFilebased storage;
+		private readonly IBundleStorage storage;
+		private readonly DumpRepository dumpRepository;
+		public bool IsPopulated { get; private set; }
 
-		public BundleRepository(BundleStorageFilebased storage) {
+
+		public BundleRepository(IBundleStorage storage, DumpRepository dumpRepository) {
 			this.storage = storage;
+			this.dumpRepository = dumpRepository;
 		}
 
-		public void Populate() {
-			var sw = new Stopwatch();
-			sw.Start();
-			foreach(var info in storage.ReadBundleMetainfos().Result) {
-				if (info == null) continue;
-				bundles[info.BundleId] = info;
-			}
-			sw.Stop();
-			Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
+		public async Task Populate() {
+			var sw = new Stopwatch(); sw.Start();
+			var tasks = (await storage.ReadBundleMetainfos()).Select(info => Task.Run(async () => {
+				try {
+					if (info == null) return;
+					bundles[info.BundleId] = info;
+					await dumpRepository.PopulateForBundle(info.BundleId);
+				} catch (Exception e) {
+					Console.Error.WriteLine($"Populating BundleRepository failed for {info.BundleId}: {e}");
+				}
+			}));
+			await Task.WhenAll(tasks);
+			IsPopulated = true;
+			dumpRepository.SetIsPopulated();
+			sw.Stop(); Console.WriteLine($"Finished populating BundleRepository in {sw.Elapsed}");
 		}
 
 		public BundleMetainfo Get(string bundleId) {
-			return bundles[bundleId];
+			return bundles.GetValueOrDefault(bundleId);
 		}
 
 		public IEnumerable<BundleMetainfo> GetAll() {

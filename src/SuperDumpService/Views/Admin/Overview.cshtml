@@ -1,0 +1,134 @@
+﻿@{
+	ViewData["Title"] = "Admin";
+}
+@using Microsoft.Extensions.Options
+@inject IOptions<SuperDumpSettings> settings
+
+<div class="container">
+	<br /><br /><br />
+	<div class="panel panel-default">
+		<div class="panel-heading">Similar Dump Relationships</div>
+		<div class="panel-body container">
+			@using (Html.BeginForm("TriggerSimilarityAnalysisForAllDumps", "Admin")) {
+				<div class="row">
+					<input type="hidden" name="force" value="false" />
+					<span class="col-sm-1">days:</span><input class="col-sm-2" type="text" name="days" value="30" />
+					<div class="col-sm-9">
+						<input class="col-sm-10" type="submit" value="Trigger Duplicate Detection for all dumps in the last X days" />
+					</div>
+				</div>
+			}
+
+			<br />
+			@using (Html.BeginForm("TriggerSimilarityAnalysisForAllDumps", "Admin")) {
+				<div class="row">
+					<input type="hidden" name="force" value="true" />
+					<span class="col-sm-1">days:</span><input class="col-sm-2" type="text" name="days" value="30" />
+					<div class="col-sm-9">
+						<input class="col-sm-10" type="submit" value="Trigger Duplicate Detection for all dumps (force all, even if analysis is already done) (!!!)" />
+					</div>
+				</div>
+			}
+
+			<br />
+			<div class="row">
+				<div class="col-sm-4">
+					@using (Html.BeginForm("CleanSimilarityAnalysisQueue", "Admin")) {
+						<input class="col-sm-12" type="submit" value="Clean queue for similarity analysis" />
+					}
+				</div>
+				<div class="col-sm-8">Is not implemented yet</div>
+			</div>
+
+			<br />
+			<div class="row">
+				<div class="col-sm-4">
+					@using (Html.BeginForm("WipeAll", "Admin")) {
+						<input class="col-sm-12" type="submit" value="Delete All similarity files (!!!!)" />
+					}
+				</div>
+				<div class="col-sm-8">Deletes all "relationships.json" files</div>
+			</div>
+		</div>
+	</div>
+
+	<br />
+	<div class="panel panel-default">
+		<div class="panel-heading">Identical Dump Relationships</div>
+		<div class="panel-body container">
+			<div class="row">
+				<div class="col-sm-4">
+					@using (Html.BeginForm("CreateAllIdenticalDumpRelationships", "Admin")) {
+						<input class="col-sm-12" type="submit" value="Create All Identical Dump Relationships" />
+					}
+				</div>
+				<div class="col-sm-8">Iterates all bundles that are identical to another one and adds references to the original bundles</div>
+			</div>
+
+			<br />
+			<div class="row">
+				<div class="col-sm-4">
+					@using (Html.BeginForm("WipeAllIdenticalDumpRelationships", "Admin")) {
+						<input class="col-sm-12" type="submit" value="Wipe All Identical Dump Relationships" />
+					}
+				</div>
+				<div class="col-sm-8">Deletes all "identic-relationships.json" files</div>
+			</div>
+		</div>
+	</div>
+
+	@if (settings.Value.UseJiraIntegration) {
+		<br />
+		<div class="panel panel-default">
+			<div class="panel-heading">Jira Integration</div>
+			<div class="panel-body container">
+				<div class="row">
+					<div class="col-sm-4">
+						@using (Html.BeginForm("ForceRefreshAllJiraIssues", "Admin")) {
+							<input class="col-sm-12" type="submit" value="Force Refresh All Jira Issues" />
+						}
+					</div>
+					<div class="col-sm-8">Starts a Hangfire Job that refreshes the status of all jira issues, regardless of their age and resulution status</div>
+				</div>
+
+				<br />
+				<div class="row">
+					<div class="col-sm-4 admin-group-no-margin">
+						@using (Html.BeginForm("ForceSearchBundleIssues", "Admin")) {
+							<span class="col-sm-2">days:</span><input class="col-sm-2" type="text" name="days" value="30" />
+							<div class="col-sm-8">
+								<input class="col-sm-12" type="submit" value="Force Bundle Issue Search" />
+							</div>
+						}
+					</div>
+					<div class="col-sm-8">Starts a Hangfire Job that searches jira issues for all bundles, regardless of their age</div>
+				</div>
+
+				<br />
+				<div class="row">
+					<div class="col-sm-4">
+						@using (Html.BeginForm("WipeJiraIssueCache", "Admin")) {
+							<input class="col-sm-12" type="submit" value="Wipe JiraIssue Cache" />
+						}
+					</div>
+					<div class="col-sm-8">Deletes all "jira-issues.json" files</div>
+				</div>
+			</div>
+		</div>
+	}
+
+	<div class="panel panel-default">
+		<div class="panel-heading">Elastic Search</div>
+		<div class="panel-body container">
+			<div class="row">
+				<div class="col-sm-4 admin-group-no-margin">
+					@using (Html.BeginForm("PushElasticSearch", "Admin")) {
+						<span class="col-sm-2">clean:</span><input class="col-sm-2" type="checkbox" name="clean" value="true" />
+						<div class="col-sm-8"><input class="col-sm-12" type="submit" value="Push Elastic Search" /></div>
+					}
+				</div>
+				<div class="col-sm-8">Pushes all dumps to the ElasticSearch, clean specifies if the current index should be deleted</div>
+			</div>
+		</div>
+	</div>
+</div>

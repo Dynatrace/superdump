@@ -2,6 +2,7 @@
 @using SuperDumpService.Helpers
 @using SuperDumpService.Models
 @using SuperDumpService.ViewModels
+@inject IAuthorizationHelper AuthorizationHelper
 @{
 	ViewData["Title"] = "Report";
 }
@@ -16,47 +17,83 @@
 	</script>
 
 } else {
-	<div class="wrapper">
-		<h2>Dump Id: @Model.DumpId</h2>
+	<div class="wrapper superdump-report">
+		<h2>Dump Id: @Model.Id.DumpId</h2>
+		@if (!Model.IsRelationshipsPopulated) {
+			<div>
+				<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Similarity repository</strong> is being populated right now. Similarities might not be complete yet.
+			</div>
+		}
+		@if (!Model.IsJiraIssuesPopulated) {
+			<div>
+				<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>Jira issue repository</strong> is populated right now. Linked jira issues might not be complete yet.
+			</div>
+		}
 
 		<!-- Page Content -->
 		<div id="content">
-			<div style="display: block; float: right; position: absolute; right: 15px; width: 350px; ">
-				@using (Html.BeginForm("Rerun", "Home")) {
-					<div class="form-group text-right">
-						<input type="hidden" name="bundleId" value="@Model.BundleId" />
-						<input type="hidden" name="dumpId" value="@Model.DumpId" />
-						<input type="submit" value="Rerun Analysis" class="btn btn-danger" />
+			<div style="display: block; float: right; position: absolute; right: 15px; width: 450px; ">
+				@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+					@using (Html.BeginForm("Rerun", "Home")) {
+						<div class="form-group text-right">
+							<input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
+							<input type="hidden" name="dumpId" value="@Model.Id.DumpId" />
+							<input type="submit" value="Rerun Analysis" class="btn btn-danger" />
+						</div>
+					}
+				}
+
+				@if (Model.UseJiraIntegration) {
+					<div class="card">
+						<div class="card-header">Jira Issues</div>
+						<div class="card-body">
+							@if (!Model.MainBundleJiraIssues.Any()) {
+								<h6 class="card-subtitle mb-2 text-muted">No Jira Issues Found</h6>
+							} else {
+								<div>
+									<partial name="_JiraIssues" model="Model.MainBundleJiraIssues" />
+								</div>
+							}
+						</div>
+					</div>
+					<br />
+				}
+
+				@if (Model.SimilarityDetectionEnabled) {
+					<div class="card" style="z-index:999">
+						<div class="card-header">Similar Dumps</div>
+						<div class="card-body">
+							@if (!Model.Similarities.Any()) {
+								<h6 class="card-subtitle mb-2 text-muted">No similar dumps found.</h6>
+							} else {
+								var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
+								<p class="card-text">@dupls.Count() similar dumps found.</p>
+								<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
+									Hide/Show
+								</button>
+								<div class="collapse show" id="collapseDuplicates">
+									<ul class="list-group list-group-flush">
+										@foreach (var rel in dupls.OrderByDescending(x => x.Value + (Model.UseJiraIntegration && Model.SimilarDumpIssues.ContainsKey(x.Key.BundleId) ? 100 : 0))) {
+											<li class="list-group-item">
+												<div class="small">(@rel.Key.Created)</div>
+												<a asp-controller="Similarity" asp-action="CompareDumps" asp-route-bundleId1="@Model.Id.BundleId" asp-route-dumpId1="@Model.Id.DumpId" asp-route-bundleId2="@rel.Key.Id.BundleId" asp-route-dumpId2="@rel.Key.Id.DumpId">
+													<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span>
+												</a>
+												<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+												@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
+													<div class="mt-2 small">
+														<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
+													</div>
+												}
+											</li>
+										}
+									</ul>
+								</div>
+							}
+						</div>
 					</div>
 				}
-				<div class="card">
-					<div class="card-body">
-						<h5 class="card-title">Duplicates</h5>
-						@if (!Model.Similarities.Any()) {
-							<h6 class="card-subtitle mb-2 text-muted">No duplicates found.</h6>
-						} else {
-							var dupls = Model.Similarities.Where(x => x.Value >= 0.8);
-							<p class="card-text">@dupls.Count() possible duplicates found.</p>
-							<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseDuplicates" aria-expanded="false" aria-controls="collapseDuplicates">
-								Hide/Show
-							</button>
-							<div class="collapse show" id="collapseDuplicates">
-								<ul class="list-group list-group-flush">
-									@foreach (var rel in dupls.OrderByDescending(x => x.Value)) {
-										<li class="list-group-item">
-											<p>
-												<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span> <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
-											<p>
-											<p>(@rel.Key.Created)</p>
-										</li>
-									}
-								</ul>
-							</div>
-						}
-					</div>
-				</div>
 			</div>
-
 			<dl class="row courier-small compact">
 				@if (!string.IsNullOrEmpty(Model.BundleFileName) && Model.BundleFileName != Model.DumpFileName) {
 					<dt class="col-sm-2 text-right">BundleFileName:</dt>
@@ -65,15 +102,20 @@
 				@if (!string.IsNullOrEmpty(Model.DumpFileName)) {
 					<dt class="col-sm-2 text-right">DumpFileName:</dt>
 					<dd class="col-sm-10">
-						@Model.DumpFileName (
-						<interactive-link model="@(Model)">
-							Start interactive session
-						</interactive-link>
-						)
+						@Model.DumpFileName
+						@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+							<a>
+								(
+								<interactive-link model="@(Model)">
+									Start interactive session
+								</interactive-link>
+								)
+							</a>
+						}
 					</dd>
 				}
-				<dt class="col-sm-2 text-right">Time:</dt>
-				<dd class="col-sm-10">@Model.TimeStamp</dd>
+				<dt class="col-sm-2 text-right">Analyzed at:</dt>
+				<dd class="col-sm-10">@Model.TimeStamp.ToString("yyyy-MM-dd HH:mmzzz")</dd>
 				@foreach (var customProp in Model.CustomProperties) {
 					<dt class="col-sm-2 text-right">
 						@customProp.Key:
@@ -82,34 +124,38 @@
 						<possible-link href="@customProp.Value" is-external="true"> @customProp.Value </possible-link>
 					</dd>
 				}
+
 				<dt class="col-sm-2 text-right">Files:</dt>
 				<dd class="col-sm-10">
 					<div class="filegroups">
 						@{ var sequence = new List<string> { "Primary Dump", "Other files", "Results", "Metadata", "Logs" }; }
 						@foreach (var filetype in Model.Files.Select(x => Utility.GetEnumDescription(x.FileEntry.Type)).Distinct()
-				.OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
-					<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
-						<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
-						<dd class="col-sm-10">
-							<ul class="flat">
-								@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
-									<li>
-										@{Html.RenderPartial("_File", new FileViewModel(Model.BundleId, Model.DumpId, file));}
-									</li>
-								}
-							</ul>
-						</dd>
-					</dl>
-				}
+						  .OrderBy(x => sequence.IndexOf(x) < 0 ? int.MaxValue : sequence.IndexOf(x))) { // somewhat ugly hack to control the order of file categories
+							<dl class="row filegroup filegroup-@filetype.ToString().Replace(" ", "_")">
+								<dt class="col-sm-2 text-right filesize">@filetype.ToString()</dt>
+								<dd class="col-sm-10">
+									<ul class="flat">
+										@foreach (SDFileInfo file in Model.Files.Where(x => Utility.GetEnumDescription(x.FileEntry.Type) == filetype).OrderBy(x => x.FileEntry.FileName)) {
+											<li>
+												@{Html.RenderPartial("_File", new FileViewModel(Model.Id, file));}
+											</li>
+										}
+									</ul>
+								</dd>
+							</dl>
+						}
 					</div>
 				</dd>
 			</dl>
 
 			<div class="container-fluid">
-				@if (Model.HasAnalysisFailed) {
+				@if (!string.IsNullOrEmpty(Model.SDResultReadError)) {
+					<h2>Something went wrong when reading SDResult.</h2>
+					<pre>@Model.SDResultReadError</pre>
+				} else if (Model.DumpStatus == DumpStatus.Failed) {
 					<h2>Analysis failed with errors, no report avaliable.</h2>
 					<pre>Error: @Model.AnalysisError</pre>
-				} else if (Model.Result == null) {
+				} else if (Model.Result == null || Model.DumpStatus != DumpStatus.Finished) {
 					if (Model.CustomTextResult != null) {
 						@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
 							<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>
@@ -143,7 +189,7 @@
 						@{Html.RenderPartial("_Modules");}
 					</section>
 					<section>
-						@{ Html.RenderPartial("_Domains");}
+						@{Html.RenderPartial("_Domains");}
 					</section>
 					<section>
 						@{Html.RenderPartial("_Memory");}

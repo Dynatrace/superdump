@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SuperDumpService {
 	public class SuperDumpSettings {
@@ -28,5 +29,14 @@ namespace SuperDumpService {
 		public string InteractiveGdbHost { get; set; }
 		public string ElasticSearchHost { get; set; }
 		public string NodeJsPath { get; set; }
+		public bool SimilarityDetectionEnabled { get; set; }
+		public int SimilarityDetectionMaxDays { get; set; } = 90;
+		public bool UseLdapAuthentication { get; set; }
+		public bool UseHttpsRedirection { get; set; }
+		public LdapAuthenticationSettings LdapAuthenticationSettings { get; set; }
+		public bool UseJiraIntegration { get; set; }
+		public JiraIntegrationSettings JiraIntegrationSettings { get; set; }
+		public bool UseAllRequestLogging { get; set; }
+		public bool DuplicationDetectionEnabled { get; set; }
 	}
 }

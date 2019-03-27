@@ -12,16 +12,14 @@ namespace SuperDumpService.TagHelpers {
 		public ReportViewModel Model { get; set; }
 		public string InteractiveGdbHost { get; set; }
 		public DumpType Type { get; set; }
-		public string DumpId { get; set; }
-		public string BundleId { get; set; }
+		public DumpIdentifier Id { get; set; }
 		public string Executable { get; set; }
 		public string Command { get; set; }
 
 		public override Task ProcessAsync(TagHelperContext context, TagHelperOutput output) {
 			InteractiveGdbHost = Model.InteractiveGdbHost;
 			Type = Model.DumpType;
-			DumpId = Model.DumpId;
-			BundleId = Model.BundleId;
+			Id = Model.Id;
 			Executable = (Model.Result?.SystemContext as SDCDSystemContext)?.FileName;
 	
 	string url;
@@ -33,12 +31,12 @@ namespace SuperDumpService.TagHelpers {
 					return base.ProcessAsync(context, output);
 				}
 
-				url = $"{InteractiveGdbHost}/?arg={BundleId}&arg={DumpId}&arg={Executable}";
+				url = $"{InteractiveGdbHost}/?arg={Id.BundleId}&arg={Id.DumpId}&arg={Executable}";
 				if (!string.IsNullOrEmpty(Command)) {
 					url += $"&arg=\"{Command}\"";
 				}
 			} else {
-				url = $"Interactive?bundleId={BundleId}&dumpId={DumpId}";
+				url = $"Interactive?bundleId={Id.BundleId}&dumpId={Id.DumpId}";
 				if(!string.IsNullOrEmpty(Command)) {
 					url += $"&cmd={Command}";
 				}

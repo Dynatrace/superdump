@@ -65,6 +65,7 @@
 					}
 				}
 			</dl>
+			@if (Model.Result.ThreadInformation != null) {
 			<dl class="row courier-small compact">
 
 				<dt class="col-sm-3 text-right"># of threads:</dt>
@@ -83,8 +84,9 @@
 							</span>
 						}
 					</dd>
-							}
+				}
 			</dl>
+			}
 			}
 		</div>
 	</div>

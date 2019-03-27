@@ -106,6 +106,10 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 		private void SetLocal(string line) {
 			KeyValuePair<string, string> keyValue = ParseVarInfo(line);
 			if (analysisResult.ThreadInformation[activeThread].StackTrace[activeFrame] is SDCDCombinedStackFrame frame) {
+				// saw coredumps with local variables with the same name
+				while (frame.Locals.ContainsKey(keyValue.Key)) {
+					keyValue = new KeyValuePair<string, string>(keyValue.Key + "_", keyValue.Value); // append underscores until key is unique.
+				}
 				frame.Locals.Add(keyValue);
 			} else {
 				throw new InvalidCastException("Invalid stackframe type! Use SDCD prefix for declaring stackframes!");

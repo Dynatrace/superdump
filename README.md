@@ -12,6 +12,11 @@ What SuperDump is not:
 
   * A replacement for in-depth analysis tools such as WinDbg.
   * A windows kernel dump analysis tool.
+  
+Maintainer: Christoph Neumüller ([christoph.neumueller@dynatrace.com][chnmail], [https://twitter.com/discostu105][chntwitter])
+
+[chnmail]: mailto:christoph.neumueller@dynatrace.com
+[chntwitter]: https://twitter.com/discostu105
 
 Docker
 =============
@@ -42,14 +47,21 @@ Features
  * SuperDump also invokes a number of `WinDbg` commands automatically and logs them to a separate log-file.
  * It also invokes DebugDiag Analysis. An `.mht` file is created automatically and can be downloaded.
  * You can enter "interactive mode" for every dump. This will spin up `cdb.exe` (basically WinDbg for the command line) and create a websocket-based console terminal in the browser which lets you analyze the dump more deeply, with out the need to download it and have debugging tools installed locally. (Isn't that awesome?)
- * Linux coredumps (`.core`) are supported too. The analysis is triggered via a docker container (the actual command is configurable via  `LinuxAnalysisCommand`. Note, that linux dumps must be uploaded in archives in a specific format. In addition to the `.core` file, it must also contain linux system libraries as `libs.tar.gz`, otherwise symbols cannot be resolved correctly. If you're interested in seriously using this, please get in touch and we'll document this better. 
+ * Linux coredumps (`.core`) are supported too. The analysis is triggered via a docker container (the actual command is configurable via  `LinuxAnalysisCommand`. Note, that linux dumps must be uploaded in archives in a specific format. In addition to the `.core` file, it must also contain linux system libraries as `libs.tar.gz`, otherwise symbols cannot be resolved correctly. If you're interested in seriously using this, please get in touch and we'll document this better. Find more details on linux analysis here: http://epub.jku.at/obvulihs/download/pdf/2581999?originalFilename=true
  * "Interactive mode" for linux coredumps is possible as well. Starts a fully TTY-Compliant browser session with GDB.
  * Slack Notifications for finished analysis (see `SlackNotificationUrls` config setting)
  * Elastic search integration for statistics. Every dump analysis is pushed into elastic search instance, which allows to run statistics on crash dumps.
  * Link to source (see `RepositoryUrl` setting)
  * Duplication detection
- 
- 
+ * Optional Ldap Authentication with three user groups:
+   * Admin: Has access to the Hangfire Server webinterface and can clean the Elastic Search.
+   * User: Can download the dump files, view the stack variables, use the interactive mode and rerun the dump analysis.
+   * Viewer: Can upload dumps, view the basic report and download certain log files.
+ * Token Authentication for Api
+ * Logging of security relevant events.
+ * Logging of all webrequests.
+
+
 <a href="doc/img/mainpage.png"><img src="doc/img/mainpage.png" title="main page" width="200"/></a>
 <a href="doc/img/managednativestacktrace.png"><img src="doc/img/managednativestacktrace.png" title="native managed"  width="200"/></a>
 <a href="doc/img/nativeexception.png"><img src="doc/img/nativeexception.png" title="native exception" width="200"/></a>
@@ -88,8 +100,8 @@ Build
 
  * Prerequisites:
    * Visual Studio 2017
-   * .NET Core Tooling 2.1
-   * .NET Core 2.1
+   * .NET Core Tooling 2.2
+   * .NET Core 2.2
    * .NET Framework 4.6
    * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
@@ -98,15 +110,31 @@ Build
  * Build via `building/build.cmd`
  * Run via `build/runsuperdump.cmd` (defaults to port 5000)
 
+ Authentication
+ ==============
+ For authentication it is necessary to add a few settings to either the appconfig.json file, environment variables or using the user secrets file of asp .net.
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapDomain"
+ * "SuperDumpSettings:LdapAuthenticationSettings:TokenSigningKey"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:Admin"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:User"
+ * "SuperDumpSettings:LdapAuthenticationSettings:GroupNames:Viewer"
+
+ When "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserMode" is set to "ServiceUser" it is also necessary to specify
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserName"
+ * "SuperDumpSettings:LdapAuthenticationSettings:LdapServiceUserPwd"
+
+ The user secrets file can be created by right-clicking the "SuperDumpService" Project in Visual Studio and selecting "Manage User Secrets"
+
+ For the https redirection it is necessary to add urls for https and http to the ASPNETCORE_URLS environment variable.
+
 State of the project
 ====================
-SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it.
+SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it. This project is considered "cummunity supported". No full-fledged support (with SLA's) is provided by Dynatrace.
 
 Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
 
  * Test-Coverage: A couple of unit tests are there, but there is currently no CI to automatically run them. The tests partially depend on actual dump-files being available, which obviously are not in source control. We'd need some binary-store, a prepare/download step, etc to make those run.
  * Some stuff is tailored for our needs at Dynatrace. E.g. we have special detection for Dynatrace Agent stackframes. While this feature probably won't hurt anyone else, it is kind of unclean to have such special detection in place.
- * There is no authentication/authorization implemented. Every crash-dump is visible to everyone and can be downloaded by everyone. This is an important fact, because crash-dump contents can be highly security critical.
 
 Future
 ======

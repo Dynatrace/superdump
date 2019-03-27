@@ -25,6 +25,7 @@ namespace SuperDump.Analyzer.Common {
 		}
 
 		private void AnalyzeModules() {
+			if (res.SystemContext == null) return;
 			foreach (var module in res.SystemContext.Modules) {
 				foreach (DynamicAnalyzer analyzer in analyzers) {
 					analyzer.AnalyzeModule(module);
@@ -33,6 +34,7 @@ namespace SuperDump.Analyzer.Common {
 		}
 
 		private void AnalyzeThreads() {
+			if (res.ThreadInformation == null) return;
 			foreach (var thread in res.ThreadInformation.Values) {
 				foreach (DynamicAnalyzer analyzer in analyzers) {
 					analyzer.AnalyzeThread(thread);

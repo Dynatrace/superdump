@@ -14,44 +14,41 @@ namespace SuperDumpService.Services {
 	/// Stores dump metainfos in memory. Also delegates to persistent storage.
 	/// </summary>
 	public class DumpRepository {
-		private readonly object sync = new object();
 		private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>> dumps = new ConcurrentDictionary<string, ConcurrentDictionary<string, DumpMetainfo>>();
-		private readonly DumpStorageFilebased storage;
-		private readonly BundleRepository bundleRepo;
+		private readonly ConcurrentDictionary<DumpIdentifier, DumpMiniInfo> miniInfosLazyCache = new ConcurrentDictionary<DumpIdentifier, DumpMiniInfo>();
+		private readonly IDumpStorage storage;
 		private readonly PathHelper pathHelper;
 
-		public DumpRepository(DumpStorageFilebased storage, BundleRepository bundleRepo, PathHelper pathHelper) {
+		public bool IsPopulated { get; private set; }
+
+		public DumpRepository(IDumpStorage storage, PathHelper pathHelper) {
 			this.storage = storage;
-			this.bundleRepo = bundleRepo;
 			this.pathHelper = pathHelper;
 		}
 
-		public void Populate() {
-			var sw = new Stopwatch();
-			sw.Start();
-			foreach(var bundle in bundleRepo.GetAll()) {
-				PopulateForBundle(bundle.BundleId);
-			}
-			sw.Stop();
-			Console.WriteLine($"Finished populating DumpRepository in {sw.Elapsed}");
+		// only BundleRepository is supposed to call this!
+		public void SetIsPopulated() {
+			IsPopulated = true;
 		}
 
-		public void PopulateForBundle(string bundleId) {
-			lock (sync) {
-				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
-				foreach (var dumpInfo in storage.ReadDumpMetainfoForBundle(bundleId).Result) {
-					if (dumpInfo == null) {
-						Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
-						continue;
-					}
-					dumps[bundleId][dumpInfo.DumpId] = dumpInfo;
+		public async Task PopulateForBundle(string bundleId) {
+			var dict = new ConcurrentDictionary<string, DumpMetainfo>();
+			foreach (var dumpInfo in await storage.ReadDumpMetainfoForBundle(bundleId)) {
+				if (dumpInfo == null) {
+					Console.Error.WriteLine($"ReadDumpMetainfoForBundle returned a null entry for bundleId '{bundleId}'");
+					continue;
 				}
+				dict[dumpInfo.DumpId] = dumpInfo;
 			}
+			dumps.TryAdd(bundleId, dict);
 		}
 
-		public DumpMetainfo Get(string bundleId, string dumpId) {
-			if (!dumps.ContainsKey(bundleId)) return null;
-			return dumps[bundleId][dumpId];
+		public DumpMetainfo Get(DumpIdentifier id) {
+			ConcurrentDictionary<string, DumpMetainfo> bundleInfo = dumps.GetValueOrDefault(id.BundleId);
+			if (bundleInfo != null) {
+				return bundleInfo.GetValueOrDefault(id.DumpId);
+			}
+			return null;
 		}
 
 		public IEnumerable<DumpMetainfo> Get(string bundleId) {
@@ -59,14 +56,8 @@ namespace SuperDumpService.Services {
 			return dumps[bundleId].Values;
 		}
 
-		public DumpMetainfo Get(DumpIdentifier dumpId) {
-			return Get(dumpId.BundleId, dumpId.DumpId);
-		}
-
 		public IEnumerable<DumpMetainfo> GetAll() {
-			lock (sync) {
-				return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
-			}
+			return dumps.SelectMany(bundle => bundle.Value.Values).ToArray();
 		}
 
 		/// <summary>
@@ -77,28 +68,30 @@ namespace SuperDumpService.Services {
 		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
-			lock (sync) {
-				dumps.TryAdd(bundleId, new ConcurrentDictionary<string, DumpMetainfo>());
-				dumpId = CreateUniqueDumpId();
-				dumpInfo = new DumpMetainfo() {
-					BundleId = bundleId,
-					DumpId = dumpId,
-					DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
-					DumpType = DetermineDumpType(sourcePath),
-					Created = DateTime.Now,
-					Status = DumpStatus.Created
-				};
-				dumps[bundleId][dumpId] = dumpInfo;
-			}
-			storage.Create(bundleId, dumpId);
-			
-			FileInfo destFile = await storage.AddFileCopy(bundleId, dumpId, sourcePath);
-			AddSDFile(bundleId, dumpId, destFile.Name, SDFileType.PrimaryDump);
+			dumpId = CreateUniqueDumpId();
+			dumpInfo = new DumpMetainfo() {
+				BundleId = bundleId,
+				DumpId = dumpId,
+				DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
+				DumpType = DetermineDumpType(sourcePath),
+				Created = DateTime.Now,
+				Status = DumpStatus.Created
+			};
+			if (!dumps.ContainsKey(bundleId)) dumps[bundleId] = new ConcurrentDictionary<string, DumpMetainfo>();
+			dumps[bundleId][dumpId] = dumpInfo;
+			storage.Create(dumpInfo.Id);
+
+			FileInfo destFile = await storage.AddFileCopy(dumpInfo.Id, sourcePath);
+			AddSDFile(dumpInfo.Id, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
 		}
 
-		internal string GetDumpFilePath(string bundleId, string dumpId) {
-			return storage.GetDumpFilePath(bundleId, dumpId);
+		public string GetDumpFilePath(DumpIdentifier id) {
+			return storage.GetDumpFilePath(id);
+		}
+
+		public void ResetDumpTyp(DumpIdentifier id) {
+			SetDumpType(id, DetermineDumpType(new FileInfo(Get(id).DumpFileName)));
 		}
 
 		private DumpType DetermineDumpType(FileInfo sourcePath) {
@@ -107,8 +100,8 @@ namespace SuperDumpService.Services {
 			throw new InvalidDataException($"cannot determine dumptype of {sourcePath.FullName}");
 		}
 
-		private void AddSDFile(string bundleId, string dumpId, string filename, SDFileType type) {
-			var dumpInfo = Get(bundleId, dumpId);
+		private void AddSDFile(DumpIdentifier id, string filename, SDFileType type) {
+			var dumpInfo = Get(id);
 			dumpInfo.Files.Add(new SDFileEntry() {
 				FileName = filename,
 				Type = type
@@ -127,19 +120,41 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		internal async Task<SDResult> GetResult(string bundleId, string dumpId) {
-			return await storage.ReadResults(bundleId, dumpId);
+		public async Task<SDResult> GetResultAndThrow(DumpIdentifier id) => await storage.ReadResultsAndThrow(id);
+		public async Task<SDResult> GetResult(DumpIdentifier id) => await storage.ReadResults(id);
+
+		public bool MiniInfoExists(DumpIdentifier id) {
+			if (miniInfosLazyCache.ContainsKey(id)) return true;
+			return storage.MiniInfoExists(id);
 		}
 
-		internal IEnumerable<SDFileInfo> GetFileNames(string bundleId, string dumpId) {
-			return storage.GetSDFileInfos(bundleId, dumpId);
+		public async Task<DumpMiniInfo> GetMiniInfo(DumpIdentifier id) {
+			if (miniInfosLazyCache.TryGetValue(id, out var cachedMiniInfo)) {
+				return cachedMiniInfo;
+			}
+			var miniInfo = await storage.ReadMiniInfo(id);
+			miniInfosLazyCache.TryAdd(id, miniInfo);
+			return miniInfo;
 		}
 
-		internal void SetDumpStatus(string bundleId, string dumpId, DumpStatus status, string errorMessage = null) {
-			var dumpInfo = Get(bundleId, dumpId);
+		public async Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo) {
+			miniInfosLazyCache.TryAdd(id, miniInfo);
+			await storage.StoreMiniInfo(id, miniInfo);
+		}
+
+		public void WriteResult(DumpIdentifier id, SDResult result) {
+			storage.WriteResult(id, result);
+		}
+
+		public IEnumerable<SDFileInfo> GetFileNames(DumpIdentifier id) {
+			return storage.GetSDFileInfos(id);
+		}
+
+		public void SetDumpStatus(DumpIdentifier id, DumpStatus status, string errorMessage = null) {
+			var dumpInfo = Get(id);
 			dumpInfo.Status = status;
 			dumpInfo.ErrorMessage = errorMessage;
-			if(status == DumpStatus.Analyzing) {
+			if (status == DumpStatus.Analyzing) {
 				dumpInfo.Started = DateTime.Now;
 				dumpInfo.Finished = DateTime.MinValue;
 			}
@@ -149,14 +164,24 @@ namespace SuperDumpService.Services {
 			storage.Store(dumpInfo);
 		}
 
-		internal async Task<FileInfo> AddFileCopy(string bundleId, string dumpId, FileInfo file, SDFileType type) {
-			var newFile = await storage.AddFileCopy(bundleId, dumpId, file);
-			AddSDFile(bundleId, dumpId, file.Name, type);
+		public void SetDumpType(DumpIdentifier id, DumpType type) {
+			DumpMetainfo dumpInfo = Get(id);
+			dumpInfo.DumpType = type;
+			storage.Store(dumpInfo);
+		}
+
+		public async Task<FileInfo> AddFileCopy(DumpIdentifier id, FileInfo file, SDFileType type) {
+			var newFile = await storage.AddFileCopy(id, file);
+			AddSDFile(id, file.Name, type);
 			return newFile;
 		}
 
-		internal void AddFile(string bundleId, string dumpId, string filename, SDFileType type) {
-			AddSDFile(bundleId, dumpId, filename, type);
+		public void AddFile(DumpIdentifier id, string filename, SDFileType type) {
+			AddSDFile(id, filename, type);
+		}
+
+		public bool IsPrimaryDumpAvailable(DumpIdentifier id) {
+			return File.Exists(GetDumpFilePath(id));
 		}
 	}
 }

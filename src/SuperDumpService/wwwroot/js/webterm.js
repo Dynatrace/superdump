@@ -80,7 +80,10 @@ function loadConsole() {
 	window.$webtermConsole = $('#webtermConsole');
 	window.$webtermConsole.append(webtermConsole);
 
-	var connection = new WebSocketManager.Connection("ws://" + window.location.hostname + ":" + window.location.port + "/cmd");
+	var useHttps = true; // TODO: auto-detect https
+	var protocol = useHttps ? "wss://" : "ws://";
+
+	var connection = new WebSocketManager.Connection(protocol + window.location.hostname + ":" + window.location.port + "/cmd");
 	window.$webtermConsole.data('connection', connection);
 
 	connection.connectionMethods.onConnected = () => {

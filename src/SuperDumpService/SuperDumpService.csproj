@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PreserveCompilationContext>true</PreserveCompilationContext>
@@ -10,6 +10,8 @@
     <DocumentationFile>$(Configuration)\$(TargetFramework)\SuperDumpService.xml</DocumentationFile>
     <RestorePackages>true</RestorePackages>
 	<MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish> <!-- needed for RazorLight. see https://github.com/toddams/RazorLight/issues/118 -->
+	<UserSecretsId>B58C48DC-CC1B-4647-8E53-36B41078F1B8</UserSecretsId>
+	<LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Content Remove="Views\SlackMessage.cshtml" />
@@ -21,23 +23,29 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-		<PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.1.0" />
-		
+    <PackageReference Include="Dynatrace.OneAgent.Sdk" Version="1.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
     <PackageReference Include="ByteSize" Version="1.3.0" />
-    <PackageReference Include="Hangfire" Version="1.6.17" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.6.17" />
+    <PackageReference Include="Hangfire" Version="1.6.21" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.6.21" />
     <PackageReference Include="Hangfire.MemoryStorage.Core" Version="1.4.0" />
-    <PackageReference Include="Humanizer" Version="2.2.0" />
+    <PackageReference Include="Humanizer" Version="2.5.16" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink.Loader" Version="14.1.0" />
-    <PackageReference Include="NEST" Version="6.1.0" />
+    <!--<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" /> ___ what do we need this for? it has a version clash with BenchmarkDotnet. can we remove it? -->
+    <PackageReference Include="NEST" Version="6.4.1" />
     <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
     <PackageReference Include="Sakura.AspNetCore.Mvc.PagedList" Version="2.0.12" />
     <PackageReference Include="Sakura.AspNetCore.PagedList" Version="2.0.2" />
+    <PackageReference Include="Serilog" Version="2.7.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="2.0.2" />
+    <PackageReference Include="Serilog.Extensions.Logging.File" Version="1.1.0" />
     <PackageReference Include="Slack.Webhooks.Core" Version="1.0.1" />
     <PackageReference Include="Swashbuckle" Version="6.0.0-beta902" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="4.5.0" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
-    <PackageReference Include="System.Net.Http" Version="4.3.3" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="WebSocketManager" Version="1.0.1" />
   </ItemGroup>
   <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
@@ -45,7 +53,7 @@
     <Exec Command="dotnet bundle" />
   </Target>
   <ItemGroup>
-    <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.2.301" />
+    <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.8.391" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ViewModels\SlackMessage.cshtml" />
@@ -58,7 +66,7 @@
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="Views\Similarity\Overview.cshtml">
+    <Content Update="Views\Admin\Overview.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Similarity\CompareDumps.cshtml">

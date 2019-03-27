@@ -1,47 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Dynatrace.OneAgent.Sdk.Api;
+using Hangfire;
+using Hangfire.Annotations;
+using Hangfire.Dashboard;
+using Hangfire.Logging;
+using Hangfire.Logging.LogProviders;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Hangfire;
-using Microsoft.Extensions.PlatformAbstractions;
-using Swashbuckle.Swagger.Model;
-using Hangfire.Logging;
-using Hangfire.Logging.LogProviders;
-using SuperDumpService.Helpers;
-using Hangfire.Dashboard;
-using Hangfire.Annotations;
-using Microsoft.AspNetCore.Http.Features;
-using System.IO;
 using Microsoft.Extensions.Options;
-using SuperDumpService.Services;
-using System.Linq;
-using SuperDump.Webterm;
-using WebSocketManager;
+using Microsoft.Extensions.PlatformAbstractions;
 using Sakura.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using SuperDump.Webterm;
+using SuperDumpService.Helpers;
+using SuperDumpService.Models;
+using SuperDumpService.Services;
+using Swashbuckle.Swagger.Model;
+using WebSocketManager;
 
 namespace SuperDumpService {
 	public class Startup {
-		public Startup(IHostingEnvironment env) {
-			var builder = new ConfigurationBuilder()
-				.SetBasePath(env.ContentRootPath)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), "appsettings.json"), optional: false, reloadOnChange: true)
-				.AddJsonFile(Path.Combine(PathHelper.GetConfDirectory(), $"appsettings.{env.EnvironmentName}.json"), optional: true)
-				.AddEnvironmentVariables();
+		private readonly IHostingEnvironment env;
+		private readonly IConfiguration config;
+		private readonly ILoggerFactory loggerFactory;
 
-			Configuration = builder.Build();
+		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory loggerFactory) {
+			this.env = env;
+			this.config = config;
+			this.loggerFactory = loggerFactory;
 		}
-
-		public IConfigurationRoot Configuration { get; }
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services) {
 			// setup path
-			IConfigurationSection configurationSection = Configuration.GetSection(nameof(SuperDumpSettings));
+			IConfigurationSection configurationSection = config.GetSection(nameof(SuperDumpSettings));
 			IConfigurationSection binPathSection = configurationSection.GetSection(nameof(SuperDumpSettings.BinPath));
 			IEnumerable<string> binPath = binPathSection.GetChildren().Select(s => s.Value);
 			string path = Environment.GetEnvironmentVariable("PATH");
@@ -49,18 +50,43 @@ namespace SuperDumpService {
 			Environment.SetEnvironmentVariable("PATH", path + ";" + additionalPath);
 
 			services.AddOptions();
-			services.Configure<SuperDumpSettings>(Configuration.GetSection(nameof(SuperDumpSettings)));
+			services.Configure<SuperDumpSettings>(config.GetSection(nameof(SuperDumpSettings)));
 
-			var pathHelper = new PathHelper(Configuration.GetSection(nameof(SuperDumpSettings)));
+			var pathHelper = new PathHelper(
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.DumpsDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/dumps/"),
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.UploadDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/uploads/"),
+				configurationSection.GetValue<string>(nameof(SuperDumpSettings.HangfireLocalDbDir)) ?? Path.Combine(Directory.GetCurrentDirectory(), @"../../data/hangfire/")
+			);
 			services.AddSingleton(pathHelper);
 
+			var superDumpSettings = new SuperDumpSettings();
+			config.GetSection(nameof(SuperDumpSettings)).Bind(superDumpSettings);
+
+			// add ldap authentication
+			if (superDumpSettings.UseLdapAuthentication) {
+				services.AddLdapCookieAuthentication(superDumpSettings.LdapAuthenticationSettings, new LdapAuthenticationPathOptions {
+					LoginPath = "/Login/Index/",
+					LogoutPath = "/Login/Logout/",
+					AccessDeniedPath = "/Login/AccessDenied/"
+				});
+				services.AddSingleton(typeof(IAuthorizationHelper), typeof(AuthorizationHelper));
+			} else {
+				services.AddPoliciesForNoAuthentication();
+				services.AddSingleton(typeof(IAuthorizationHelper), typeof(NoAuthorizationHelper));
+			}
+
+			services.AddAntiforgery();
+
+			// asp.net core health checks
+			services.AddHealthChecks();
+
 			//configure DB
-			if (Configuration.GetValue<bool>("UseInMemoryHangfireStorage")) {
+			if (config.GetValue<bool>("UseInMemoryHangfireStorage")) {
 				services.AddHangfire(x => x.UseStorage(new Hangfire.MemoryStorage.MemoryStorage()));
 			} else {
 				string connString;
 				Console.WriteLine(Directory.GetCurrentDirectory());
-				using (SqlConnection conn = LocalDBAccess.GetLocalDB(Configuration, "HangfireDB", pathHelper)) {
+				using (SqlConnection conn = LocalDBAccess.GetLocalDB(config, "HangfireDB", pathHelper)) {
 					connString = conn.ConnectionString;
 				}
 				if (string.IsNullOrEmpty(connString)) {
@@ -70,7 +96,7 @@ namespace SuperDumpService {
 			}
 
 			// set upload limit
-			int maxUploadSizeMB = Configuration.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
+			int maxUploadSizeMB = config.GetSection(nameof(SuperDumpSettings)).GetValue<int>(nameof(SuperDumpSettings.MaxUploadSizeMB));
 			if (maxUploadSizeMB == 0) maxUploadSizeMB = 16000; // default
 			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 1024L * 1024L * maxUploadSizeMB);
 
@@ -96,6 +122,13 @@ namespace SuperDumpService {
 				if (xmlDocFile.Exists) {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
+
+				options.AddSecurityDefinition("Bearer", new ApiKeyScheme() {
+					In = "header",
+					Description = "Please insert JWT Bearer Token into field",
+					Name = "Authorization",
+					Type = "apiKey"
+				});
 			});
 
 			// for pagination list
@@ -107,9 +140,9 @@ namespace SuperDumpService {
 			services.AddSingleton<SuperDumpRepository>();
 
 			services.AddSingleton<BundleRepository>();
-			services.AddSingleton<BundleStorageFilebased>();
+			services.AddSingleton<IBundleStorage, BundleStorageFilebased>();
 			services.AddSingleton<DumpRepository>();
-			services.AddSingleton<DumpStorageFilebased>();
+			services.AddSingleton<IDumpStorage, DumpStorageFilebased>();
 			services.AddSingleton<AnalysisService>();
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();
@@ -120,21 +153,69 @@ namespace SuperDumpService {
 			services.AddSingleton<DumpRetentionService>();
 			services.AddSingleton<SimilarityService>();
 			services.AddSingleton<RelationshipRepository>();
-			services.AddSingleton<RelationshipStorageFilebased>();
+			services.AddSingleton<IRelationshipStorage, RelationshipStorageFilebased>();
+			services.AddSingleton<IIdenticalDumpStorage, IdenticalDumpStorageFilebased>();
+			services.AddSingleton<IdenticalDumpRepository>();
+			services.AddSingleton<IJiraApiService, JiraApiService>();
+			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
+			services.AddSingleton<JiraIssueRepository>();
+			services.AddSingleton<SearchService>();
+
+			var sdk = OneAgentSdkFactory.CreateInstance();
+			sdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
+			services.AddSingleton<IOneAgentSdk>(sdk);
+
 			services.AddWebSocketManager();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns) {
-			app.ApplicationServices.GetService<BundleRepository>().Populate();
-			app.ApplicationServices.GetService<DumpRepository>().Populate();
+		public void Configure(IApplicationBuilder app, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns, IAuthorizationHelper authorizationHelper) {
+			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
+			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
+			if (settings.Value.UseJiraIntegration) {
+				Task.Run(async () => await app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
+			}
 
-			loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+			// configure Logger
+			loggerFactory.AddConsole(config.GetSection("Logging"));
+
+			var fileLogConfig = config.GetSection("FileLogging");
+			var logPath = Path.GetDirectoryName(fileLogConfig.GetValue<string>("PathFormat"));
+			Directory.CreateDirectory(logPath);
+			loggerFactory.AddFile(config.GetSection("FileLogging"));
+
+			if (settings.Value.UseAllRequestLogging) {
+				loggerFactory.AddFile(config.GetSection("RequestFileLogging"));
+			}
+
 			loggerFactory.AddDebug();
 
+
+			if (settings.Value.UseHttpsRedirection) {
+				app.UseHttpsRedirection();
+			}
+			if (settings.Value.UseLdapAuthentication) {
+				app.UseAuthentication();
+				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
+			} else {
+				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
+					appBuilder => appBuilder.Run(async context => {
+						context.Response.StatusCode = 404;
+						await context.Response.WriteAsync("");
+					}));
+			}
+
+			if (settings.Value.UseAllRequestLogging) {
+				ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
+				app.Use(async (context, next) => {
+					logger.LogRequest(context);
+					await next.Invoke();
+				});
+			}
+
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions {
-				Authorization = new[] { new CustomAuthorizeFilter() }
+				Authorization = new[] { new CustomAuthorizeFilter(authorizationHelper) }
 			});
 
 			app.UseHangfireServer(new BackgroundJobServerOptions {
@@ -157,13 +238,23 @@ namespace SuperDumpService {
 				Queues = new[] { "similarityanalysis" },
 				WorkerCount = 8
 			});
+			if (settings.Value.UseJiraIntegration) {
+				app.UseHangfireServer(new BackgroundJobServerOptions {
+					Queues = new[] { "jirastatus" },
+					WorkerCount = 2
+				});
 
+				JiraIssueRepository jiraIssueRepository = app.ApplicationServices.GetService<JiraIssueRepository>();
+				jiraIssueRepository.StartRefreshHangfireJob();
+				jiraIssueRepository.StartBundleSearchHangfireJob();
+			}
 			app.ApplicationServices.GetService<DumpRetentionService>().StartService();
 
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
 			app.UseSwagger();
 			app.UseSwaggerUi();
+			app.UseHealthChecks("/healthcheck");
 
 			LogProvider.SetCurrentLogProvider(new ColouredConsoleLogProvider());
 
@@ -184,8 +275,30 @@ namespace SuperDumpService {
 	}
 
 	public class CustomAuthorizeFilter : IDashboardAuthorizationFilter {
+		private IAuthorizationHelper authorizationHelper;
+
+		public CustomAuthorizeFilter(IAuthorizationHelper authorizationHelper) {
+			this.authorizationHelper = authorizationHelper;
+		}
+
 		public bool Authorize([NotNull] DashboardContext context) {
-			return true; // let everyone see hangfire
+			return authorizationHelper.CheckPolicy(context.GetHttpContext().User, LdapCookieAuthenticationExtension.AdminPolicy);
+		}
+	}
+
+	public class DynatraceSdkLogger : ILoggingCallback {
+		private readonly ILogger _logger;
+
+		public DynatraceSdkLogger(ILogger logger) {
+			this._logger = logger;
+		}
+
+		public void Error(string message) {
+			_logger.LogError("DynatraceSdk: " + message);
+		}
+
+		public void Warn(string message) {
+			_logger.LogWarning("DynatraceSdk: " + message);
 		}
 	}
 }

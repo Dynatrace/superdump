@@ -1,0 +1,14 @@
+﻿@using Microsoft.AspNetCore.Identity
+
+@if (User.Identity.IsAuthenticated) {
+	<ul class="nav navbar-nav navbar-right">
+		<li>
+			<label asp-area="Identity" class="navbar-text">@User.Identity.Name</label>
+		</li>
+		<li>
+			@using (Html.BeginForm("Logout", "Login", FormMethod.Post)) {
+				<button type="submit" class="btn btn-link navbar-btn navbar-link">Logout</button>
+			}
+		</li>
+	</ul>
+}

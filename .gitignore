@@ -276,3 +276,5 @@ src/SuperDumpService/wwwroot/js/site.min.js
 build/runsuperdump_appmon.cmd
 testdata/
 test-dumps/
+conf/appsettings.json
+build/conf/appsettings.json

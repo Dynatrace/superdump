@@ -1,6 +1,6 @@
 ﻿@model SuperDumpService.ViewModels.ReportViewModel
 
-@if (Model.Result.MemoryInformation.Any()) {
+@if (Model.Result.MemoryInformation != null && Model.Result.MemoryInformation.Any()) {
 	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<h4 class="panel-title">
@@ -38,7 +38,7 @@
 									data: {
 										labels: types,
 										datasets: [{
-											label: '@Model.DumpId',
+											label: '@Model.Id.DumpId',
 											data: sizes,
 											backgroundColor: [
 												'rgba(255, 99, 132, 0.4)',

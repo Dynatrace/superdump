@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace SuperDumpService.Helpers {
 	public static class LocalDBAccess {
-		public static SqlConnection GetLocalDB(IConfigurationRoot configuration, string dbName, PathHelper pathHelper, bool deleteIfExists = false) {
+		public static SqlConnection GetLocalDB(IConfiguration configuration, string dbName, PathHelper pathHelper, bool deleteIfExists = false) {
 			try {
 				// todo: need to think about cleanup
 				pathHelper.PrepareDirectories();
@@ -37,7 +37,7 @@ namespace SuperDumpService.Helpers {
 			}
 		}
 
-		private static void DropDatabase(IConfigurationRoot configuration, string dbName) {
+		private static void DropDatabase(IConfiguration configuration, string dbName) {
 			try {
 				using (var tmpConn = new SqlConnection(configuration.GetConnectionString("MasterDB"))) {
 					tmpConn.Open();
@@ -47,7 +47,7 @@ namespace SuperDumpService.Helpers {
 			} catch (SqlException) { }
 		}
 
-		public static bool CreateDatabase(IConfigurationRoot configuration, string dbName, string dbFileName) {
+		public static bool CreateDatabase(IConfiguration configuration, string dbName, string dbFileName) {
 			try {
 				string connectionString = configuration.GetConnectionString("MasterDB");
 				using (var connection = new SqlConnection(connectionString)) {
@@ -67,7 +67,7 @@ namespace SuperDumpService.Helpers {
 			}
 		}
 		
-		public static bool DetachDatabase(IConfigurationRoot configuration, string dbName) {
+		public static bool DetachDatabase(IConfiguration configuration, string dbName) {
 			try {
 				string connectionString = configuration.GetConnectionString("MasterDB");
 				using (var connection = new SqlConnection(connectionString)) {
