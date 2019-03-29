@@ -1,0 +1,63 @@
+FROM mcr.microsoft.com/windows/servercore:1809
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'silentlyContinue';"]
+
+# Install .NET Core SDK
+ENV DOTNET_SDK_VERSION 2.2.105
+RUN Invoke-WebRequest -OutFile dotnet.zip https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$Env:DOTNET_SDK_VERSION/dotnet-sdk-$Env:DOTNET_SDK_VERSION-win-x64.zip; \
+	$dotnet_sha512 = 'd58b0b3f2f82f3960b84e1a7ee36c4febc28db9e08bb99a6dd0b61e5812631d935c471a5ba2f90c966fbcddb208454948339ee5c0d7fbaee4168f3fe6c0827f4'; \
+    if ((Get-FileHash dotnet.zip -Algorithm sha512).Hash -ne $dotnet_sha512) { \
+        Write-Host 'CHECKSUM VERIFICATION FAILED!'; \
+        exit 1; \
+    }; \
+    Expand-Archive dotnet.zip -DestinationPath 'C:\Program Files\dotnet'; \
+    Remove-Item -Force dotnet.zip
+RUN setx /M PATH $($Env:PATH + ';' + $Env:ProgramFiles + '\dotnet')
+
+# Install .Net SDK
+ENV DOTNET_SDK_DOWNLOAD_URL https://download.microsoft.com/download/E/F/D/EFD52638-B804-4865-BB57-47F4B9C80269/NDP462-DevPack-KB3151934-ENU.exe
+RUN Invoke-WebRequest $Env:DOTNET_SDK_DOWNLOAD_URL -OutFile DotNetSDK.exe; \
+    start-Process DotNetSDK.exe -ArgumentList '/q' -Wait ; \
+	Remove-Item -Force DotNetSDK.exe
+
+# Install Windows Debugging Tools
+ENV WINDBG_DOWNLOAD_URL https://download.microsoft.com/download/F/9/1/F91B5312-4385-4476-9688-055E3B1ED10F/windowssdk/winsdksetup.exe
+RUN Invoke-WebRequest $Env:WINDBG_DOWNLOAD_URL -OutFile winsdksetup.exe; \
+    start-Process winsdksetup.exe -ArgumentList '/features OptionId.WindowsDesktopDebuggers /q' -Wait ; \
+    Remove-Item -Force winsdksetup.exe
+
+# Install DebugDiag
+ENV DEBUGDIAG_DOWNLOAD_URL https://download.microsoft.com/download/D/C/9/DC98BD0E-5A9A-4D8A-B313-22BC3604FB05/DebugDiagx64.msi
+RUN Invoke-WebRequest $Env:DEBUGDIAG_DOWNLOAD_URL -OutFile DebugDiagx64.msi; \
+    start-Process DebugDiagx64.msi -ArgumentList '/qn' -Wait ; \
+    Remove-Item -Force DebugDiagx64.msi
+
+# Trigger the population of the local package cache
+ENV NUGET_XMLDOC_MODE skip
+RUN New-Item -Type Directory warmup; \
+    cd warmup; \
+    dotnet new console; \
+    cd ..; \
+    Remove-Item -Force -Recurse warmup
+
+# Install nodejs and bower which is used in the Prepublish Script of SuperDumpService
+ENV NODEJS_DOWNLOAD_URL https://nodejs.org/dist/v10.15.3/node-v10.15.3-x64.msi
+RUN Invoke-WebRequest $Env:NODEJS_DOWNLOAD_URL -OutFile nodejs.msi; \
+    start-Process nodejs.msi -ArgumentList '/qn' -Wait ; \
+    Remove-Item -Force nodejs.msi
+RUN npm install -g bower \
+	npm install -g typescript
+	
+# Install Visual Studio Build Tools
+ENV VSTUDIO_INSTALLER_DOWNLOAD_URL https://aka.ms/vs/15/release/vs_buildtools.exe
+RUN Invoke-WebRequest $Env:VSTUDIO_INSTALLER_DOWNLOAD_URL -OutFile vs_buildtools.exe; \
+	start-Process vs_buildtools.exe -ArgumentList '--quiet --norestart --nocache --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools' -Wait; \
+    Remove-Item -Force vs_buildtools.exe
+
+# default MS symbol servers. override this with your own list if necessary.
+RUN mkdir C:/symbols
+ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
+# needed, otherwise symbol servers are not reachable
+RUN "reg.exe" "add \"HKLM\Software\Microsoft\Symbol Server\" /v NoInternetProxy /t REG_DWORD /d 1 /f"
+
+VOLUME C:/superdump
