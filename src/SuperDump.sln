@@ -9,11 +9,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{F1C07791-3
 		..\conf\appsettings.json.template = ..\conf\appsettings.json.template
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump", "SuperDump\SuperDump.csproj", "{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDump", "SuperDump\SuperDump.csproj", "{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpTests", "SuperDumpTests\SuperDumpTests.csproj", "{6C01A53B-099E-4F44-9CA9-02E2AB209204}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpTests", "SuperDumpTests\SuperDumpTests.csproj", "{6C01A53B-099E-4F44-9CA9-02E2AB209204}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpSelector", "SuperDumpSelector\SuperDumpSelector.csproj", "{6D98C345-4F5E-44FA-A97A-998878D497DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpSelector", "SuperDumpSelector\SuperDumpSelector.csproj", "{6D98C345-4F5E-44FA-A97A-998878D497DA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4} = {0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}
 	EndProjectSection
@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService", "SuperDu
 		{BB6EC51D-3ACC-4ADE-B09C-4217B4AD3C58} = {BB6EC51D-3ACC-4ADE-B09C-4217B4AD3C58}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDump.DebugDiag", "SuperDump.DebugDiag\SuperDump.DebugDiag.csproj", "{7AD98161-6822-47E6-8A68-9374D854599F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDump.DebugDiag", "SuperDump.DebugDiag\SuperDump.DebugDiag.csproj", "{7AD98161-6822-47E6-8A68-9374D854599F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDump.Common", "SuperDump.Common\SuperDump.Common.csproj", "{68D2B1C2-740B-48B4-8CE0-88D8B9437541}"
 EndProject
@@ -41,7 +41,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test", "Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Benchmark", "SuperDumpService.Benchmark\SuperDumpService.Benchmark.csproj", "{6C014CE6-464F-4420-A9AB-1D4E3DFFD48C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperDumpService.Test.Fakes", "SuperDumpService.Test.Fakes\SuperDumpService.Test.Fakes.csproj", "{C81E6045-4C5F-4978-A897-85B5F470B5F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuperDumpService.Test.Fakes", "SuperDumpService.Test.Fakes\SuperDumpService.Test.Fakes.csproj", "{C81E6045-4C5F-4978-A897-85B5F470B5F3}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -71,10 +71,10 @@ Global
 		{0DD4DA67-4E55-4EE1-9030-5A69D8CDC6B4}.Release|x86.Build.0 = Release|x86
 		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x64.ActiveCfg = Debug|x64
-		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x64.Build.0 = Debug|x64
-		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x86.ActiveCfg = Debug|x86
-		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x86.Build.0 = Debug|x86
+		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Debug|x86.Build.0 = Debug|Any CPU
 		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6C01A53B-099E-4F44-9CA9-02E2AB209204}.Release|x64.ActiveCfg = Release|Any CPU
