@@ -2,7 +2,6 @@
 	<PropertyGroup>
 		<TargetFramework>net462</TargetFramework>
 		<AssemblyName>SuperDumpTests</AssemblyName>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<OutputPath>bin\$(Configuration)</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
