@@ -54,10 +54,13 @@ RUN Invoke-WebRequest $Env:VSTUDIO_INSTALLER_DOWNLOAD_URL -OutFile vs_buildtools
 	start-Process vs_buildtools.exe -ArgumentList '--quiet --norestart --nocache --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools' -Wait; \
     Remove-Item -Force vs_buildtools.exe
 
-# default MS symbol servers. override this with your own list if necessary.
-RUN mkdir C:/symbols
-ENV _NT_SYMBOL_PATH srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;srv*c:\\symbols*http://referencesource.microsoft.com/symbols
-# needed, otherwise symbol servers are not reachable
-RUN "reg.exe" "add \"HKLM\Software\Microsoft\Symbol Server\" /v NoInternetProxy /t REG_DWORD /d 1 /f"
 
 VOLUME C:/superdump
+
+# Build Super Dump
+ENV MSBUILD "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
+ENV TARGET "Windows"
+CMD cd C:/superdump/building; \
+	dotnet restore ..\src; \
+	& $Env:MSBUILD msbuild.targets /l:'FileLogger,Microsoft.Build.Engine;logfile=msbuild.log' /target:$Env:TARGET #; \
+	#copy '..\src\SuperDumpService\bin\Release\netcoreapp2.2\SuperDumpService.xml' '..\build\bin\SuperDumpService\SuperDumpService.xml'
