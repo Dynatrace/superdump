@@ -51,7 +51,6 @@
     <PackageReference Include="WebSocketManager" Version="1.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.0.0-preview-18579-0053" />
   </ItemGroup>
-
   <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
     <Exec Command="bower install" />
     <Exec Command="dotnet bundle" />
