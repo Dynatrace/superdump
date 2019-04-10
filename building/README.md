@@ -23,3 +23,7 @@ There are different scripts that can be used to build SuperDump:
 
  * build-docker-windows-superdumpservice.cmd
    This script creates a docker image containing the SuperDumpService and the Windows Analysis Components.
+
+ * build.cmd
+   Searches for a Visual Studio installation and builds the Project as defined in the msbuild.targets file.
+   This is used by the other build scripts.
