@@ -31,12 +31,10 @@ namespace SuperDumpService {
 	public class Startup {
 		private readonly IHostingEnvironment env;
 		private readonly IConfiguration config;
-		private readonly ILoggerFactory startupLoggerFactory;
 
-		public Startup(IHostingEnvironment env, IConfiguration config, ILoggerFactory startupLoggerFactory) {
+		public Startup(IHostingEnvironment env, IConfiguration config) {
 			this.env = env;
 			this.config = config;
-			this.startupLoggerFactory = startupLoggerFactory;
 		}
 
 		// This method gets called by the runtime. Use this method to add services to the container.
@@ -161,15 +159,19 @@ namespace SuperDumpService {
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddSingleton<SearchService>();
 
-			var sdk = OneAgentSdkFactory.CreateInstance();
-			sdk.SetLoggingCallback(new DynatraceSdkLogger(startupLoggerFactory.CreateLogger<DynatraceSdkLogger>()));
-			services.AddSingleton<IOneAgentSdk>(sdk);
+			services.AddSingleton<IOneAgentSdk>(OneAgentSdkFactory.CreateInstance());
 
 			services.AddWebSocketManager();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-		public void Configure(IApplicationBuilder app, IOptions<SuperDumpSettings> settings, IServiceProvider serviceProvider, SlackNotificationService sns, IAuthorizationHelper authorizationHelper, ILoggerFactory loggerFactory) {
+		public void Configure(IApplicationBuilder app, 
+				IOptions<SuperDumpSettings> settings, 
+				IServiceProvider serviceProvider, 
+				SlackNotificationService sns, 
+				IAuthorizationHelper authorizationHelper, 
+				ILoggerFactory loggerFactory, 
+				IOneAgentSdk oneAgentSdk) {
 			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
@@ -191,6 +193,7 @@ namespace SuperDumpService {
 
 			loggerFactory.AddDebug();
 
+			oneAgentSdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
 
 			if (settings.Value.UseHttpsRedirection) {
 				app.UseHttpsRedirection();
