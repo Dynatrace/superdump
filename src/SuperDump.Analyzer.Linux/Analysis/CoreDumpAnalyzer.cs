@@ -14,11 +14,11 @@ using System.Diagnostics;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalyzer {
-		private const string LinkDockerLibrariesCommand = "mkdir libs"
+		private const string LinkDockerLibrariesCommand = "\"mkdir libs"
 			+ " && tar -xzf /dump/libs.tar.gz -C /opt/dump/libs"
 			+ " && mkdir -p var/lib/docker/aufs/diff/"
-			+ " && for layer in $(readelf -aW $(ls *.core) | grep -Po \"(?<=\\/var\\/lib\\/docker\\/aufs\\/diff\\/)([a-z0-9]*)(?=\\/.*)\" | sort -u);"
-				+ " do ln -s /opt/dump/libs/ var/lib/docker/aufs/diff/$layer;  done;";
+			+ " && for layer in $(readelf -aW $(ls *.core) | grep -Po \\\"(?<=\\/var\\/lib\\/docker\\/aufs\\/diff\\/)([a-z0-9]*)(?=\\/.*)\\\" | sort -u);"
+				+ " do ln -s /opt/dump/libs/ var/lib/docker/aufs/diff/$layer;  done;\"";
 
 		[DllImport(Configuration.WRAPPER)]
 		private static extern void init(string filepath, string workindDir);
@@ -101,7 +101,11 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			Console.WriteLine($"Processing core dump file: {coredump}");
 
 			Console.WriteLine("Linking Libraries from Inside Docker");
-			RunBashCommand(LinkDockerLibrariesCommand);
+			using (var linkLibs = await ProcessRunner.Run("/bin/bash", new DirectoryInfo(Directory.GetCurrentDirectory()), "-c", LinkDockerLibrariesCommand)) {
+				if (linkLibs.ExitCode != 0) {
+					Console.WriteLine($"LinkDockerLibrariesCommand exited with error: {linkLibs.StdErr}");
+				}
+			}
 
 			init(coredump.FullName, coredump.Directory.FullName);
 
@@ -182,31 +186,6 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private IFileInfo FindCoredumpOrNull(IDirectoryInfo directory) {
 			return directory.EnumerateFiles("*.core", SearchOption.AllDirectories).FirstOrDefault();
-		}
-
-		private string RunBashCommand(string command) {
-			string escapedCommand = command.Replace("\"", "\\\"");
-			var process = new Process {
-				StartInfo = new ProcessStartInfo {
-					FileName = "/bin/bash",
-					Arguments = $"-c \"{escapedCommand}\"",
-					UseShellExecute = false,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-					CreateNoWindow = true
-				}
-			};
-
-			process.Start();
-			string result = process.StandardOutput.ReadToEnd();
-			string error = process.StandardError.ReadToEnd();
-			process.WaitForExit();
-
-			if (!string.IsNullOrEmpty(error)) {
-				Console.WriteLine($"LinkDockerLibrariesCommand exited with error: {error}");
-			}
-
-			return result;
 		}
 	}
 }
