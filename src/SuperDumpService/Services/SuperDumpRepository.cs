@@ -237,5 +237,9 @@ namespace SuperDumpService.Services {
 			var dumpInfo = dumpRepo.Get(id);
 			analysisService.ScheduleDumpAnalysis(dumpInfo);
 		}
+
+		public void ExtendDumpRetentionTime(DumpIdentifier id, string reason, TimeSpan extension) {
+			dumpRepo.ExtendRetentionTime(id, reason, extension);
+		}
 	}
 }

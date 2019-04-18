@@ -116,8 +116,8 @@ namespace SuperDumpService.Controllers {
 			if (relationshipRepo.IsPopulated) {
 				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => 
 					new DumpViewModel(x, new BundleViewModel(bundleInfo), 
-					new Similarities(await similarityService.GetSimilarities(x.Id)),
-					new RetentionViewModel(x, TimeSpan.FromDays(settings.DumpRetentionDays), dumpRepo.IsPrimaryDumpAvailable(x.Id), TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)))));
+					new Similarities(await similarityService.GetSimilarities(x.Id)), 
+					new RetentionViewModel(x, dumpRepo.IsPrimaryDumpAvailable(x.Id), TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)))));
 			}
 			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
@@ -278,7 +278,6 @@ namespace SuperDumpService.Controllers {
 				UseAutomaticDumpDeletion = settings.DumpRetentionDays != 0,
 				RetentionViewModel = new RetentionViewModel(
 					dumpInfo,
-					TimeSpan.FromDays(settings.DumpRetentionDays),
 					dumpRepo.IsPrimaryDumpAvailable(id),
 					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays))
 			});
@@ -352,6 +351,27 @@ namespace SuperDumpService.Controllers {
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 			superDumpRepo.RerunAnalysis(id);
 			return View(new ReportViewModel(id));
+		}
+
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
+		[HttpPost]
+		public IActionResult ExtendRetentionTime(string bundleId, string dumpId) {
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
+				logger.LogNotFound("ExtendRetentionTime: Bundle not found", HttpContext, "BundleId", bundleId);
+				return View(null);
+			}
+			var id = DumpIdentifier.Create(bundleId, dumpId);
+			var dumpInfo = superDumpRepo.GetDump(id);
+			if (dumpInfo == null) {
+				logger.LogNotFound("Report: Dump not found", HttpContext, "Id", id.ToString());
+				return View(null);
+			}
+			logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
+
+			superDumpRepo.ExtendDumpRetentionTime(id, $"The Retention Time was extended by user {HttpContext.User.Identity.Name} for 30 days", TimeSpan.FromDays(30));
+
+			return RedirectToAction("Report", new { bundleId, dumpId });
 		}
 	}
 }

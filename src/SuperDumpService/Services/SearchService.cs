@@ -64,7 +64,6 @@ namespace SuperDumpService.Services {
 				similarities,
 				new RetentionViewModel(
 					dumpMetainfo,
-					TimeSpan.FromDays(settings.DumpRetentionDays),
 					dumpRepo.IsPrimaryDumpAvailable(dumpMetainfo.Id),
 					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)));
 		}

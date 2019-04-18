@@ -11,8 +11,8 @@ namespace SuperDumpService.ViewModels {
 		public bool IsDumpAvailable { get; set; }
 		public bool IsNearDeletionDate { get; set; }
 
-		public RetentionViewModel(DumpMetainfo dumpMetainfo, TimeSpan defaultRetentionTime, bool isDumpAvailable, TimeSpan warnBeforeDeletion) {
-			RemainingRetentionTime = dumpMetainfo.Created + defaultRetentionTime - DateTime.Now;
+		public RetentionViewModel(DumpMetainfo dumpMetainfo, bool isDumpAvailable, TimeSpan warnBeforeDeletion) {
+			RemainingRetentionTime = dumpMetainfo.PlannedDeletionDate - DateTime.Now;
 			if (RemainingRetentionTime < TimeSpan.Zero) {
 				RemainingRetentionTime = TimeSpan.Zero;
 			}

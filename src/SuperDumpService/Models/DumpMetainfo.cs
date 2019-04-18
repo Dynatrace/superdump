@@ -19,6 +19,8 @@ namespace SuperDumpService.Models {
 		public DumpStatus Status { get; set; }
 		public string ErrorMessage { get; set; }
 		public List<SDFileEntry> Files { get; set; } = new List<SDFileEntry>();
+		public DateTime PlannedDeletionDate { get; set; }
+		public string RetentionTimeExtensionReason { get; set; }
 
 		public override string ToString() {
 			return Id.ToString();

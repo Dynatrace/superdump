@@ -34,7 +34,7 @@ namespace SuperDumpService.Services {
 				if (bundle == null) continue;
 				foreach (var dump in dumpRepo.Get(bundle.BundleId)) {
 					if (dump == null) continue;
-					if (dump.Created < DateTime.Now.Subtract(TimeSpan.FromDays(settings.DumpRetentionDays))) {
+					if (dump.PlannedDeletionDate < DateTime.Now) {
 						RemoveOldDumps(dump);
 					}
 				}
