@@ -33,7 +33,7 @@
 		<!-- Page Content -->
 		<div id="content">
 			<div style="display: block; float: right; position: absolute; right: 15px; width: 450px; ">
-				@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+				@if (Model.RetentionViewModel.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
 					@using (Html.BeginForm("Rerun", "Home")) {
 						<div class="form-group text-right">
 							<input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
@@ -103,7 +103,7 @@
 					<dt class="col-sm-2 text-right">DumpFileName:</dt>
 					<dd class="col-sm-10">
 						@Model.DumpFileName
-						@if (Model.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
+						@if (Model.RetentionViewModel.IsDumpAvailable && AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.UserPolicy)) {
 							<a>
 								(
 								<interactive-link model="@(Model)">
@@ -116,6 +116,14 @@
 				}
 				<dt class="col-sm-2 text-right">Analyzed at:</dt>
 				<dd class="col-sm-10">@Model.TimeStamp.ToString("yyyy-MM-dd HH:mmzzz")</dd>
+
+				@if (Model.UseAutomaticDumpDeletion) {
+					<dt class="col-sm-2 text-right">Planned Deletion:</dt>
+					<dd class="col-sm-10">
+						<partial name="_RetentionTime" model="Model.RetentionViewModel" />
+					</dd>
+				}
+
 				@foreach (var customProp in Model.CustomProperties) {
 					<dt class="col-sm-2 text-right">
 						@customProp.Key:

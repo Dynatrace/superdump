@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using SuperDumpService.Models;
 using SuperDumpService.ViewModels;
 
@@ -11,16 +12,19 @@ namespace SuperDumpService.Services {
 		private readonly DumpRepository dumpRepo;
 		private readonly SimilarityService similarityService;
 		private readonly ElasticSearchService elasticService;
+		private readonly SuperDumpSettings settings;
 
 		public SearchService(
 				BundleRepository bundleRepo,
 				DumpRepository dumpRepo,
 				SimilarityService similarityService,
-				ElasticSearchService elasticService) {
+				ElasticSearchService elasticService,
+				IOptions<SuperDumpSettings> settings) {
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			this.similarityService = similarityService;
 			this.elasticService = elasticService;
+			this.settings = settings.Value;
 		}
 
 		public async Task<IOrderedEnumerable<DumpViewModel>> SearchBySimpleFilter(string searchFilter, bool includeSimilarities = true) {
@@ -55,7 +59,14 @@ namespace SuperDumpService.Services {
 		private async Task<DumpViewModel> ToDumpViewModel(DumpMetainfo dumpMetainfo, bool includeSimilarities = false) {
 			if (dumpMetainfo == null) return null;
 			var similarities = !includeSimilarities ? null : new Similarities(await similarityService.GetSimilarities(dumpMetainfo.Id));
-			return new DumpViewModel(dumpMetainfo, new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)), similarities);
+			return new DumpViewModel(dumpMetainfo,
+				new BundleViewModel(bundleRepo.Get(dumpMetainfo.BundleId)),
+				similarities,
+				new RetentionViewModel(
+					dumpMetainfo,
+					TimeSpan.FromDays(settings.DumpRetentionDays),
+					dumpRepo.IsPrimaryDumpAvailable(dumpMetainfo.Id),
+					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)));
 		}
 
 		public static IEnumerable<DumpViewModel> SimpleFilter(string searchFilter, IEnumerable<DumpViewModel> dumps) {

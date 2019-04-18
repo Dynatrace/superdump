@@ -11,6 +11,7 @@ namespace SuperDumpService.ViewModels {
 		public bool IsPopulated { get; set; }
 		public bool IsRelationshipsPopulated { get; set; }
 		public bool IsJiraIssuesPopulated { get; set; }
+		public bool UseAutomaticDumpDeletion { get; set; }
 		public string KibanaUrl { get; set; }
 	}
 }
