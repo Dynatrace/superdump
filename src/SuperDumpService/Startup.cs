@@ -101,7 +101,6 @@ namespace SuperDumpService {
 			// Add framework services.
 			services.AddMvc()
 				.AddNewtonsoftJson();
-			//services.AddCors();
 			services.AddSwaggerGen();
 
 			services.ConfigureSwaggerGen(options => {
@@ -179,6 +178,10 @@ namespace SuperDumpService {
 			if (settings.Value.UseHttpsRedirection) {
 				app.UseHttpsRedirection();
 			}
+
+			app.UseStaticFiles();
+			app.UseRouting();
+
 			if (settings.Value.UseLdapAuthentication) {
 				app.UseAuthentication();
 				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
@@ -189,14 +192,6 @@ namespace SuperDumpService {
 						await context.Response.WriteAsync("");
 					}));
 			}
-
-			//if (settings.Value.UseAllRequestLogging) {
-			//	//ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
-			//	app.Use(async (context, next) => {
-			//		logger.LogRequest(context);
-			//		await next.Invoke();
-			//	});
-			//}
 
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions {
 				Authorization = new[] { new CustomAuthorizeFilter(authorizationHelper) }
@@ -249,12 +244,14 @@ namespace SuperDumpService {
 				app.UseExceptionHandler("/Home/Error");
 			}
 
-			app.UseStaticFiles();
-
 			app.UseWebSockets();
 			app.MapWebSocketManager("/cmd", serviceProvider.GetService<WebTermHandler>());
 
-			app.UseMvcWithDefaultRoute();
+			//app.UseMvcWithDefaultRoute();
+			//app.UseMvc();
+			app.UseEndpoints(endpoints => {
+				endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+			});
 		}
 	}
 
