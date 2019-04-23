@@ -21,7 +21,6 @@ namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
 	[Authorize(Policy = LdapCookieAuthenticationExtension.ViewerPolicy)]
 	public class HomeController : Controller {
-		private readonly IHostingEnvironment environment;
 		private readonly SuperDumpRepository superDumpRepo;
 		private readonly BundleRepository bundleRepo;
 		private readonly DumpRepository dumpRepo;
@@ -35,7 +34,7 @@ namespace SuperDumpService.Controllers {
 		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SearchService searchService;
 
-		public HomeController(IHostingEnvironment environment, 
+		public HomeController( 
 				SuperDumpRepository superDumpRepo, 
 				BundleRepository bundleRepo, 
 				DumpRepository dumpRepo,
@@ -49,7 +48,6 @@ namespace SuperDumpService.Controllers {
 				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository,
 				SearchService searchService) {
-			this.environment = environment;
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
