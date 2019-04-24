@@ -41,7 +41,7 @@ namespace SuperDumpService {
 		public bool DuplicationDetectionEnabled { get; set; }
 
         public bool IsDumpRetentionEnabled () {
-			return DumpRetentionDays <= 0;
+			return DumpRetentionDays > 0;
 		}
 	}
 }
