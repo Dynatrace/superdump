@@ -119,16 +119,16 @@
 
 				@if (Model.UseAutomaticDumpDeletion) {
 					<dt class="col-sm-2 text-right">Planned Deletion:</dt>
-                    <dd class="col-sm-10">
-                        @using (Html.BeginForm("ExtendRetentionTime", "Home", FormMethod.Post, new { @class = "form-inline" })) {
-                            <partial name="_RetentionTime" model="Model.RetentionViewModel" />
-                            @if (Model.RetentionViewModel.IsDumpAvailable) {
-                                <input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
-                                <input type="hidden" name="dumpId" value="@Model.Id.DumpId" />
-                                <div>&nbsp;(<input type="submit" value="extend to @Model.DumpRetentionExtensionDays days" class="btn-link my-0 py-0 border-bottom-0 border-top-0" />)</div>
-                            }
-                        }
-                    </dd>
+					<dd class="col-sm-10">
+						@using (Html.BeginForm("ExtendRetentionTime", "Home", FormMethod.Post, new { @class = "form-inline" })) {
+							<partial name="_RetentionTime" model="Model.RetentionViewModel" />
+							@if (Model.RetentionViewModel.IsDumpAvailable) {
+								<input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
+								<input type="hidden" name="dumpId" value="@Model.Id.DumpId" />
+								<div>&nbsp;(<input type="submit" value="extend to @Model.DumpRetentionExtensionDays days" class="btn-link my-0 py-0 border-bottom-0 border-top-0" />)</div>
+							}
+						}
+					</dd>
 				}
 
 				@foreach (var customProp in Model.CustomProperties) {
