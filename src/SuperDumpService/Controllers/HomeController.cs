@@ -365,13 +365,18 @@ namespace SuperDumpService.Controllers {
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 			var dumpInfo = superDumpRepo.GetDump(id);
 			if (dumpInfo == null) {
-				logger.LogNotFound("Report: Dump not found", HttpContext, "Id", id.ToString());
+				logger.LogNotFound("ExtendRetentionTime: Dump not found", HttpContext, "Id", id.ToString());
 				return View(null);
 			}
-			logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
 
-			dumpRepo.SetPlannedDeletionDate(id, DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionExtensionDays),
-                $"The Retention Time was extended to {settings.DumpRetentionExtensionDays} days by user {HttpContext.User.Identity.Name}");
+            var newPlannedDeletionDate = DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionExtensionDays);
+            if (dumpInfo.PlannedDeletionDate < newPlannedDeletionDate) {
+                logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
+                dumpRepo.SetPlannedDeletionDate(id, newPlannedDeletionDate,
+                    $"The Retention Time was extended to {settings.DumpRetentionExtensionDays} days by user {HttpContext.User.Identity.Name}");
+            } else {
+                logger.LogDumpAccess("ExtendRetentionTime: failed to extend dump retention time since the new one was shorter", HttpContext, bundleInfo, dumpId);
+            }
 
 			return RedirectToAction("Report", new { bundleId, dumpId });
 		}
