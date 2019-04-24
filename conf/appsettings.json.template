@@ -42,6 +42,8 @@
     "MaxUploadSizeMB": "16000",
     "DumpRetentionDays": "0", // 0 to disable dump deletion
     "DumpRetentionCron": "0 6 * * 1",
+    "WarnBeforeDeletionInDays": "2",
+    "DumpRetentionExtensionDays": "30",
     "IncludeOtherFilesInReport": "true", // if true, sibling files to a crashdump within a zip-file are copied to the dump-report directory.
     "BinPath": [
       "../SuperDump.DebugDiag/",
