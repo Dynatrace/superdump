@@ -80,7 +80,7 @@ namespace SuperDumpService.Services {
 				Created = DateTime.Now,
 				Status = DumpStatus.Created
 			};
-			if (settings.DumpRetentionDays != 0) {
+			if (settings.IsDumpRetentionEnabled()) {
 				dumpInfo.PlannedDeletionDate = DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionDays);
 			}
 

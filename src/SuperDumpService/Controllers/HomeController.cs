@@ -181,7 +181,7 @@ namespace SuperDumpService.Controllers {
 				IsPopulated = bundleRepo.IsPopulated,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
 				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration,
-				UseAutomaticDumpDeletion = settings.DumpRetentionDays != 0
+				UseAutomaticDumpDeletion = settings.IsDumpRetentionEnabled()
 			});
 		}
 
@@ -275,7 +275,7 @@ namespace SuperDumpService.Controllers {
 				DumpStatus = dumpInfo.Status,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
 				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration,
-				UseAutomaticDumpDeletion = settings.DumpRetentionDays != 0,
+				UseAutomaticDumpDeletion = settings.IsDumpRetentionEnabled(),
 				RetentionViewModel = new RetentionViewModel(
 					dumpInfo,
 					dumpRepo.IsPrimaryDumpAvailable(id),
