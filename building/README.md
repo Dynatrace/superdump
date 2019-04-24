@@ -10,7 +10,7 @@ There are different scripts that can be used to build SuperDump:
     * DebugDiag
 
  * build-docker-linux-analysis.cmd
-   This script builds the Linux Analyzer and creates a docker container containing it. Docker has to be installed for this.
+   This script builds the Linux Analyzer and creates a docker image containing it. Docker has to be installed for this.
 
  * build-all.cmd
    This script builds the Windows and Linux components.
@@ -19,7 +19,7 @@ There are different scripts that can be used to build SuperDump:
    This creates a docker image that contains all requirements for building the Windows components.
 
  * build-windows-all-with-docker.cmd
-   Builds the Windows comnponents using the image created by the previous script
+   Builds the Windows components using the image created by the previous script
 
  * build-docker-windows-superdumpservice.cmd
    This script creates a docker image containing the SuperDumpService and the Windows Analysis Components.
