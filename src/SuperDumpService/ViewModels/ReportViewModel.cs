@@ -32,6 +32,7 @@ namespace SuperDumpService.ViewModels {
 		public bool IsJiraIssuesPopulated { get; set; }
 		public RetentionViewModel RetentionViewModel { get; set; }
 		public bool UseAutomaticDumpDeletion { get; set; }
+		public int DumpRetentionExtensionDays { get; set; }
 
 		public ReportViewModel(DumpIdentifier id) {
 			this.Id = id;

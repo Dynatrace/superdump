@@ -276,6 +276,7 @@ namespace SuperDumpService.Controllers {
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
 				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration,
 				UseAutomaticDumpDeletion = settings.IsDumpRetentionEnabled(),
+                DumpRetentionExtensionDays = settings.DumpRetentionExtensionDays,
 				RetentionViewModel = new RetentionViewModel(
 					dumpInfo,
 					dumpRepo.IsPrimaryDumpAvailable(id),
@@ -369,7 +370,9 @@ namespace SuperDumpService.Controllers {
 			}
 			logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
 
-			superDumpRepo.ExtendDumpRetentionTime(id, $"The Retention Time was extended by user {HttpContext.User.Identity.Name} for 30 days", TimeSpan.FromDays(30));
+			superDumpRepo.ExtendDumpRetentionTime(id, 
+                $"The Retention Time was extended by user {HttpContext.User.Identity.Name} for {settings.DumpRetentionExtensionDays} days",
+                TimeSpan.FromDays(settings.DumpRetentionExtensionDays));
 
 			return RedirectToAction("Report", new { bundleId, dumpId });
 		}

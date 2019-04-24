@@ -17,6 +17,7 @@ namespace SuperDumpService {
 		public int MaxUploadSizeMB { get; set; } = 16000;
 		public int DumpRetentionDays { get; set; } = 0;
 		public int WarnBeforeDeletionInDays { get; set; } = 0;
+		public int DumpRetentionExtensionDays { get; set; } = 30;
 		public string DumpRetentionCron { get; set; } = "";
 		public bool IncludeOtherFilesInReport { get; set; }
 		public IEnumerable<string> BinPath { get; set; }
