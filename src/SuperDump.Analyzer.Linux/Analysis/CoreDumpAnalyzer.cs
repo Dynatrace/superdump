@@ -10,9 +10,16 @@ using SuperDump.Common;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using SuperDumpModels;
+using System.Diagnostics;
 
 namespace SuperDump.Analyzer.Linux.Analysis {
 	public class CoreDumpAnalyzer {
+		private const string LinkDockerLibrariesCommand = "\"mkdir libs"
+			+ " && tar -xzf /dump/libs.tar.gz -C /opt/dump/libs"
+			+ " && mkdir -p var/lib/docker/aufs/diff/"
+			+ " && for layer in $(readelf -aW $(ls *.core) | grep -Po \\\"(?<=\\/var\\/lib\\/docker\\/aufs\\/diff\\/)([a-z0-9]*)(?=\\/.*)\\\" | sort -u);"
+				+ " do ln -s /opt/dump/libs/ var/lib/docker/aufs/diff/$layer;  done;\"";
+
 		[DllImport(Configuration.WRAPPER)]
 		private static extern void init(string filepath, string workindDir);
 		[DllImport(Configuration.WRAPPER)]
@@ -92,6 +99,13 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				return LinuxAnalyzerExitCode.NoCoredumpFound;
 			}
 			Console.WriteLine($"Processing core dump file: {coredump}");
+
+			Console.WriteLine("Linking Libraries from Inside Docker");
+			using (var linkLibs = await ProcessRunner.Run("/bin/bash", new DirectoryInfo(Directory.GetCurrentDirectory()), "-c", LinkDockerLibrariesCommand)) {
+				if (linkLibs.ExitCode != 0) {
+					Console.WriteLine($"LinkDockerLibrariesCommand exited with error: {linkLibs.StdErr}");
+				}
+			}
 
 			init(coredump.FullName, coredump.Directory.FullName);
 
