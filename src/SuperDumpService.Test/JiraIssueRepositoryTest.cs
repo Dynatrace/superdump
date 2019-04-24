@@ -52,7 +52,7 @@ namespace SuperDumpService.Test {
 			var pathHelper = new PathHelper("", "", "");
 			var dumpStorage = new FakeDumpStorage(CreateFakeDumps());
 			var bundleStorage = dumpStorage;
-			var dumpRepo = new DumpRepository(dumpStorage, pathHelper);
+			var dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
 			var bundleRepo = new BundleRepository(bundleStorage, dumpRepo);
 
 			var jiraApiService = new FakeJiraApiService();

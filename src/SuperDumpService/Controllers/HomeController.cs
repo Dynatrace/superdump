@@ -35,17 +35,17 @@ namespace SuperDumpService.Controllers {
 		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SearchService searchService;
 
-		public HomeController(IHostingEnvironment environment, 
-				SuperDumpRepository superDumpRepo, 
-				BundleRepository bundleRepo, 
+		public HomeController(IHostingEnvironment environment,
+				SuperDumpRepository superDumpRepo,
+				BundleRepository bundleRepo,
 				DumpRepository dumpRepo,
-				IDumpStorage dumpStorage, 
-				IOptions<SuperDumpSettings> settings, 
-				PathHelper pathHelper, 
-				RelationshipRepository relationshipRepo, 
+				IDumpStorage dumpStorage,
+				IOptions<SuperDumpSettings> settings,
+				PathHelper pathHelper,
+				RelationshipRepository relationshipRepo,
 				SimilarityService similarityService,
 				ElasticSearchService elasticService,
-				ILoggerFactory loggerFactory, 
+				ILoggerFactory loggerFactory,
 				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository,
 				SearchService searchService) {
@@ -114,7 +114,10 @@ namespace SuperDumpService.Controllers {
 		private async Task<IEnumerable<DumpViewModel>> GetDumpListViewModels(string bundleId) {
 			var bundleInfo = bundleRepo.Get(bundleId);
 			if (relationshipRepo.IsPopulated) {
-				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => new DumpViewModel(x, new BundleViewModel(bundleInfo), new Similarities(await similarityService.GetSimilarities(x.Id)))));
+				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => 
+					new DumpViewModel(x, new BundleViewModel(bundleInfo), 
+					new Similarities(await similarityService.GetSimilarities(x.Id)), 
+					new RetentionViewModel(x, dumpRepo.IsPrimaryDumpAvailable(x.Id), TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)))));
 			}
 			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
@@ -140,10 +143,10 @@ namespace SuperDumpService.Controllers {
 		}
 
 		public async Task<IActionResult> Dumps(
-				int page = 1, 
-				int pagesize = 50, 
-				string searchFilter = null, 
-				bool includeEmptyBundles = false, 
+				int page = 1,
+				int pagesize = 50,
+				string searchFilter = null,
+				bool includeEmptyBundles = false,
 				string elasticSearchFilter = null,
 				string duplBundleId = null,
 				string duplDumpId = null
@@ -177,7 +180,8 @@ namespace SuperDumpService.Controllers {
 				KibanaUrl = KibanaUrl(),
 				IsPopulated = bundleRepo.IsPopulated,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration,
+				UseAutomaticDumpDeletion = settings.IsDumpRetentionEnabled()
 			});
 		}
 
@@ -265,13 +269,18 @@ namespace SuperDumpService.Controllers {
 				InteractiveGdbHost = settings.InteractiveGdbHost,
 				SimilarityDetectionEnabled = settings.SimilarityDetectionEnabled,
 				Similarities = similarDumps,
-				IsDumpAvailable = dumpRepo.IsPrimaryDumpAvailable(id),
 				MainBundleJiraIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? Enumerable.Empty<JiraIssueModel>() : await jiraIssueRepository.GetAllIssuesByBundleIdWithoutWait(bundleId),
 				SimilarDumpIssues = !settings.UseJiraIntegration || !jiraIssueRepository.IsPopulated ? new Dictionary<string, IEnumerable<JiraIssueModel>>() : await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(similarDumps.Select(dump => dump.Key.BundleId)),
 				UseJiraIntegration = settings.UseJiraIntegration,
 				DumpStatus = dumpInfo.Status,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
-				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration
+				IsJiraIssuesPopulated = jiraIssueRepository.IsPopulated || !settings.UseJiraIntegration,
+				UseAutomaticDumpDeletion = settings.IsDumpRetentionEnabled(),
+                DumpRetentionExtensionDays = settings.DumpRetentionExtensionDays,
+				RetentionViewModel = new RetentionViewModel(
+					dumpInfo,
+					dumpRepo.IsPrimaryDumpAvailable(id),
+					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays))
 			});
 		}
 
@@ -343,6 +352,33 @@ namespace SuperDumpService.Controllers {
 			var id = DumpIdentifier.Create(bundleId, dumpId);
 			superDumpRepo.RerunAnalysis(id);
 			return View(new ReportViewModel(id));
+		}
+
+		[Authorize(Policy = LdapCookieAuthenticationExtension.UserPolicy)]
+		[HttpPost]
+		public IActionResult ExtendRetentionTime(string bundleId, string dumpId) {
+			var bundleInfo = superDumpRepo.GetBundle(bundleId);
+			if (bundleInfo == null) {
+				logger.LogNotFound("ExtendRetentionTime: Bundle not found", HttpContext, "BundleId", bundleId);
+				return View(null);
+			}
+			var id = DumpIdentifier.Create(bundleId, dumpId);
+			var dumpInfo = superDumpRepo.GetDump(id);
+			if (dumpInfo == null) {
+				logger.LogNotFound("ExtendRetentionTime: Dump not found", HttpContext, "Id", id.ToString());
+				return View(null);
+			}
+
+            var newPlannedDeletionDate = DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionExtensionDays);
+            if (dumpInfo.PlannedDeletionDate < newPlannedDeletionDate) {
+                logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
+                dumpRepo.SetPlannedDeletionDate(id, newPlannedDeletionDate,
+                    $"The Retention Time was extended to {settings.DumpRetentionExtensionDays} days by user {HttpContext.User.Identity.Name}");
+            } else {
+                logger.LogDumpAccess("ExtendRetentionTime: failed to extend dump retention time since the new one was shorter", HttpContext, bundleInfo, dumpId);
+            }
+
+			return RedirectToAction("Report", new { bundleId, dumpId });
 		}
 	}
 }

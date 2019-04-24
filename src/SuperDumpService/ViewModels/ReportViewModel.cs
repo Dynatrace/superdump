@@ -24,13 +24,15 @@ namespace SuperDumpService.ViewModels {
 		public string InteractiveGdbHost { get; set; }
 		public IEnumerable<KeyValuePair<DumpMetainfo, double>> Similarities { get; set; } = Enumerable.Empty<KeyValuePair<DumpMetainfo, double>>();
 		public bool SimilarityDetectionEnabled { get; set; }
-		public bool IsDumpAvailable { get; set; }
 		public IDictionary<string, IEnumerable<JiraIssueModel>> SimilarDumpIssues { get; set; }
 		public bool UseJiraIntegration { get; internal set; }
 		public IEnumerable<JiraIssueModel> MainBundleJiraIssues { get; internal set; }
 		public DumpStatus DumpStatus { get; internal set; }
 		public bool IsRelationshipsPopulated { get; set; }
 		public bool IsJiraIssuesPopulated { get; set; }
+		public RetentionViewModel RetentionViewModel { get; set; }
+		public bool UseAutomaticDumpDeletion { get; set; }
+		public int DumpRetentionExtensionDays { get; set; }
 
 		public ReportViewModel(DumpIdentifier id) {
 			this.Id = id;

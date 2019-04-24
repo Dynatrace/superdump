@@ -34,7 +34,7 @@ namespace SuperDumpService.Benchmark.Benchmarks {
 
 			this.pathHelper = new PathHelper("", "", "");
 			this.dumpStorage = new FakeDumpStorage(CreateFakeDumps(N));
-			this.dumpRepo = new DumpRepository(dumpStorage, pathHelper);
+			this.dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
 			this.relationshipStorage = new FakeRelationshipStorage();
 			this.relationshipRepo = new RelationshipRepository(relationshipStorage, dumpRepo, settings);
 			this.similarityService = new SimilarityService(dumpRepo, relationshipRepo, settings, Dynatrace.OneAgent.Sdk.Api.OneAgentSdkFactory.CreateInstance());
