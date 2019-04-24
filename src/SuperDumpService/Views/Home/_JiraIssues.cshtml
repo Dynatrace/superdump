@@ -1,8 +1,9 @@
-﻿@model IEnumerable<SuperDumpService.Models.JiraIssueModel>
+﻿@using SuperDumpService.Models
+@model IEnumerable<JiraIssueModel>
 
 <ul class="list-unstyled">
 	@foreach (var jiraIssue in Model) {
-		bool resolved = jiraIssue.GetStatusName() == "Resolved";
+		bool resolved = jiraIssue.GetStatusName() == JiraIssueModel.JiraIssueStatusResolved;
 		string strikethroughstyle = resolved ? "text-decoration: line-through" : string.Empty;
 
 		<li>

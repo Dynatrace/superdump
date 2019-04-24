@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace SuperDumpService.Models {
 	public class JiraIssueModel {
+		public const string JiraIssueStatusResolved = "Resolved";
+
 		public string Id { get; set; }
 		public string Key { get; set; }
 		public string Url { get; set; }
