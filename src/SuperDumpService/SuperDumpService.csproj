@@ -42,7 +42,8 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="2.0.3" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="2.0.0-dev-00032" />
     <PackageReference Include="Slack.Webhooks.Core" Version="1.0.1" />
-    <PackageReference Include="Swashbuckle" Version="6.0.0-beta902" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc2" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="5.0.0-rc2" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="4.6.0-preview4.19212.13" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />

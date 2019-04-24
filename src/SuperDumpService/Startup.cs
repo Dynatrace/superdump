@@ -24,8 +24,9 @@ using SuperDump.Webterm;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
-using Swashbuckle.Swagger.Model;
 using WebSocketManager;
+using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -103,13 +104,12 @@ namespace SuperDumpService {
 				.AddNewtonsoftJson();
 			services.AddSwaggerGen();
 
-			services.ConfigureSwaggerGen(options => {
-				options.SingleApiVersion(new Info {
+			services.AddSwaggerGen(options => {
+				options.SwaggerDoc("v1", new OpenApiInfo {
 					Version = "v1",
 					Title = "SuperDump API",
 					Description = "REST interface for SuperDump analysis tool",
-					TermsOfService = "None",
-					Contact = new Contact { Url = "https://github.com/Dynatrace/superdump" }
+					Contact = new OpenApiContact { Url = new Uri("https://github.com/Dynatrace/superdump") }
 				});
 
 				//Determine base path for the application.
@@ -121,11 +121,12 @@ namespace SuperDumpService {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
 
-				options.AddSecurityDefinition("Bearer", new ApiKeyScheme() {
-					In = "header",
+
+				options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme() {
+					In = ParameterLocation.Header,
 					Description = "Please insert JWT Bearer Token into field",
 					Name = "Authorization",
-					Type = "apiKey"
+					Type = SecuritySchemeType.ApiKey
 				});
 			});
 
@@ -184,6 +185,7 @@ namespace SuperDumpService {
 
 			if (settings.Value.UseLdapAuthentication) {
 				app.UseAuthentication();
+				app.UseAuthorization();
 				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
 			} else {
 				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
@@ -232,7 +234,9 @@ namespace SuperDumpService {
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
 			app.UseSwagger();
-			app.UseSwaggerUi();
+			app.UseSwaggerUI(c => {
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+			});
 			app.UseHealthChecks("/healthcheck");
 
 			LogProvider.SetCurrentLogProvider(new ColouredConsoleLogProvider());
