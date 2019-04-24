@@ -6,7 +6,7 @@ using SuperDumpService.Models;
 
 namespace SuperDumpService.ViewModels {
 	public class RetentionViewModel {
-		public TimeSpan RemainingRetentionTime { get; set; }
+		public TimeSpan? RemainingRetentionTime { get; set; }
 		public string RetentionTimeExtensionReason { get; set; }
 		public bool IsDumpAvailable { get; set; }
 		public bool IsNearDeletionDate { get; set; }

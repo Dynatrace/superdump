@@ -35,7 +35,7 @@ namespace SuperDumpService.Services {
 					await CreateMetainfoForCompat(id);
 				}
 				DumpMetainfo dumpMetainfo = ReadMetainfoFile(metainfoFilename);
-				if (settings.Value.IsDumpRetentionEnabled() && (dumpMetainfo.PlannedDeletionDate == null || dumpMetainfo.PlannedDeletionDate == DateTime.MinValue)) {
+				if (settings.Value.IsDumpRetentionEnabled() && dumpMetainfo.PlannedDeletionDate == null) {
 					SetPlannedDeletionDateForCompat(dumpMetainfo);
 				}
 				list.Add(dumpMetainfo);

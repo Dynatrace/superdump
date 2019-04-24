@@ -4,7 +4,7 @@
 @if (Model.IsDumpAvailable) {
 	string remainingRetentionColor = Model.IsNearDeletionDate ? "text-danger" : "text-success";
 	<span class="@remainingRetentionColor" title="@Model.RetentionTimeExtensionReason">
-		@Model.RemainingRetentionTime.Humanize(maxUnit: Humanizer.Localisation.TimeUnit.Month, minUnit: Humanizer.Localisation.TimeUnit.Hour)
+		@Model.RemainingRetentionTime?.Humanize(maxUnit: Humanizer.Localisation.TimeUnit.Month, minUnit: Humanizer.Localisation.TimeUnit.Hour)
 	</span>
 } else {
 	<span>Primary Dump Deleted</span>

@@ -193,8 +193,11 @@ namespace SuperDumpService.Services {
 
 		public void ExtendRetentionTime(DumpIdentifier id, string reason, TimeSpan extension) {
 			DumpMetainfo dumpInfo = Get(id);
-			dumpInfo.RetentionTimeExtensionReason = reason;
+            if (dumpInfo.PlannedDeletionDate == null) {
+				return;
+			}
 			dumpInfo.PlannedDeletionDate += extension;
+			dumpInfo.RetentionTimeExtensionReason = reason;
 			storage.Store(dumpInfo);
 		}
 	}
