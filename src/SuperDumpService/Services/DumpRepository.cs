@@ -191,12 +191,9 @@ namespace SuperDumpService.Services {
 			return File.Exists(GetDumpFilePath(id));
 		}
 
-		public void ExtendRetentionTime(DumpIdentifier id, string reason, TimeSpan extension) {
+		public void SetPlannedDeletionDate(DumpIdentifier id, DateTime plannedDeletionDate, string reason) {
 			DumpMetainfo dumpInfo = Get(id);
-            if (dumpInfo.PlannedDeletionDate == null) {
-				return;
-			}
-			dumpInfo.PlannedDeletionDate += extension;
+			dumpInfo.PlannedDeletionDate = plannedDeletionDate;
 			dumpInfo.RetentionTimeExtensionReason = reason;
 			storage.Store(dumpInfo);
 		}

@@ -370,9 +370,8 @@ namespace SuperDumpService.Controllers {
 			}
 			logger.LogDumpAccess("ExtendRetentionTime", HttpContext, bundleInfo, dumpId);
 
-			superDumpRepo.ExtendDumpRetentionTime(id, 
-                $"The Retention Time was extended by user {HttpContext.User.Identity.Name} for {settings.DumpRetentionExtensionDays} days",
-                TimeSpan.FromDays(settings.DumpRetentionExtensionDays));
+			dumpRepo.SetPlannedDeletionDate(id, DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionExtensionDays),
+                $"The Retention Time was extended by user {HttpContext.User.Identity.Name} to {settings.DumpRetentionExtensionDays} days");
 
 			return RedirectToAction("Report", new { bundleId, dumpId });
 		}

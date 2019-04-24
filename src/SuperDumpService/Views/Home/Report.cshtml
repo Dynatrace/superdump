@@ -125,7 +125,7 @@
                             @if (Model.RetentionViewModel.IsDumpAvailable) {
                                 <input type="hidden" name="bundleId" value="@Model.Id.BundleId" />
                                 <input type="hidden" name="dumpId" value="@Model.Id.DumpId" />
-                                <div>&nbsp;(<input type="submit" value="extend by @Model.DumpRetentionExtensionDays days" class="btn-link my-0 py-0 border-bottom-0 border-top-0" />)</div>
+                                <div>&nbsp;(<input type="submit" value="extend to @Model.DumpRetentionExtensionDays days" class="btn-link my-0 py-0 border-bottom-0 border-top-0" />)</div>
                             }
                         }
                     </dd>
