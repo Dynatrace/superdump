@@ -20,5 +20,6 @@ namespace SuperDumpService.Services {
 		void Store(DumpMetainfo dumpInfo);
 		Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo);
 		void WriteResult(DumpIdentifier id, SDResult result);
+		bool ReadIsPrimaryDumpAvailable(DumpIdentifier id);
 	}
 }

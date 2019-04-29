@@ -36,11 +36,17 @@ namespace SuperDumpService.Services {
 				}
 				DumpMetainfo dumpMetainfo = ReadMetainfoFile(metainfoFilename);
 				if (settings.Value.IsDumpRetentionEnabled() && dumpMetainfo.PlannedDeletionDate == null) {
+					// backwards compatibility, when deletion date field does not yet exist.
 					SetPlannedDeletionDateForCompat(dumpMetainfo);
 				}
+				dumpMetainfo.IsPrimaryDumpAvailable = ReadIsPrimaryDumpAvailable(id);
 				list.Add(dumpMetainfo);
 			}
 			return list;
+		}
+
+		public bool ReadIsPrimaryDumpAvailable(DumpIdentifier id) {
+			return File.Exists(GetDumpFilePath(id));
 		}
 
 		private DumpMetainfo ReadMetainfoFile(string filename) {

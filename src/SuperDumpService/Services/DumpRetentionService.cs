@@ -75,6 +75,7 @@ namespace SuperDumpService.Services {
 					File.Delete(file);
 				}
 			}
+			dumpRepo.UpdateIsDumpAvailable(dump.Id);
 		}
 	}
 }
