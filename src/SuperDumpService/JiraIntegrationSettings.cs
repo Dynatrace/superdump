@@ -16,5 +16,6 @@ namespace SuperDumpService {
 		public string JiraApiUsername { get; set; }
 		public string JiraApiPassword { get; set; }
 		public string JiraIssueUrl { get; set; }
+		public int JiraDumpRetentionTimeExtensionDays { get; set; } = 7;
 	}
 }

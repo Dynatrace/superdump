@@ -117,7 +117,9 @@ namespace SuperDumpService.Controllers {
 				return await Task.WhenAll(dumpRepo.Get(bundleId).Select(async x => 
 					new DumpViewModel(x, new BundleViewModel(bundleInfo), 
 					new Similarities(await similarityService.GetSimilarities(x.Id)), 
-					new RetentionViewModel(x, dumpRepo.IsPrimaryDumpAvailable(x.Id), TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)))));
+					new RetentionViewModel(x, dumpRepo.IsPrimaryDumpAvailable(x.Id), 
+						TimeSpan.FromDays(settings.WarnBeforeDeletionInDays), 
+						await jiraIssueRepository.HasBundleOpenIssues(bundleId)))));
 			}
 			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
@@ -280,7 +282,8 @@ namespace SuperDumpService.Controllers {
 				RetentionViewModel = new RetentionViewModel(
 					dumpInfo,
 					dumpRepo.IsPrimaryDumpAvailable(id),
-					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays))
+					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays),
+					await jiraIssueRepository.HasBundleOpenIssues(bundleId))
 			});
 		}
 

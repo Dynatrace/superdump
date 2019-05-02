@@ -4,20 +4,24 @@ using System;
 using SuperDumpService.Models;
 using SuperDumpService.Helpers;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SuperDumpService.Services {
 	public class DumpRetentionService {
 		private const string RETENTION_JOB_ID = "dump-retention";
+		private const string JiraRetentionExtensionReason = "The retention time was extended due to an open jira issue.";
 
 		private readonly DumpRepository dumpRepo;
 		private readonly BundleRepository bundleRepo;
 		private readonly PathHelper pathHelper;
+		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SuperDumpSettings settings;
 
-		public DumpRetentionService(DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
+		public DumpRetentionService(DumpRepository dumpRepo, BundleRepository bundleRepo, PathHelper pathHelper, IOptions<SuperDumpSettings> settings, JiraIssueRepository jiraIssueRepository) {
 			this.dumpRepo = dumpRepo ?? throw new ArgumentNullException("Dump Repository must not be null!");
 			this.bundleRepo = bundleRepo ?? throw new ArgumentNullException("Bundle Repository must not be null!");
 			this.pathHelper = pathHelper ?? throw new ArgumentException("PathHelper must not be null!");
+			this.jiraIssueRepository = jiraIssueRepository;
 			this.settings = settings?.Value ?? throw new ArgumentException("Settings must not be null!");
 		}
 
@@ -34,7 +38,12 @@ namespace SuperDumpService.Services {
 				if (bundle == null) continue;
 				foreach (var dump in dumpRepo.Get(bundle.BundleId)) {
 					if (dump == null) continue;
-					if (dump.PlannedDeletionDate < DateTime.Now) {
+					if (settings.UseJiraIntegration && jiraIssueRepository.IsPopulated && Task.Run(() => jiraIssueRepository.HasBundleOpenIssues(bundle.BundleId)).GetAwaiter().GetResult()) {
+						var jiraExtensionTime = TimeSpan.FromDays(settings.JiraIntegrationSettings.JiraDumpRetentionTimeExtensionDays);
+						if (jiraExtensionTime > dump.PlannedDeletionDate - DateTime.Now) {
+							dumpRepo.SetPlannedDeletionDate(dump.Id, DateTime.Now + jiraExtensionTime, JiraRetentionExtensionReason);
+						}
+					} else if (dump.PlannedDeletionDate < DateTime.Now) {
 						RemoveOldDumps(dump);
 					}
 				}

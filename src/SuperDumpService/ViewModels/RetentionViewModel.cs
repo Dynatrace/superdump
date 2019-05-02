@@ -10,14 +10,16 @@ namespace SuperDumpService.ViewModels {
 		public string RetentionTimeExtensionReason { get; set; }
 		public bool IsDumpAvailable { get; set; }
 		public bool IsNearDeletionDate { get; set; }
+		public bool HasOpenJiraIssue { get; set; }
 
-		public RetentionViewModel(DumpMetainfo dumpMetainfo, bool isDumpAvailable, TimeSpan warnBeforeDeletion) {
+		public RetentionViewModel(DumpMetainfo dumpMetainfo, bool isDumpAvailable, TimeSpan warnBeforeDeletion, bool hasOpenJiraIssue) {
 			RemainingRetentionTime = dumpMetainfo.PlannedDeletionDate - DateTime.Now;
 			if (RemainingRetentionTime < TimeSpan.Zero) {
 				RemainingRetentionTime = TimeSpan.Zero;
 			}
 			RetentionTimeExtensionReason = dumpMetainfo.RetentionTimeExtensionReason;
 			IsDumpAvailable = isDumpAvailable;
+			HasOpenJiraIssue = hasOpenJiraIssue;
 			IsNearDeletionDate = RemainingRetentionTime < warnBeforeDeletion;
 		}
 	}

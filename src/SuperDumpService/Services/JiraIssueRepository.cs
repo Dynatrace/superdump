@@ -82,6 +82,10 @@ namespace SuperDumpService.Services {
 			return result;
 		}
 
+		public async Task<bool> HasBundleOpenIssues(string bundleId) {
+			return (await GetAllIssuesByBundleIdWithoutWait(bundleId)).Any(issue => issue.GetResolutionName() != JiraIssueModel.JiraIssueStatusResolved);
+		}
+
 		public async Task WipeJiraIssueCache() {
 			await semaphoreSlim.WaitAsync().ConfigureAwait(false);
 			try {
