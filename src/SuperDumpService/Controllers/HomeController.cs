@@ -118,8 +118,8 @@ namespace SuperDumpService.Controllers {
 					new DumpViewModel(x, new BundleViewModel(bundleInfo), 
 					new Similarities(await similarityService.GetSimilarities(x.Id)), 
 					new RetentionViewModel(x, dumpRepo.IsPrimaryDumpAvailable(x.Id), 
-						TimeSpan.FromDays(settings.WarnBeforeDeletionInDays), 
-						await jiraIssueRepository.HasBundleOpenIssues(bundleId)))));
+						TimeSpan.FromDays(settings.WarnBeforeDeletionInDays),
+						settings.UseJiraIntegration && jiraIssueRepository.IsPopulated && await jiraIssueRepository.HasBundleOpenIssues(bundleId)))));
 			}
 			return dumpRepo.Get(bundleId).Select(x => new DumpViewModel(x, new BundleViewModel(bundleInfo)));
 		}
@@ -283,7 +283,7 @@ namespace SuperDumpService.Controllers {
 					dumpInfo,
 					dumpRepo.IsPrimaryDumpAvailable(id),
 					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays),
-					await jiraIssueRepository.HasBundleOpenIssues(bundleId))
+					settings.UseJiraIntegration && jiraIssueRepository.IsPopulated && await jiraIssueRepository.HasBundleOpenIssues(bundleId))
 			});
 		}
 

@@ -69,7 +69,7 @@ namespace SuperDumpService.Services {
 					dumpMetainfo,
 					dumpRepo.IsPrimaryDumpAvailable(dumpMetainfo.Id),
 					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays),
-					await jiraIssueRepository.HasBundleOpenIssues(dumpMetainfo.BundleId)));
+					settings.UseJiraIntegration && jiraIssueRepository.IsPopulated && await jiraIssueRepository.HasBundleOpenIssues(dumpMetainfo.BundleId)));
 		}
 
 		public static IEnumerable<DumpViewModel> SimpleFilter(string searchFilter, IEnumerable<DumpViewModel> dumps) {
