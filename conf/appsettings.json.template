@@ -121,7 +121,9 @@
       "JiraIssueUrl": "", //The url for the jira webpage issue links (e.g. "https://localhost/browse/")
 
       "JiraApiUsername": "",
-      "JiraApiPassword": ""
+      "JiraApiPassword": "",
+
+      "JiraDumpRetentionTimeExtensionDays": "7"
     },
     "DuplicationDetectionEnabled": "true" // if enabled, the same bundle (md5 hash check) does not get analyzed twice
   }
