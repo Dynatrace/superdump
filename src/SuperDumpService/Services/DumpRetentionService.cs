@@ -4,7 +4,6 @@ using System;
 using SuperDumpService.Models;
 using SuperDumpService.Helpers;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace SuperDumpService.Services {
 	public class DumpRetentionService {
