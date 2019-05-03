@@ -42,7 +42,7 @@ namespace SuperDumpService.Services {
 				if (bundle == null) continue;
 				foreach (var dump in dumpRepo.Get(bundle.BundleId)) {
 					if (dump == null) continue;
-					if (settings.UseJiraIntegration && AsyncHelper.RunSync(() => jiraIssueRepository.HasBundleOpenIssues(bundle.BundleId))) {
+					if (settings.UseJiraIntegration && jiraIssueRepository.HasBundleOpenIssues(bundle.BundleId)) {
 						var jiraExtensionTime = TimeSpan.FromDays(settings.JiraIntegrationSettings.JiraDumpRetentionTimeExtensionDays);
 						// do not set the dump deletion date if it would shorten the current retention time
 						if (jiraExtensionTime > dump.PlannedDeletionDate - DateTime.Now) {
