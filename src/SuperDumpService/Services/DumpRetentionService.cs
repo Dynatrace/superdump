@@ -34,6 +34,7 @@ namespace SuperDumpService.Services {
 
 		[Hangfire.Queue("retention", Order = 2)]
 		public void RemoveOldDumps() {
+			// Check if the jiraIssueRepository is populated to avoid deleting dumps with open issues
 			if (settings.UseJiraIntegration && !jiraIssueRepository.IsPopulated) {
 				return;
 			}
@@ -44,6 +45,7 @@ namespace SuperDumpService.Services {
 					if (dump == null) continue;
 					if (settings.UseJiraIntegration && AsyncHelper.RunSync(() => jiraIssueRepository.HasBundleOpenIssues(bundle.BundleId))) {
 						var jiraExtensionTime = TimeSpan.FromDays(settings.JiraIntegrationSettings.JiraDumpRetentionTimeExtensionDays);
+						// do not set the dump deletion date if it would shorten the current retention time
 						if (jiraExtensionTime > dump.PlannedDeletionDate - DateTime.Now) {
 							dumpRepo.SetPlannedDeletionDate(dump.Id, DateTime.Now + jiraExtensionTime, JiraRetentionExtensionReason);
 						}
