@@ -117,6 +117,7 @@
       "JiraBundleSearchDelay": "0.5", //Time to wait (in minutes) after searching for "JiraBundleSearchLimit" bundles before searching for the next bundles
       "JiraBundleSearchTimeSpan": "30.00:00:00", //Maximum age of bundle for issue search
 
+      "JiraApiAuthUrl": "", //The url for jira authentication (e.g. "https://localhost/rest/auth/1/session/")
       "JiraApiSearchUrl": "", //The url of the jira rest api search method (e.g "https://localhost/rest/api/2/search/")
       "JiraIssueUrl": "", //The url for the jira webpage issue links (e.g. "https://localhost/browse/")
 
