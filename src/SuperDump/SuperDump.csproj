@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net462</TargetFramework>
+		<TargetFramework>net48</TargetFramework>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<RuntimeIdentifier>win-x86 or win-x64</RuntimeIdentifier>
 		<OutputPath>bin\$(Platform)</OutputPath>
@@ -17,11 +17,6 @@
 		<Compile Remove="Models\**" />
 		<EmbeddedResource Remove="Models\**" />
 		<None Remove="Models\**" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="App.config">
-      <SubType>Designer</SubType>
-    </None>
 	</ItemGroup>
 	<ItemGroup>
 		<WCFMetadata Include="Service References\" />
@@ -41,6 +36,10 @@
 		<NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\dbghelp.dll" />
 		<NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\msdia120.dll" />
 		<NativeLibs Include="$(MSBuildThisFileDirectory)\dbgfiles\x64\symsrv.dll" />
+		<None Include="@(NativeLibs)">
+			<Link>%(FileName)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\SuperDumpModels\SuperDumpModels.csproj" />
