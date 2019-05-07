@@ -99,10 +99,10 @@ Build
 =====
 
  * Prerequisites:
-   * Visual Studio 2017
-   * .NET Core Tooling 2.2
-   * .NET Core 2.2
-   * .NET Framework 4.6
+   * Visual Studio 2019
+   * .NET Core Tooling 2.2 and 3.0
+   * .NET Core 3.0
+   * .NET Framework 4.8 (developer pack)
    * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
    * DebugDiag (for automatic DebugDiag analysis)
