@@ -34,7 +34,11 @@ namespace SuperDumpService.Services {
 					// backwards compatibility, when Metadata files did not exist. read full json, then store metadata file
 					await CreateMetainfoForCompat(id);
 				}
-				list.Add(ReadMetainfoFile(metainfoFilename));
+				DumpMetainfo dumpMetainfo = ReadMetainfoFile(metainfoFilename);
+				if (settings.Value.IsDumpRetentionEnabled() && dumpMetainfo.PlannedDeletionDate == null) {
+					SetPlannedDeletionDateForCompat(dumpMetainfo);
+				}
+				list.Add(dumpMetainfo);
 			}
 			return list;
 		}
@@ -75,6 +79,11 @@ namespace SuperDumpService.Services {
 			}
 
 			WriteMetainfoFile(metainfo, pathHelper.GetDumpMetadataPath(id));
+		}
+
+		private void SetPlannedDeletionDateForCompat(DumpMetainfo dumpMetainfo) {
+			dumpMetainfo.PlannedDeletionDate = dumpMetainfo.Created + TimeSpan.FromDays(settings.Value.DumpRetentionDays);
+			WriteMetainfoFile(dumpMetainfo, pathHelper.GetDumpMetadataPath(dumpMetainfo.Id));
 		}
 
 		public async Task<SDResult> ReadResults(DumpIdentifier id) {

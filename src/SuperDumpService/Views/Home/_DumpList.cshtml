@@ -1,12 +1,14 @@
 ﻿@model SuperDumpService.ViewModels.DumpsViewModel
 
-
 <table class="table table-striped table-word-break">
 	<thead>
 		<tr>
 			<th style="">Dumps</th>
 			<th style="">Properties</th>
 			<th style="width: 90px;" nowrap>Analyzed at</th>
+			@if (Model.UseAutomaticDumpDeletion) {
+				<th style="width: 90px;" nowrap>Planned Dump Deletion</th>
+			}
 		</tr>
 	</thead>
 	<tbody>
@@ -33,6 +35,9 @@
 					</ul>
 				</td>
 				<td nowrap>@dump.DumpInfo.Created.ToString("yyyy-MM-dd HH:mmzzz")</td>
+				@if (Model.UseAutomaticDumpDeletion) {
+					<td nowrap><partial name="_RetentionTime" model="dump.RetentionViewModel" /></td>
+				}
 			</tr>}
 	</tbody>
 </table>

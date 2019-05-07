@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using SuperDump.Models;
 using System.IO;
 using System.Diagnostics;
+using Microsoft.Extensions.Options;
 
 namespace SuperDumpService.Services {
 	/// <summary>
@@ -18,12 +19,14 @@ namespace SuperDumpService.Services {
 		private readonly ConcurrentDictionary<DumpIdentifier, DumpMiniInfo> miniInfosLazyCache = new ConcurrentDictionary<DumpIdentifier, DumpMiniInfo>();
 		private readonly IDumpStorage storage;
 		private readonly PathHelper pathHelper;
+		private readonly SuperDumpSettings settings;
 
 		public bool IsPopulated { get; private set; }
 
-		public DumpRepository(IDumpStorage storage, PathHelper pathHelper) {
+		public DumpRepository(IDumpStorage storage, PathHelper pathHelper, IOptions<SuperDumpSettings> settings) {
 			this.storage = storage;
 			this.pathHelper = pathHelper;
+			this.settings = settings.Value;
 		}
 
 		// only BundleRepository is supposed to call this!
@@ -77,6 +80,10 @@ namespace SuperDumpService.Services {
 				Created = DateTime.Now,
 				Status = DumpStatus.Created
 			};
+			if (settings.IsDumpRetentionEnabled()) {
+				dumpInfo.PlannedDeletionDate = DateTime.Now + TimeSpan.FromDays(settings.DumpRetentionDays);
+			}
+
 			if (!dumps.ContainsKey(bundleId)) dumps[bundleId] = new ConcurrentDictionary<string, DumpMetainfo>();
 			dumps[bundleId][dumpId] = dumpInfo;
 			storage.Create(dumpInfo.Id);
@@ -182,6 +189,13 @@ namespace SuperDumpService.Services {
 
 		public bool IsPrimaryDumpAvailable(DumpIdentifier id) {
 			return File.Exists(GetDumpFilePath(id));
+		}
+
+		public void SetPlannedDeletionDate(DumpIdentifier id, DateTime plannedDeletionDate, string reason) {
+			DumpMetainfo dumpInfo = Get(id);
+			dumpInfo.PlannedDeletionDate = plannedDeletionDate;
+			dumpInfo.RetentionTimeExtensionReason = reason;
+			storage.Store(dumpInfo);
 		}
 	}
 }

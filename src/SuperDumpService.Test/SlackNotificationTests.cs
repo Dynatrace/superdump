@@ -20,7 +20,7 @@ namespace SuperDumpService.Test {
 			var fakeDump = CreateFakeDump();
 			var pathHelper = new PathHelper("", "", "");
 			var dumpStorage = new FakeDumpStorage(new FakeDump[] { fakeDump });
-			var dumpRepo = new DumpRepository(dumpStorage, pathHelper);
+			var dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
 			var slackNotificationService = new SlackNotificationService(settings, dumpRepo);
 			var msg = await slackNotificationService.GetMessageModel(fakeDump.MetaInfo);
 

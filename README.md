@@ -129,7 +129,7 @@ Build
 
 State of the project
 ====================
-SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to opensource it. This project is considered "cummunity supported". No full-fledged support (with SLA's) is provided by Dynatrace.
+SuperDump has been created at [Dynatrace] as an internship project in 2016. It turned out to be pretty useful so we thought it might be useful for others too. Thus we decided to open source it. This project is considered "community supported". No full-fledged support (with SLA's) is provided by Dynatrace.
 
 Though it currently works great for us at Dynatrace, there are areas that need to be improved to make it a high-quality and generally useful tool:
 
