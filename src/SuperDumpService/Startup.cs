@@ -194,6 +194,7 @@ namespace SuperDumpService {
 				app.UseAuthorization();
 				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
 			} else {
+				app.UseAuthorization();
 				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
 					appBuilder => appBuilder.Run(async context => {
 						context.Response.StatusCode = 404;
