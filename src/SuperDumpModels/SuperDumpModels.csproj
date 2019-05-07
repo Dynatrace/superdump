@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<DebugType>portable</DebugType>
-		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<TargetFrameworks>netstandard1.3</TargetFrameworks>
 		<PreserveCompilationContext>true</PreserveCompilationContext>
 		<AssemblyName>SuperDumpModels</AssemblyName>
 		<PackageId>SuperDumpModels</PackageId>
