@@ -25,6 +25,12 @@ namespace SuperDump {
 						tracer.SetDynatraceStringTag(options.TraceTag);
 						tracer.Trace(() => RunAnalysis(options));
 					});
+			} catch (AggregateException ae) {
+				Console.Error.WriteLine("AggregateException happened:");
+				foreach (var e in ae.Flatten().InnerExceptions) {
+					Console.Error.WriteLine($"inner exception: {e}");
+				}
+				return 1;
 			} catch (Exception e) {
 				Console.Error.WriteLine($"Exception happened: {e}");
 				return 1;

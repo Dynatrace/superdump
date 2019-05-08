@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net462</TargetFramework>
+		<TargetFramework>net48</TargetFramework>
 		<OutputPath>bin\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
@@ -15,9 +15,6 @@
 		<Reference Include="DebugDiag.DotNet">
 			<HintPath>C:\Program Files\DebugDiag\DebugDiag.DotNet.dll</HintPath>
 		</Reference>
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="App.config" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="CommandLineParser" Version="2.3.0" />

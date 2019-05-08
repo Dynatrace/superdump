@@ -3,19 +3,14 @@ FROM mcr.microsoft.com/windows/servercore:1809
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'silentlyContinue';"]
 
 # Install .NET Core SDK
-ENV DOTNET_SDK_VERSION 2.2.105
+ENV DOTNET_SDK_VERSION 3.0.100-preview5-011568
 RUN Invoke-WebRequest -OutFile dotnet.zip https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$Env:DOTNET_SDK_VERSION/dotnet-sdk-$Env:DOTNET_SDK_VERSION-win-x64.zip; \
-	$dotnet_sha512 = 'd58b0b3f2f82f3960b84e1a7ee36c4febc28db9e08bb99a6dd0b61e5812631d935c471a5ba2f90c966fbcddb208454948339ee5c0d7fbaee4168f3fe6c0827f4'; \
-    if ((Get-FileHash dotnet.zip -Algorithm sha512).Hash -ne $dotnet_sha512) { \
-        Write-Host 'CHECKSUM VERIFICATION FAILED!'; \
-        exit 1; \
-    }; \
     Expand-Archive dotnet.zip -DestinationPath 'C:\Program Files\dotnet'; \
     Remove-Item -Force dotnet.zip
 RUN setx /M PATH $($Env:PATH + ';' + $Env:ProgramFiles + '\dotnet')
 
 # Install .Net SDK
-ENV DOTNET_SDK_DOWNLOAD_URL https://download.microsoft.com/download/E/F/D/EFD52638-B804-4865-BB57-47F4B9C80269/NDP462-DevPack-KB3151934-ENU.exe
+ENV DOTNET_SDK_DOWNLOAD_URL https://download.visualstudio.microsoft.com/download/pr/7afca223-55d2-470a-8edc-6a1739ae3252/c8c829444416e811be84c5765ede6148/ndp48-devpack-enu.exe
 RUN Invoke-WebRequest $Env:DOTNET_SDK_DOWNLOAD_URL -OutFile DotNetSDK.exe; \
     start-Process DotNetSDK.exe -ArgumentList '/q' -Wait ; \
 	Remove-Item -Force DotNetSDK.exe
@@ -49,7 +44,7 @@ RUN npm install -g bower \
 	npm install -g typescript
 	
 # Install Visual Studio Build Tools
-ENV VSTUDIO_INSTALLER_DOWNLOAD_URL https://aka.ms/vs/15/release/vs_buildtools.exe
+ENV STUDIOS_INSTALLER_DOWNLOAD_URL https://download.visualstudio.microsoft.com/download/pr/a08183e4-3087-4df5-a074-d3bdf1ad5eb8/20816d670f7909277d9793dc3e80b3c2/vs_buildtools.exe
 RUN Invoke-WebRequest $Env:VSTUDIO_INSTALLER_DOWNLOAD_URL -OutFile vs_buildtools.exe; \
 	start-Process vs_buildtools.exe -ArgumentList '--quiet --norestart --nocache --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools' -Wait; \
     Remove-Item -Force vs_buildtools.exe
@@ -58,9 +53,9 @@ RUN Invoke-WebRequest $Env:VSTUDIO_INSTALLER_DOWNLOAD_URL -OutFile vs_buildtools
 VOLUME C:/superdump
 
 # Build Super Dump
-ENV MSBUILD "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
+ENV MSBUILD "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe"
 ENV TARGET "Windows"
 CMD cd C:/superdump/building; \
 	dotnet restore ..\src; \
 	& $Env:MSBUILD msbuild.targets /l:'FileLogger,Microsoft.Build.Engine;logfile=msbuild.log' /target:$Env:TARGET #; \
-	#copy '..\src\SuperDumpService\bin\Release\netcoreapp2.2\SuperDumpService.xml' '..\build\bin\SuperDumpService\SuperDumpService.xml'
+	#copy '..\src\SuperDumpService\bin\Release\netcoreapp3.0\SuperDumpService.xml' '..\build\bin\SuperDumpService\SuperDumpService.xml'

@@ -4,10 +4,10 @@ There are different scripts that can be used to build SuperDump:
  * build-windows-all.cmd
    This script builds the SuperDump Service and the Windows Analysis components. For this all required Programs have to be installed on the system. 
    The basic requirements are:
-	* Visual Studio 2017
-	* .Net Core SDK 2.2
-	* .Net Framework 4.6
-    * DebugDiag
+	* Visual Studio 2019
+	* .Net Core SDK 3.0
+	* .Net Framework 4.8
+  * DebugDiag
 
  * build-docker-linux-analysis.cmd
    This script builds the Linux Analyzer and creates a docker image containing it. Docker has to be installed for this.

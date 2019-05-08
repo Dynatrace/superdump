@@ -24,15 +24,16 @@ using SuperDump.Webterm;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
-using Swashbuckle.Swagger.Model;
 using WebSocketManager;
+using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 
 namespace SuperDumpService {
 	public class Startup {
-		private readonly IHostingEnvironment env;
+		private readonly IWebHostEnvironment env;
 		private readonly IConfiguration config;
 
-		public Startup(IHostingEnvironment env, IConfiguration config) {
+		public Startup(IWebHostEnvironment env, IConfiguration config) {
 			this.env = env;
 			this.config = config;
 		}
@@ -99,17 +100,16 @@ namespace SuperDumpService {
 			services.Configure<FormOptions>(opt => opt.MultipartBodyLengthLimit = 1024L * 1024L * maxUploadSizeMB);
 
 			// Add framework services.
-			services.AddMvc();
-			//services.AddCors();
+			services.AddMvc()
+				.AddNewtonsoftJson();
 			services.AddSwaggerGen();
 
-			services.ConfigureSwaggerGen(options => {
-				options.SingleApiVersion(new Info {
+			services.AddSwaggerGen(options => {
+				options.SwaggerDoc("v1", new OpenApiInfo {
 					Version = "v1",
 					Title = "SuperDump API",
 					Description = "REST interface for SuperDump analysis tool",
-					TermsOfService = "None",
-					Contact = new Contact { Url = "https://github.com/Dynatrace/superdump" }
+					Contact = new OpenApiContact { Url = new Uri("https://github.com/Dynatrace/superdump") }
 				});
 
 				//Determine base path for the application.
@@ -121,11 +121,12 @@ namespace SuperDumpService {
 					options.IncludeXmlComments(xmlDocFile.FullName);
 				}
 
-				options.AddSecurityDefinition("Bearer", new ApiKeyScheme() {
-					In = "header",
+
+				options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme() {
+					In = ParameterLocation.Header,
 					Description = "Please insert JWT Bearer Token into field",
 					Name = "Authorization",
-					Type = "apiKey"
+					Type = SecuritySchemeType.ApiKey
 				});
 			});
 
@@ -158,8 +159,10 @@ namespace SuperDumpService {
 			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddSingleton<SearchService>();
-
-			services.AddSingleton<IOneAgentSdk>(OneAgentSdkFactory.CreateInstance());
+			
+			var sdk = OneAgentSdkFactory.CreateInstance();
+			sdk.SetLoggingCallback(new DynatraceSdkLogger(services.BuildServiceProvider().GetService<ILogger<DynatraceSdkLogger>>()));
+			services.AddSingleton<IOneAgentSdk>(sdk);
 
 			services.AddWebSocketManager();
 		}
@@ -170,8 +173,7 @@ namespace SuperDumpService {
 				IServiceProvider serviceProvider, 
 				SlackNotificationService sns, 
 				IAuthorizationHelper authorizationHelper, 
-				ILoggerFactory loggerFactory, 
-				IOneAgentSdk oneAgentSdk) {
+				ILoggerFactory loggerFactory) {
 			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
@@ -179,29 +181,19 @@ namespace SuperDumpService {
 				Task.Run(async () => await app.ApplicationServices.GetService<JiraIssueRepository>().Populate());
 			}
 
-			// configure Logger
-			loggerFactory.AddConsole(config.GetSection("Logging"));
-
-			var fileLogConfig = config.GetSection("FileLogging");
-			var logPath = Path.GetDirectoryName(fileLogConfig.GetValue<string>("PathFormat"));
-			Directory.CreateDirectory(logPath);
-			loggerFactory.AddFile(config.GetSection("FileLogging"));
-
-			if (settings.Value.UseAllRequestLogging) {
-				loggerFactory.AddFile(config.GetSection("RequestFileLogging"));
-			}
-
-			loggerFactory.AddDebug();
-
-			oneAgentSdk.SetLoggingCallback(new DynatraceSdkLogger(loggerFactory.CreateLogger<DynatraceSdkLogger>()));
-
 			if (settings.Value.UseHttpsRedirection) {
 				app.UseHttpsRedirection();
 			}
+
+			app.UseStaticFiles();
+			app.UseRouting();
+
 			if (settings.Value.UseLdapAuthentication) {
 				app.UseAuthentication();
+				app.UseAuthorization();
 				app.UseSwaggerAuthorizationMiddleware(authorizationHelper);
 			} else {
+				app.UseAuthorization();
 				app.MapWhen(context => context.Request.Path.StartsWithSegments("/Login") || context.Request.Path.StartsWithSegments("/api/Token"),
 					appBuilder => appBuilder.Run(async context => {
 						context.Response.StatusCode = 404;
@@ -256,24 +248,28 @@ namespace SuperDumpService {
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
 			app.UseSwagger();
-			app.UseSwaggerUi();
+			app.UseSwaggerUI(c => {
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+			});
 			app.UseHealthChecks("/healthcheck");
 
 			LogProvider.SetCurrentLogProvider(new ColouredConsoleLogProvider());
 
-			if (env.IsDevelopment()) {
+			if (env.EnvironmentName == "Development") {
 				app.UseDeveloperExceptionPage();
 				BrowserLinkExtensions.UseBrowserLink(app); // using the extension method directly somehow did not work in .NET Core 2.0 (ambiguous extension method)
 			} else {
 				app.UseExceptionHandler("/Home/Error");
 			}
 
-			app.UseStaticFiles();
-
 			app.UseWebSockets();
 			app.MapWebSocketManager("/cmd", serviceProvider.GetService<WebTermHandler>());
 
-			app.UseMvcWithDefaultRoute();
+			//app.UseMvcWithDefaultRoute();
+			//app.UseMvc();
+			app.UseEndpoints(endpoints => {
+				endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+			});
 		}
 	}
 
