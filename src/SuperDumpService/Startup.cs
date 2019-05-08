@@ -173,8 +173,7 @@ namespace SuperDumpService {
 				IServiceProvider serviceProvider, 
 				SlackNotificationService sns, 
 				IAuthorizationHelper authorizationHelper, 
-				ILoggerFactory loggerFactory, 
-				IOneAgentSdk oneAgentSdk) {
+				ILoggerFactory loggerFactory) {
 			Task.Run(async () => await app.ApplicationServices.GetService<BundleRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<RelationshipRepository>().Populate());
 			Task.Run(async () => await app.ApplicationServices.GetService<IdenticalDumpRepository>().Populate());
@@ -200,6 +199,14 @@ namespace SuperDumpService {
 						context.Response.StatusCode = 404;
 						await context.Response.WriteAsync("");
 					}));
+			}
+
+			if (settings.Value.UseAllRequestLogging) {
+				ILogger logger = loggerFactory.CreateLogger("SuperDumpServiceRequests");
+				app.Use(async (context, next) => {
+					logger.LogRequest(context);
+					await next.Invoke();
+				});
 			}
 
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions {
