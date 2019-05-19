@@ -2,10 +2,14 @@
 @model SuperDumpService.ViewModels.RetentionViewModel
 
 @if (Model.IsDumpAvailable) {
-	string remainingRetentionColor = Model.IsNearDeletionDate ? "text-danger" : "text-success";
-	<span class="@remainingRetentionColor" title="@Model.RetentionTimeExtensionReason">
-		@Model.RemainingRetentionTime?.Humanize(maxUnit: Humanizer.Localisation.TimeUnit.Month, minUnit: Humanizer.Localisation.TimeUnit.Hour)
-	</span>
+	if (Model.HasOpenJiraIssue) {
+		<span class="text-success" title="The dump will be retained as long as the Jira Issue is open">Open Jira Issue detected</span>
+	} else {
+		string remainingRetentionColor = Model.IsNearDeletionDate ? "text-danger" : "text-success";
+		<span class="@remainingRetentionColor" title="@Model.RetentionTimeExtensionReason">
+			@Model.RemainingRetentionTime?.Humanize(maxUnit: Humanizer.Localisation.TimeUnit.Day, minUnit: Humanizer.Localisation.TimeUnit.Hour)
+		</span>
+	}
 } else {
 	<span>Primary Dump Deleted</span>
 }

@@ -123,5 +123,9 @@ namespace SuperDumpService.Test.Fakes {
 		public void Store(BundleMetainfo bundleInfo) {
 			throw new NotImplementedException();
 		}
+
+		public bool ReadIsPrimaryDumpAvailable(DumpIdentifier id) {
+			throw new NotImplementedException();
+		}
 	}
 }

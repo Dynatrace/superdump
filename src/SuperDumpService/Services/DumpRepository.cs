@@ -93,6 +93,10 @@ namespace SuperDumpService.Services {
 			return dumpInfo;
 		}
 
+		public void UpdateIsDumpAvailable(DumpIdentifier id) {
+			Get(id).IsPrimaryDumpAvailable = storage.ReadIsPrimaryDumpAvailable(id);
+		}
+
 		public string GetDumpFilePath(DumpIdentifier id) {
 			return storage.GetDumpFilePath(id);
 		}
@@ -188,7 +192,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public bool IsPrimaryDumpAvailable(DumpIdentifier id) {
-			return File.Exists(GetDumpFilePath(id));
+			return Get(id)?.IsPrimaryDumpAvailable ?? false;
 		}
 
 		public void SetPlannedDeletionDate(DumpIdentifier id, DateTime plannedDeletionDate, string reason) {

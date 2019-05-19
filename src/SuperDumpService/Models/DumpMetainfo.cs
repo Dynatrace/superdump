@@ -21,6 +21,8 @@ namespace SuperDumpService.Models {
 		public List<SDFileEntry> Files { get; set; } = new List<SDFileEntry>();
 		public DateTime? PlannedDeletionDate { get; set; }
 		public string RetentionTimeExtensionReason { get; set; }
+		[JsonIgnore] // don't store this, this should be determined at startup.
+		public bool IsPrimaryDumpAvailable { get; set; } = true;
 
 		public override string ToString() {
 			return Id.ToString();

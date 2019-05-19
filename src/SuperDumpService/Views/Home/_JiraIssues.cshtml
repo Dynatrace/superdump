@@ -2,7 +2,7 @@
 
 <ul class="list-unstyled">
 	@foreach (var jiraIssue in Model) {
-		bool resolved = jiraIssue.GetStatusName() == "Resolved";
+		bool resolved = jiraIssue.IsResolved();
 		string strikethroughstyle = resolved ? "text-decoration: line-through" : string.Empty;
 
 		<li>

@@ -12,6 +12,7 @@ namespace SuperDumpService.Services {
 		private readonly DumpRepository dumpRepo;
 		private readonly SimilarityService similarityService;
 		private readonly ElasticSearchService elasticService;
+		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SuperDumpSettings settings;
 
 		public SearchService(
@@ -19,11 +20,13 @@ namespace SuperDumpService.Services {
 				DumpRepository dumpRepo,
 				SimilarityService similarityService,
 				ElasticSearchService elasticService,
-				IOptions<SuperDumpSettings> settings) {
+				IOptions<SuperDumpSettings> settings,
+				JiraIssueRepository jiraIssueRepository) {
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			this.similarityService = similarityService;
 			this.elasticService = elasticService;
+			this.jiraIssueRepository = jiraIssueRepository;
 			this.settings = settings.Value;
 		}
 
@@ -65,7 +68,8 @@ namespace SuperDumpService.Services {
 				new RetentionViewModel(
 					dumpMetainfo,
 					dumpRepo.IsPrimaryDumpAvailable(dumpMetainfo.Id),
-					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays)));
+					TimeSpan.FromDays(settings.WarnBeforeDeletionInDays),
+					settings.UseJiraIntegration && jiraIssueRepository.IsPopulated && jiraIssueRepository.HasBundleOpenIssues(dumpMetainfo.BundleId)));
 		}
 
 		public static IEnumerable<DumpViewModel> SimpleFilter(string searchFilter, IEnumerable<DumpViewModel> dumps) {

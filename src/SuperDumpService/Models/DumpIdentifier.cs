@@ -56,15 +56,15 @@ namespace SuperDumpService.Models {
 		/// ever-growing, because as of right now, every dump exists in memory
 		/// </summary>
 		private sealed class DumpIdentifierPool {
-			private Dictionary<int, DumpIdentifier> pool = new Dictionary<int, DumpIdentifier>();
+			private Dictionary<string, DumpIdentifier> pool = new Dictionary<string, DumpIdentifier>();
 			private object sync = new object();
 
 			public DumpIdentifier Allocate(string bundleId, string dumpId) {
-				int hash = $"{bundleId}:{dumpId}".GetHashCode();
+				string identifier = $"{bundleId}:{dumpId}";
 				lock (sync) {
-					if (pool.TryGetValue(hash, out DumpIdentifier id2)) return id2;
+					if (pool.TryGetValue(identifier, out DumpIdentifier id2)) return id2;
 					var newId = new DumpIdentifier(bundleId, dumpId);
-					pool.TryAdd(hash, newId);
+					pool.TryAdd(identifier, newId);
 					return newId;
 				}
 			}
