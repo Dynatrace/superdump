@@ -78,6 +78,11 @@ namespace SuperDumpService.Services {
 			try {
 				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Analyzing);
 
+				if (new FileInfo(dumpFilePath).Length == 0) {
+					dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed, "The primary dump file is empty!");
+					return;
+				}
+
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
 					await AnalyzeWindows(dumpInfo, new DirectoryInfo(analysisWorkingDir), dumpFilePath);
 				} else if (dumpInfo.DumpType == DumpType.LinuxCoreDump) {
