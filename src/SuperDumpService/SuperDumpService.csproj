@@ -36,8 +36,6 @@
     <!--<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" /> ___ what do we need this for? it has a version clash with BenchmarkDotnet. can we remove it? -->
     <PackageReference Include="NEST" Version="7.0.0-alpha1" />
     <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
-    <PackageReference Include="Sakura.AspNetCore.Mvc.PagedList" Version="2.0.12" />
-    <PackageReference Include="Sakura.AspNetCore.PagedList" Version="2.0.2" />
     <PackageReference Include="Serilog" Version="2.8.1-dev-01047" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="2.0.3" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="2.0.0-dev-00032" />
@@ -51,6 +49,7 @@
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" /> <!-- needed to reference this directly because of a "package downgrade problem" introduced by "Slack.Webhooks.Core" -->
     <PackageReference Include="WebSocketManager" Version="1.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.0.0-preview5-19227-01" />
+    <PackageReference Include="X.PagedList.Mvc.Core" Version="7.6.0" />
   </ItemGroup>
   <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
     <Exec Command="bower install" />

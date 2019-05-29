@@ -19,7 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
-using Sakura.AspNetCore.Mvc;
 using SuperDump.Webterm;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
@@ -128,11 +127,6 @@ namespace SuperDumpService {
 					Name = "Authorization",
 					Type = SecuritySchemeType.ApiKey
 				});
-			});
-
-			// for pagination list
-			services.AddBootstrapPagerGenerator(options => {
-				options.ConfigureDefault();
 			});
 
 			// register repository as singleton

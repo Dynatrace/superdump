@@ -1,8 +1,8 @@
-﻿using Sakura.AspNetCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace SuperDumpService.ViewModels {
 	public class DumpsViewModel {
