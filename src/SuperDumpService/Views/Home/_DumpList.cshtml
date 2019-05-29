@@ -1,4 +1,5 @@
-﻿@model SuperDumpService.ViewModels.DumpsViewModel
+﻿@using X.PagedList.Mvc.Core;
+@model SuperDumpService.ViewModels.DumpsViewModel
 
 <table class="table table-striped table-word-break">
 	<thead>
@@ -42,5 +43,11 @@
 	</tbody>
 </table>
 
-<pager source="@Model.Paged" />
+@Html.PagedListPager(Model.Paged, page => Url.Action("Dumps", new {
+	page = page,
+	searchFilter = ViewData["searchFilter"],
+	elasticSearchFilter = ViewData["elasticSearchFilter"],
+	duplBundleId = ViewData["duplBundleId"],
+	duplDumpId = @ViewData["duplDumpId"]
+}))
 

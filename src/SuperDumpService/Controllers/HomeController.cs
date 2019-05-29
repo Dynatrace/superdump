@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sakura.AspNetCore;
+using X.PagedList;
 using SuperDump.Models;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
@@ -176,7 +176,7 @@ namespace SuperDumpService.Controllers {
 
 			return View(new DumpsViewModel {
 				Filtered = dumpViewModels,
-				Paged = dumpViewModels.ToPagedList(pagesize, page),
+				Paged = dumpViewModels.ToPagedList(page, pagesize),
 				KibanaUrl = KibanaUrl(),
 				IsPopulated = bundleRepo.IsPopulated,
 				IsRelationshipsPopulated = relationshipRepo.IsPopulated || !settings.SimilarityDetectionEnabled,
