@@ -66,12 +66,19 @@ namespace SuperDumpService.Test.Fakes {
 		public string GetDumpFilePath(DumpIdentifier id) {
 			throw new NotImplementedException();
 		}
+		public string GetDumpFilePath(DumpMetainfo dumpInfo) {
+			throw new NotImplementedException();
+		}
 
 		public FileInfo GetFile(DumpIdentifier id, string filename) {
 			throw new NotImplementedException();
 		}
 
 		public IEnumerable<SDFileInfo> GetSDFileInfos(DumpIdentifier id) {
+			throw new NotImplementedException();
+		}
+
+		public IEnumerable<SDFileInfo> GetSDFileInfos(DumpMetainfo dumpInfo) {
 			throw new NotImplementedException();
 		}
 
@@ -124,7 +131,7 @@ namespace SuperDumpService.Test.Fakes {
 			throw new NotImplementedException();
 		}
 
-		public bool ReadIsPrimaryDumpAvailable(DumpIdentifier id) {
+		public bool ReadIsPrimaryDumpAvailable(DumpMetainfo dumpMetainfo) {
 			throw new NotImplementedException();
 		}
 	}

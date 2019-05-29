@@ -10,8 +10,10 @@ namespace SuperDumpService.Services {
 		void Create(DumpIdentifier id);
 		void DeleteDumpFile(DumpIdentifier id);
 		string GetDumpFilePath(DumpIdentifier id);
+		string GetDumpFilePath(DumpMetainfo dumpInfo);
 		FileInfo GetFile(DumpIdentifier id, string filename);
 		IEnumerable<SDFileInfo> GetSDFileInfos(DumpIdentifier id);
+		IEnumerable<SDFileInfo> GetSDFileInfos(DumpMetainfo dumpInfo);
 		bool MiniInfoExists(DumpIdentifier id);
 		Task<IEnumerable<DumpMetainfo>> ReadDumpMetainfoForBundle(string bundleId);
 		Task<DumpMiniInfo> ReadMiniInfo(DumpIdentifier id);
@@ -20,6 +22,6 @@ namespace SuperDumpService.Services {
 		void Store(DumpMetainfo dumpInfo);
 		Task StoreMiniInfo(DumpIdentifier id, DumpMiniInfo miniInfo);
 		void WriteResult(DumpIdentifier id, SDResult result);
-		bool ReadIsPrimaryDumpAvailable(DumpIdentifier id);
+		bool ReadIsPrimaryDumpAvailable(DumpMetainfo dumpMetainfo);
 	}
 }
