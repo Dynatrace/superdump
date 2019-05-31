@@ -94,7 +94,8 @@ namespace SuperDumpService.Services {
 		}
 
 		public void UpdateIsDumpAvailable(DumpIdentifier id) {
-			Get(id).IsPrimaryDumpAvailable = storage.ReadIsPrimaryDumpAvailable(id);
+			DumpMetainfo dumpMetainfo = Get(id);
+			dumpMetainfo.IsPrimaryDumpAvailable = storage.ReadIsPrimaryDumpAvailable(dumpMetainfo);
 		}
 
 		public string GetDumpFilePath(DumpIdentifier id) {

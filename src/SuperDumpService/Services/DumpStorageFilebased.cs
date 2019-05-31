@@ -39,14 +39,14 @@ namespace SuperDumpService.Services {
 					// backwards compatibility, when deletion date field does not yet exist.
 					SetPlannedDeletionDateForCompat(dumpMetainfo);
 				}
-				dumpMetainfo.IsPrimaryDumpAvailable = ReadIsPrimaryDumpAvailable(id);
+				dumpMetainfo.IsPrimaryDumpAvailable = ReadIsPrimaryDumpAvailable(dumpMetainfo);
 				list.Add(dumpMetainfo);
 			}
 			return list;
 		}
 
-		public bool ReadIsPrimaryDumpAvailable(DumpIdentifier id) {
-			return File.Exists(GetDumpFilePath(id));
+		public bool ReadIsPrimaryDumpAvailable(DumpMetainfo dumpMetainfo) {
+			return File.Exists(GetDumpFilePath(dumpMetainfo));
 		}
 
 		private DumpMetainfo ReadMetainfoFile(string filename) {
@@ -129,7 +129,15 @@ namespace SuperDumpService.Services {
 		}
 
 		public string GetDumpFilePath(DumpIdentifier id) {
-			var filename = GetSDFileInfos(id).FirstOrDefault(x => x.FileEntry.Type == SDFileType.PrimaryDump)?.FileInfo;
+			return GetDumpFilePath(GetSDFileInfos(id));
+		}
+
+		public string GetDumpFilePath(DumpMetainfo dumpInfo) {
+			return GetDumpFilePath(GetSDFileInfos(dumpInfo));
+		}
+
+		private string GetDumpFilePath(IEnumerable<SDFileInfo> fileInfos) {
+			var filename = fileInfos.FirstOrDefault(x => x.FileEntry.Type == SDFileType.PrimaryDump)?.FileInfo;
 			if (filename == null) return null;
 			if (!filename.Exists) return null;
 			return filename.FullName;
@@ -163,9 +171,12 @@ namespace SuperDumpService.Services {
 		}
 
 		public IEnumerable<SDFileInfo> GetSDFileInfos(DumpIdentifier id) {
-			foreach (var filePath in Directory.EnumerateFiles(pathHelper.GetDumpDirectory(id))) {
+			return GetSDFileInfos(ReadMetainfoFile(id));
+		}
+
+		public IEnumerable<SDFileInfo> GetSDFileInfos(DumpMetainfo dumpInfo) {	
+			foreach (var filePath in Directory.EnumerateFiles(pathHelper.GetDumpDirectory(dumpInfo.Id))) {
 				// in case the requested file has a "special" entry in FileEntry list, add that information
-				var dumpInfo = ReadMetainfoFile(id);
 				FileInfo fileInfo = new FileInfo(filePath);
 				SDFileEntry fileEntry = GetSDFileEntry(dumpInfo, fileInfo);
 				
