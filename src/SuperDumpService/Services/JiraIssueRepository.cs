@@ -110,7 +110,7 @@ namespace SuperDumpService.Services {
 			try {
 				//Only update bundles with unresolved issues
 				IEnumerable<KeyValuePair<string, IList<JiraIssueModel>>> bundlesToRefresh =
-					bundleIssues.Where(bundle => bundle.Value.Any(issue => issue.GetStatusName() != "Resolved"));
+					bundleIssues.Where(bundle => bundle.Value.Any(issue => !issue.IsResolved()));
 
 				if (!bundlesToRefresh.Any()) {
 					return;
@@ -118,7 +118,7 @@ namespace SuperDumpService.Services {
 
 				//Split issues into one group with all resolved issues and one with all others
 				ILookup<bool, JiraIssueModel> issuesToRefresh = bundlesToRefresh.SelectMany(issue => issue.Value).
-					ToLookup(issue => issue.GetStatusName() != "Resolved");
+					ToLookup(issue => !issue.IsResolved());
 
 				//Get the current status of not resolved issues from the jira api and combine them with the resolved issues
 				IEnumerable<JiraIssueModel> refreshedIssues = (await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)))
