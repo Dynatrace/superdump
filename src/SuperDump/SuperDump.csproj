@@ -13,6 +13,9 @@
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 		<CodeAnalysisRuleSet>..\SuperDump.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Platform)' == 'x86'">
+		<LargeAddressAware>true</LargeAddressAware>
+	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="Models\**" />
 		<EmbeddedResource Remove="Models\**" />
@@ -48,6 +51,7 @@
 		<PackageReference Include="ByteSize" Version="1.3.0" />
 		<PackageReference Include="CommandLineParser" Version="2.3.0" />
 		<PackageReference Include="Dynatrace.OneAgent.Sdk" Version="1.2.0" />
+		<PackageReference Include="LargeAddressAware" Version="1.0.3" />
 		<PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.2" />
 		<PackageReference Include="Microsoft.NETCore.Platforms" Version="2.2.0-preview2-26905-02" />
 		<PackageReference Include="morelinq" Version="3.0.0" />
