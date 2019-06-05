@@ -38,6 +38,16 @@ namespace SuperDumpService.Models {
 			public string Id { get; set; }
 		}
 
+		public class KeyEqualityComparer : IEqualityComparer<JiraIssueModel> {
+			public bool Equals(JiraIssueModel x, JiraIssueModel y) {
+				return x.Key.Equals(y.Key);
+			}
+
+			public int GetHashCode(JiraIssueModel obj) {
+				return obj.Key.GetHashCode();
+			}
+		}
+
 		public override string ToString() {
 			return Key;
 		}

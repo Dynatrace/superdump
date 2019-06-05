@@ -121,8 +121,8 @@ namespace SuperDumpService.Services {
 					ToLookup(issue => issue.GetStatusName() != "Resolved");
 
 				//Get the current status of not resolved issues from the jira api and combine them with the resolved issues
-				IEnumerable<JiraIssueModel> refreshedIssues = issuesToRefresh[false]
-						.Union(await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)));
+				IEnumerable<JiraIssueModel> refreshedIssues = (await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)))
+						.Union(issuesToRefresh[false], new JiraIssueModel.KeyEqualityComparer());
 
 				await SetBundleIssues(bundlesToRefresh, refreshedIssues);
 			} finally {
