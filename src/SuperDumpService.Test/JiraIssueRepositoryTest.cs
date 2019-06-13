@@ -23,23 +23,23 @@ namespace SuperDumpService.Test {
 			jiraApiService.SetFakeJiraIssues("bundle2", new JiraIssueModel[] { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-22221") });
 			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111"), new JiraIssueModel("JRA-3333") });
 
-			Assert.Collection(await jiraApiService.GetJiraIssues("bundle1"),
+			Assert.Collection((await jiraApiService.GetJiraIssues("bundle1")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key));
-			Assert.Collection(await jiraApiService.GetJiraIssues("bundle2"),
+			Assert.Collection((await jiraApiService.GetJiraIssues("bundle2")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-2222", item.Key),
 				item => Assert.Equal("JRA-22221", item.Key));
-			Assert.Collection(await jiraApiService.GetJiraIssues("bundle3"),
+			Assert.Collection((await jiraApiService.GetJiraIssues("bundle3")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key),
 				item => Assert.Equal("JRA-3333", item.Key));
 
 			
-			Assert.Collection(await jiraApiService.GetBulkIssues(new string[] { "JRA-1111" }),
+			Assert.Collection((await jiraApiService.GetBulkIssues(new string[] { "JRA-1111" })).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key));
 
-			Assert.Collection(await jiraApiService.GetBulkIssues(new string[] { "JRA-1111", "JRA-2222", "JRA-3333" }),
+			Assert.Collection((await jiraApiService.GetBulkIssues(new string[] { "JRA-1111", "JRA-2222", "JRA-3333" })).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key),
-				item => Assert.Equal("JRA-3333", item.Key),
-				item => Assert.Equal("JRA-2222", item.Key));
+				item => Assert.Equal("JRA-2222", item.Key),
+				item => Assert.Equal("JRA-3333", item.Key));
 		}
 
 		[Fact]
@@ -95,14 +95,14 @@ namespace SuperDumpService.Test {
 
 			await jiraIssueRepository.SearchBundleIssuesAsync(bundleRepo.GetAll(), true);
 
-			Assert.Collection(jiraIssueRepository.GetIssues("bundle1"),
+			Assert.Collection((jiraIssueRepository.GetIssues("bundle1")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key));
 
-			Assert.Collection(jiraIssueRepository.GetIssues("bundle2"),
+			Assert.Collection((jiraIssueRepository.GetIssues("bundle2")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-2222", item.Key),
 				item => Assert.Equal("JRA-4444", item.Key));
 
-			Assert.Collection(jiraIssueRepository.GetIssues("bundle3"),
+			Assert.Collection((jiraIssueRepository.GetIssues("bundle3")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key),
 				item => Assert.Equal("JRA-5555", item.Key));
 
@@ -111,10 +111,10 @@ namespace SuperDumpService.Test {
 			var res = await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1", "bundle2", "bundle7", "bundle666", "bundle9" });
 			Assert.Equal(2, res.Count());
 
-			Assert.Collection(res["bundle1"],
+			Assert.Collection(res["bundle1"].OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key));
 
-			Assert.Collection(res["bundle2"],
+			Assert.Collection(res["bundle2"].OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-2222", item.Key),
 				item => Assert.Equal("JRA-4444", item.Key));
 
