@@ -123,6 +123,7 @@ namespace SuperDumpService.Controllers {
 		}
 
 		[HttpPost]
+		[RequestSizeLimit(4294967295)] //set max allowed request content length to 4GB - 1byte, the configuration in the web.config file does not work in .net core 3.0 preview 6
 		public async Task<IActionResult> Upload(IFormFile file, string refurl, string note) {
 			if (ModelState.IsValid) {
 				pathHelper.PrepareDirectories();
