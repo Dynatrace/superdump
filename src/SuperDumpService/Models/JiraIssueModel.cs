@@ -15,6 +15,15 @@ namespace SuperDumpService.Models {
 			this.Key = key;
 		}
 
+		public JiraIssueModel(string key, string status) {
+			this.Key = key;
+			this.Fields = new JiraIssueFieldModel {
+				Status = new JiraIssueStatusModel {
+					Name = status
+				}
+			};
+		}
+
 		public string GetStatusName() {
 			return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
 		}

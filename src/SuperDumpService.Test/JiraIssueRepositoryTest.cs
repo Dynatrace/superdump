@@ -124,6 +124,60 @@ namespace SuperDumpService.Test {
 			Assert.Empty(jiraIssueRepository.GetIssues("bundle9"));
 		}
 
+		[Fact]
+		public async Task TestRefreshJiraIssues() {
+			InitFakeJiraRepository(out FakeJiraApiService jiraApiService,
+				out FakeJiraIssueStorage jiraIssueStorage,
+				out JiraIssueRepository jiraIssueRepository,
+				out BundleRepository bundleRepository);
+
+			// population
+			await jiraIssueStorage.Store("bundle1", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111", "Open") });
+			await jiraIssueStorage.Store("bundle2", new List<JiraIssueModel> { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
+			await jiraIssueStorage.Store("bundle9", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111", "Resolved"), new JiraIssueModel("JRA-9999") });
+
+			await bundleRepository.Populate();
+			await jiraIssueRepository.Populate();
+
+			jiraApiService.SetFakeJiraIssues("bundle1", new JiraIssueModel[] { new JiraIssueModel("JRA-1111", "Resolved")});
+			jiraApiService.SetFakeJiraIssues("bundle2", new JiraIssueModel[] { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
+			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111", "Resolved"), new JiraIssueModel("JRA-9999") });
+
+			await jiraIssueRepository.RefreshAllIssuesAsync();
+
+			Assert.Collection(await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1" }),
+				item => {
+					Assert.Equal("JRA-1111", item.Value.Single().Key);
+					Assert.True(item.Value.Single().IsResolved());
+				});
+		}
+
+		private void InitFakeJiraRepository(out FakeJiraApiService fakeJiraApiService,
+				out FakeJiraIssueStorage fakeJiraIssueStorage,  
+				out JiraIssueRepository jiraIssueRepository,
+				out BundleRepository bundleRepository) {
+
+			var settings = Options.Create(new SuperDumpSettings {
+				UseJiraIntegration = true,
+				JiraIntegrationSettings = new JiraIntegrationSettings { }
+			});
+			var pathHelper = new PathHelper("", "", "");
+			var dumpStorage = new FakeDumpStorage(CreateFakeDumps());
+			var bundleStorage = dumpStorage;
+			var dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
+			bundleRepository = new BundleRepository(bundleStorage, dumpRepo);
+
+			fakeJiraApiService = new FakeJiraApiService();
+			fakeJiraIssueStorage = new FakeJiraIssueStorage();
+
+			var identicalDumpStorage = new FakeIdenticalDumpStorage();
+			var identicalDumpRepository = new IdenticalDumpRepository(identicalDumpStorage, bundleRepository);
+
+			var loggerFactory = new LoggerFactory();
+
+			jiraIssueRepository = new JiraIssueRepository(settings, fakeJiraApiService, bundleRepository, fakeJiraIssueStorage, identicalDumpRepository, loggerFactory);
+		}
+
 		private IEnumerable<FakeDump> CreateFakeDumps() {
 			int n = 10;
 			for (int i = 0; i < n; i++) {
