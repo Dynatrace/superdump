@@ -110,7 +110,7 @@ namespace SuperDumpService.Services {
 			try {
 				//Only update bundles with unresolved issues
 				IEnumerable<KeyValuePair<string, IList<JiraIssueModel>>> bundlesToRefresh =
-					bundleIssues.Where(bundle => bundle.Value.Any(issue => issue.GetStatusName() != "Resolved"));
+					bundleIssues.Where(bundle => bundle.Value.Any(issue => !issue.IsResolved()));
 
 				if (!bundlesToRefresh.Any()) {
 					return;
@@ -118,11 +118,11 @@ namespace SuperDumpService.Services {
 
 				//Split issues into one group with all resolved issues and one with all others
 				ILookup<bool, JiraIssueModel> issuesToRefresh = bundlesToRefresh.SelectMany(issue => issue.Value).
-					ToLookup(issue => issue.GetStatusName() != "Resolved");
+					ToLookup(issue => !issue.IsResolved());
 
 				//Get the current status of not resolved issues from the jira api and combine them with the resolved issues
-				IEnumerable<JiraIssueModel> refreshedIssues = issuesToRefresh[false]
-						.Union(await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)));
+				IEnumerable<JiraIssueModel> refreshedIssues = (await apiService.GetBulkIssues(issuesToRefresh[true].Select(i => i.Key)))
+						.Union(issuesToRefresh[false], new JiraIssueModel.KeyEqualityComparer());
 
 				await SetBundleIssues(bundlesToRefresh, refreshedIssues);
 			} finally {
@@ -206,10 +206,8 @@ namespace SuperDumpService.Services {
 			//I am not sure if this is the best way to do this
 			var fileStorageTasks = new List<Task>();
 			foreach (KeyValuePair<string, IList<JiraIssueModel>> bundle in bundlesToUpdate) {
-				if (issueDictionary.ContainsKey(bundle.Key)) {
-					IList<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]).ToList();
-					fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
-				}
+				IList<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]).ToList();
+				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
 			}
 
 			await Task.WhenAll(fileStorageTasks);

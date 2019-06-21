@@ -45,32 +45,17 @@ namespace SuperDumpService.Test {
 		[Fact]
 		public async Task TestJiraIssueRepository() {
 			// setup dependencies
-			var settings = Options.Create(new SuperDumpSettings {
-				UseJiraIntegration = true,
-				JiraIntegrationSettings = new JiraIntegrationSettings { }
-			});
-			var pathHelper = new PathHelper("", "", "");
-			var dumpStorage = new FakeDumpStorage(CreateFakeDumps());
-			var bundleStorage = dumpStorage;
-			var dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
-			var bundleRepo = new BundleRepository(bundleStorage, dumpRepo);
-
-			var jiraApiService = new FakeJiraApiService();
-			var jiraIssueStorage = new FakeJiraIssueStorage();
-
-			var identicalDumpStorage = new FakeIdenticalDumpStorage();
-			var identicalDumpRepository = new IdenticalDumpRepository(identicalDumpStorage, bundleRepo);
-
-			var loggerFactory = new LoggerFactory();
-
-			var jiraIssueRepository = new JiraIssueRepository(settings, jiraApiService, bundleRepo, jiraIssueStorage, identicalDumpRepository, loggerFactory);
+			InitFakeJiraRepository(out FakeJiraApiService jiraApiService,
+				out FakeJiraIssueStorage jiraIssueStorage,
+				out JiraIssueRepository jiraIssueRepository,
+				out BundleRepository bundleRepository);
 
 			// population
 			await jiraIssueStorage.Store("bundle1", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111") });
 			await jiraIssueStorage.Store("bundle2", new List<JiraIssueModel> { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
 			await jiraIssueStorage.Store("bundle9", new List<JiraIssueModel> { new JiraIssueModel("JRA-9999") });
 
-			await bundleRepo.Populate();
+			await bundleRepository.Populate();
 			await jiraIssueRepository.Populate();
 
 			// actual test
@@ -93,7 +78,7 @@ namespace SuperDumpService.Test {
 			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111"), new JiraIssueModel("JRA-5555") }); // new
 			jiraApiService.SetFakeJiraIssues("bundle9", null ); // removed jira issues
 
-			await jiraIssueRepository.SearchBundleIssuesAsync(bundleRepo.GetAll(), true);
+			await jiraIssueRepository.SearchBundleIssuesAsync(bundleRepository.GetAll(), true);
 
 			Assert.Collection((jiraIssueRepository.GetIssues("bundle1")).OrderBy(x => x.Key),
 				item => Assert.Equal("JRA-1111", item.Key));
@@ -122,6 +107,60 @@ namespace SuperDumpService.Test {
 			Assert.Empty(jiraIssueRepository.GetIssues("bundle7"));
 			Assert.Empty(jiraIssueRepository.GetIssues("bundle666"));
 			Assert.Empty(jiraIssueRepository.GetIssues("bundle9"));
+		}
+
+		[Fact]
+		public async Task TestRefreshJiraIssues() {
+			InitFakeJiraRepository(out FakeJiraApiService jiraApiService,
+				out FakeJiraIssueStorage jiraIssueStorage,
+				out JiraIssueRepository jiraIssueRepository,
+				out BundleRepository bundleRepository);
+
+			// population
+			await jiraIssueStorage.Store("bundle1", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111", "Open") });
+			await jiraIssueStorage.Store("bundle2", new List<JiraIssueModel> { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
+			await jiraIssueStorage.Store("bundle9", new List<JiraIssueModel> { new JiraIssueModel("JRA-1111", "Resolved"), new JiraIssueModel("JRA-9999") });
+
+			await bundleRepository.Populate();
+			await jiraIssueRepository.Populate();
+
+			jiraApiService.SetFakeJiraIssues("bundle1", new JiraIssueModel[] { new JiraIssueModel("JRA-1111", "Resolved")});
+			jiraApiService.SetFakeJiraIssues("bundle2", new JiraIssueModel[] { new JiraIssueModel("JRA-2222"), new JiraIssueModel("JRA-3333") });
+			jiraApiService.SetFakeJiraIssues("bundle3", new JiraIssueModel[] { new JiraIssueModel("JRA-1111", "Resolved"), new JiraIssueModel("JRA-9999") });
+
+			await jiraIssueRepository.RefreshAllIssuesAsync();
+
+			Assert.Collection(await jiraIssueRepository.GetAllIssuesByBundleIdsWithoutWait(new string[] { "bundle1" }),
+				item => {
+					Assert.Equal("JRA-1111", item.Value.Single().Key);
+					Assert.True(item.Value.Single().IsResolved());
+				});
+		}
+
+		private void InitFakeJiraRepository(out FakeJiraApiService fakeJiraApiService,
+				out FakeJiraIssueStorage fakeJiraIssueStorage,
+				out JiraIssueRepository jiraIssueRepository,
+				out BundleRepository bundleRepository) {
+
+			var settings = Options.Create(new SuperDumpSettings {
+				UseJiraIntegration = true,
+				JiraIntegrationSettings = new JiraIntegrationSettings { }
+			});
+			var pathHelper = new PathHelper("", "", "");
+			var dumpStorage = new FakeDumpStorage(CreateFakeDumps());
+			var bundleStorage = dumpStorage;
+			var dumpRepo = new DumpRepository(dumpStorage, pathHelper, settings);
+			bundleRepository = new BundleRepository(bundleStorage, dumpRepo);
+
+			fakeJiraApiService = new FakeJiraApiService();
+			fakeJiraIssueStorage = new FakeJiraIssueStorage();
+
+			var identicalDumpStorage = new FakeIdenticalDumpStorage();
+			var identicalDumpRepository = new IdenticalDumpRepository(identicalDumpStorage, bundleRepository);
+
+			var loggerFactory = new LoggerFactory();
+
+			jiraIssueRepository = new JiraIssueRepository(settings, fakeJiraApiService, bundleRepository, fakeJiraIssueStorage, identicalDumpRepository, loggerFactory);
 		}
 
 		private IEnumerable<FakeDump> CreateFakeDumps() {

@@ -15,6 +15,15 @@ namespace SuperDumpService.Models {
 			this.Key = key;
 		}
 
+		public JiraIssueModel(string key, string status) {
+			this.Key = key;
+			this.Fields = new JiraIssueFieldModel {
+				Status = new JiraIssueStatusModel {
+					Name = status
+				}
+			};
+		}
+
 		public string GetStatusName() {
 			return Fields != null && Fields.Status != null ? Fields.Status.Name : null;
 		}
@@ -36,6 +45,16 @@ namespace SuperDumpService.Models {
 		public class JiraIssueStatusModel {
 			public string Name { get; set; }
 			public string Id { get; set; }
+		}
+
+		public class KeyEqualityComparer : IEqualityComparer<JiraIssueModel> {
+			public bool Equals(JiraIssueModel x, JiraIssueModel y) {
+				return x.Key.Equals(y.Key);
+			}
+
+			public int GetHashCode(JiraIssueModel obj) {
+				return obj.Key.GetHashCode();
+			}
 		}
 
 		public override string ToString() {
