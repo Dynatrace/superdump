@@ -206,8 +206,13 @@ namespace SuperDumpService.Services {
 			//I am not sure if this is the best way to do this
 			var fileStorageTasks = new List<Task>();
 			foreach (KeyValuePair<string, IList<JiraIssueModel>> bundle in bundlesToUpdate) {
-				IList<JiraIssueModel> issues = bundle.Value.Select(issue => issueDictionary[issue.Key]).ToList();
-				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = issues)); //update the issue file for the bundle
+				var newIssues = new List<JiraIssueModel>();
+				foreach (JiraIssueModel oldIssue in bundle.Value) {
+					if (issueDictionary.TryGetValue(oldIssue.Key, out JiraIssueModel newIssue)) {
+						newIssues.Add(newIssue);
+					}
+				}
+				fileStorageTasks.Add(jiraIssueStorage.Store(bundle.Key, bundleIssues[bundle.Key] = newIssues)); //update the issue file for the bundle
 			}
 
 			await Task.WhenAll(fileStorageTasks);
