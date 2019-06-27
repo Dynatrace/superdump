@@ -52,7 +52,7 @@
 		<PackageReference Include="CommandLineParser" Version="2.5.0" />
 		<PackageReference Include="Dynatrace.OneAgent.Sdk" Version="1.4.0" />
 		<PackageReference Include="LargeAddressAware" Version="1.0.3" />
-		<PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.5" />
+		<PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.3" />
 		<PackageReference Include="Microsoft.NETCore.Platforms" Version="2.2.0-preview2-26905-02" />
 		<PackageReference Include="morelinq" Version="3.0.0" />
 		<PackageReference Include="NETStandard.Library" Version="2.0.3" />
