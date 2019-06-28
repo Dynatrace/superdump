@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
@@ -43,6 +44,8 @@ namespace SuperDumpService.Services {
 
 		private readonly JiraIntegrationSettings settings;
 		private readonly HttpClient client;
+		private static readonly JsonSerializerSettings CamelCaseJsonSettings =
+			new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
 		public CookieContainer Cookies {
 			get { return HttpClientHandler.CookieContainer; }
@@ -101,7 +104,7 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetJiraIssues(string bundleId) {
-			return await JiraSearch($"text ~ {bundleId}");
+			return await JiraPostSearch($"text ~ {bundleId}");
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetBulkIssues(IEnumerable<string> issueKeys) {
@@ -111,35 +114,39 @@ namespace SuperDumpService.Services {
 			return await JiraPostSearch($"key in ({string.Join(",", issueKeys)})");
 		}
 
-		private async Task<IEnumerable<JiraIssueModel>> JiraSearch(string queryString) {
-			var uriBuilder = new UriBuilder(settings.JiraApiSearchUrl);
-
-			NameValueCollection query = HttpUtility.ParseQueryString(uriBuilder.Query);
-			query["jql"] = queryString;
-			query["fields"] = JiraIssueFields;
-			uriBuilder.Query = query.ToString();
-
-			await EnsureAuthentication();
-			return await HandleResponse(await client.GetAsync(uriBuilder.ToString()));
-		}
-
 		private async Task<IEnumerable<JiraIssueModel>> JiraPostSearch(string queryString, int retry = 3) {
 			await EnsureAuthentication();
-			return await HandleResponse(await client.PostAsJsonAsync(settings.JiraApiSearchUrl, new {
-				jql = queryString,
-				fields = JiraIssueFieldsArray
-			}));
+			var query = new JiraSearchQuery {
+				Jql = queryString,
+				Fields = JiraIssueFieldsArray,
+				StartAt = 0
+			};
+
+			JiraSearchResultModel searchResult;
+			List<JiraIssueModel> issues = null;
+			//This loop is necessary since the maxResults per query are limited by a Jira setting.
+			do {
+				searchResult = await HttpPostQuery(query);
+				if (issues == null) { //Has to be initialized after we know how many results there are to avoid reallocating the list
+					issues = new List<JiraIssueModel>(searchResult.Total);
+				}
+				foreach (JiraIssueModel issue in searchResult.Issues) {
+					issue.Url = settings.JiraIssueUrl + issue.Key;
+					issues.Add(issue);
+				}
+				query.StartAt += searchResult.MaxResults;
+			} while (query.StartAt < searchResult.Total);
+			return issues;
 		}
 
-		private async Task<IEnumerable<JiraIssueModel>> HandleResponse(HttpResponseMessage response) {
+		private async Task<JiraSearchResultModel> HttpPostQuery(JiraSearchQuery query) {
+			HttpResponseMessage response = await client.PostAsync(settings.JiraApiSearchUrl,
+				new StringContent(JsonConvert.SerializeObject(query, CamelCaseJsonSettings), Encoding.UTF8, "application/json"));
+
 			if (!response.IsSuccessStatusCode) {
 				throw new HttpRequestException($"Jira api call {response.RequestMessage.RequestUri} returned status code {response.StatusCode}");
 			}
-			IEnumerable<JiraIssueModel> issues = (await response.Content.ReadAsAsync<JiraSearchResultModel>()).Issues;
-			foreach (JiraIssueModel issue in issues) {
-				issue.Url = settings.JiraIssueUrl + issue.Key;
-			}
-			return issues;
+			return await response.Content.ReadAsAsync<JiraSearchResultModel>();
 		}
 
 		private AuthenticationHeaderValue GetBasicAuthenticationHeader(string username, string password) {
