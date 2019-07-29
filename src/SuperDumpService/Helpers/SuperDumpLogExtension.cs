@@ -34,7 +34,7 @@ namespace SuperDumpService.Helpers {
 				bundleInfo.BundleId, GetCustomPropertyString(bundleInfo.CustomProperties), dumpId, filename);
 		}
 
-		public static void LogFileUpload(this ILogger logger, string text, HttpContext context, string bundleId, Dictionary<string, string> customProperties, string uri) {
+		public static void LogFileUpload(this ILogger logger, string text, HttpContext context, string bundleId, IDictionary<string, string> customProperties, string uri) {
 			logger.LogInformation(UploadLogText, text, context.Connection.RemoteIpAddress.ToString(), context.User.Identity.Name,
 				bundleId, GetCustomPropertyString(customProperties).ToString(), uri);
 		}
@@ -81,7 +81,7 @@ namespace SuperDumpService.Helpers {
 			logger.LogInformation(DumpComparisonText, text, context.Connection.RemoteIpAddress.ToString(), context.User.Identity.Name, bundleId1, dumpId1, bundleId2, dumpId2);
 		}
 
-		private static string GetCustomPropertyString(Dictionary<string, string> customProperties) {
+		private static string GetCustomPropertyString(IDictionary<string, string> customProperties) {
 			return string.Join(", ", customProperties.Select(entry => $"{entry.Key}: {entry.Value}"));
 		}
 	}

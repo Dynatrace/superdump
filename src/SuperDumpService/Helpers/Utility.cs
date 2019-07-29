@@ -87,7 +87,7 @@ namespace SuperDumpService.Helpers {
 		/// <summary>
 		/// make key and values safe against XSS
 		/// </summary>
-		internal static IDictionary<string, string> Sanitize(Dictionary<string, string> sourceDict) {
+		internal static IDictionary<string, string> Sanitize(IDictionary<string, string> sourceDict) {
 			var dict = new Dictionary<string, string>();
 			foreach (var entry in sourceDict) {
 				dict[Sanitize(entry.Key)] = Sanitize(entry.Value);

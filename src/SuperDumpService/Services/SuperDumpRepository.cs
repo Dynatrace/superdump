@@ -107,21 +107,24 @@ namespace SuperDumpService.Services {
 		/// <summary>
 		/// create bundle, process the file
 		/// </summary>
-		/// <param name="filename"></param>
-		/// <param name="input"></param>
-		/// <returns>bundleId</returns>
-		public string ProcessInputfile(string filename, DumpAnalysisInput input) {
-			var bundleInfo = bundleRepo.Create(filename, input);
+		public string ProcessWebInputfile(string filename, DumpAnalysisInput input) {
+			var bundleInfo = bundleRepo.Create(filename, input.CustomProperties);
 			ScheduleDownload(bundleInfo.BundleId, input.Url, filename); // indirectly calls ProcessFile()
+			return bundleInfo.BundleId;
+		}
+
+		/// <summary>
+		/// create bundle, process the file
+		/// </summary>
+		public string ProcessLocalInputfile(string filename, TempFileHandle tempFile, IDictionary<string, string> properties) {
+			var bundleInfo = bundleRepo.Create(filename, properties);
+			ScheduleProcessLocalFile(bundleInfo.BundleId, filename, tempFile);
 			return bundleInfo.BundleId;
 		}
 
 		/// <summary>
 		/// processes the file given.
 		/// </summary>
-		/// <param name="bundleId"></param>
-		/// <param name="file"></param>
-		/// <returns></returns>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
 			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
@@ -186,20 +189,45 @@ namespace SuperDumpService.Services {
 			);
 		}
 
+		[Hangfire.Queue("download", Order = 1)]
+		public void ScheduleProcessLocalFile(string bundleId, string filename, TempFileHandle tempFile, byte[] dynatraceTag = null) {
+			var processTracer = dynatraceSdk.TraceIncomingMessageProcess(messagingSystemInfo);
+			processTracer.SetDynatraceByteTag(dynatraceTag);
+			processTracer.Trace(() =>
+				AsyncHelper.RunSync(() => ProcessFileAsync(bundleId, filename, tempFile))
+			);
+			tempFile.Dispose(); // now it's safe to delete temp file
+		}
+
+		private void ScheduleProcessing(string bundleId, string url, string filename) {
+			var outgoingMessageTracer = dynatraceSdk.TraceOutgoingMessage(messagingSystemInfo);
+			outgoingMessageTracer.Trace(() => {
+				string jobId = Hangfire.BackgroundJob.Enqueue<SuperDumpRepository>(repo => DownloadAndScheduleProcessFile(bundleId, url, filename, outgoingMessageTracer.GetDynatraceByteTag()));
+				outgoingMessageTracer.SetVendorMessageId(jobId);
+			});
+		}
+
 		public async Task DownloadAndScheduleProcessFileAsync(string bundleId, string url, string filename) {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Downloading);
 			try {
-				using (TempDirectoryHandle tempDir = await downloadService.Download(bundleId, url, filename)) {
-					if (settings.Value.DuplicationDetectionEnabled && !SetHashAndCheckIfDuplicated(bundleId, new FileInfo(Path.Combine(tempDir.Dir.FullName, filename)))) {
-						// duplication detected
-						return;
-					}
-
-					// this class should only do downloading. 
-					// unf. i could not find a good way to *not* make this call from with DownloadService
-					// hangfire supports continuations, but not parameterized. i found no way to pass the result (TempFileHandle) over to the continuation
-					await ProcessDirRecursive(bundleId, tempDir.Dir);
+				using (TempFileHandle tempFile = await downloadService.Download(bundleId, url, filename)) {
+					await ProcessFileAsync(bundleId, filename, tempFile);
 				}
+			} catch (Exception e) {
+				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Failed, e.ToString());
+			}
+		}
+
+		private async Task ProcessFileAsync(string bundleId, string filename, TempFileHandle tempFile) {
+			if (settings.Value.DuplicationDetectionEnabled && !SetHashAndCheckIfDuplicated(bundleId, tempFile.File)) {
+				// duplication detected
+				return;
+			}
+
+			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Analyzing);
+			try {
+				await ProcessFile(bundleId, tempFile.File);
+
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 			} catch (Exception e) {
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Failed, e.ToString());
