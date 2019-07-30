@@ -13,9 +13,9 @@ namespace SuperDumpService.Services {
 			this.pathHelper = pathHelper;
 		}
 
-		public async Task<TempDirectoryHandle> Download(string bundleId, string url, string filename) {
+		public async Task<TempFileHandle> Download(string bundleId, string url, string filename) {
 			if (Utility.IsLocalFile(url) && IsAlreadyInUploadsDir(url)) {
-				return new TempDirectoryHandle(new DirectoryInfo(Path.GetDirectoryName(url)));
+				return new TempFileHandle(new FileInfo(url), new TempDirectoryHandle(new DirectoryInfo(Path.GetDirectoryName(url))));
 			} else {
 				DirectoryInfo dir = FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir()));
 				dir.Create();
@@ -41,8 +41,19 @@ namespace SuperDumpService.Services {
 					dir.Delete(true);
 					throw e;
 				}
-				return new TempDirectoryHandle(dir);
+				return new TempFileHandle(file, new TempDirectoryHandle(dir));
 			}
+		}
+
+		public async Task<TempFileHandle> Download(Stream stream, string filename) {
+			DirectoryInfo dir = FindUniqueSubDirectoryName(new DirectoryInfo(pathHelper.GetUploadsDir()));
+			dir.Create();
+			var file = new FileInfo(Path.Combine(dir.FullName, Path.GetFileName(filename)));
+			
+			using (var targetStream = file.Create()) {
+				await stream.CopyToAsync(targetStream);
+			}
+			return new TempFileHandle(file, new TempDirectoryHandle(dir));
 		}
 
 		private bool IsAlreadyInUploadsDir(string url) {

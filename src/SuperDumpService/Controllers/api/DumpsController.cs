@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Linq;
 using System.Text;
 using SuperDumpService.ViewModels;
+using Microsoft.AspNetCore.Http;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -25,18 +26,21 @@ namespace SuperDumpService.Controllers.Api {
 		public DumpRepository dumpRepo;
 		private readonly ILogger<DumpsController> logger;
 		private readonly SearchService searchService;
+		private readonly DownloadService downloadService;
 
 		public DumpsController(
 				SuperDumpRepository superDumpRepo,
 				BundleRepository bundleRepo,
 				DumpRepository dumpRepo,
 				ILoggerFactory loggerFactory,
-				SearchService searchService) {
+				SearchService searchService,
+				DownloadService downloadService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
 			logger = loggerFactory.CreateLogger<DumpsController>();
 			this.searchService = searchService;
+			this.downloadService = downloadService;
 		}
 
 		/// <summary>
@@ -86,7 +90,7 @@ namespace SuperDumpService.Controllers.Api {
 					if (filename == null && Utility.IsLocalFile(input.Url)) {
 						filename = Path.GetFileName(input.Url);
 					}
-					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
+					string bundleId = superDumpRepo.ProcessWebInputfile(filename, input);
 					if (bundleId != null) {
 						logger.LogFileUpload("Api Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
 						return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
@@ -102,6 +106,28 @@ namespace SuperDumpService.Controllers.Api {
 			} else {
 				var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(x => "'" + x.Exception.Message + "'"));
 				return BadRequest($"Invalid request, check if value was set: {errors}");
+			}
+		}
+
+		/// <summary>
+		/// Upload a file and schedule for analysis
+		/// </summary>
+		/// <param name="file">file upload</param>
+		/// <param name="customProperties">custom properties for that file</param>
+		/// <returns>Created resource</returns>
+		[HttpPost("Upload")]
+		[ProducesResponseType(typeof(void), 201)]
+		[ProducesResponseType(typeof(string), 400)]
+		[RequestSizeLimit(4294967295)] //set max allowed request content length to 4GB - 1byte, the configuration in the web.config file does not work in .net core 3.0 preview 6
+		public async Task<IActionResult> PostFile(IFormFile file, IDictionary<string, string> customProperties) {
+			var tempFileHandle = await downloadService.Download(file.OpenReadStream(), file.FileName);
+			string bundleId = superDumpRepo.ProcessLocalInputfile(file.FileName, tempFileHandle, customProperties);
+			if (bundleId != null) {
+				logger.LogFileUpload("Api Upload", HttpContext, bundleId, customProperties, file.FileName);
+				return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
+			} else {
+				// in case the input was just symbol files, we don't get a bundleid.
+				return BadRequest("No dump was found in bundle.");
 			}
 		}
 

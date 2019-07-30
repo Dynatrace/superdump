@@ -33,6 +33,7 @@ namespace SuperDumpService.Controllers {
 		private readonly IAuthorizationHelper authorizationHelper;
 		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SearchService searchService;
+		private readonly DownloadService downloadService;
 
 		public HomeController( 
 				SuperDumpRepository superDumpRepo, 
@@ -47,7 +48,8 @@ namespace SuperDumpService.Controllers {
 				ILoggerFactory loggerFactory,
 				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository,
-				SearchService searchService) {
+				SearchService searchService,
+				DownloadService downloadService) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -60,6 +62,7 @@ namespace SuperDumpService.Controllers {
 			this.authorizationHelper = authorizationHelper;
 			this.jiraIssueRepository = jiraIssueRepository;
 			this.searchService = searchService;
+			this.downloadService = downloadService;
 		}
 
 		public IActionResult Index() {
@@ -89,7 +92,7 @@ namespace SuperDumpService.Controllers {
 					if (filename == null && Utility.IsLocalFile(input.Url)) {
 						filename = Path.GetFileName(input.Url);
 					}
-					string bundleId = superDumpRepo.ProcessInputfile(filename, input);
+					string bundleId = superDumpRepo.ProcessWebInputfile(filename, input);
 					logger.LogFileUpload("Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
 					// return list of file paths from zip
 					return RedirectToAction("BundleCreated", "Home", new { bundleId = bundleId });
@@ -128,14 +131,9 @@ namespace SuperDumpService.Controllers {
 			if (ModelState.IsValid) {
 				pathHelper.PrepareDirectories();
 				if (file.Length > 0) {
-					var tempDir = new DirectoryInfo(pathHelper.GetTempDir());
-					tempDir.Create();
-					var filePath = new FileInfo(Path.Combine(tempDir.FullName, file.FileName));
-					using (var fileStream = new FileStream(filePath.FullName, FileMode.Create)) {
-						await file.CopyToAsync(fileStream);
-					}
-					var bundle = new DumpAnalysisInput(filePath.FullName, new Tuple<string, string>("ref", refurl), new Tuple<string, string>("note", note));
-					return Create(bundle);
+					var tempFileHandle = await downloadService.Download(file.OpenReadStream(), file.FileName);
+					string bundleId = superDumpRepo.ProcessLocalInputfile(file.FileName, tempFileHandle, new Dictionary<string, string> { { "ref", refurl }, { "note", note } });
+					return RedirectToAction("BundleCreated", "Home", new { bundleId = bundleId });
 				}
 				return View("UploadError", new Error("No filename was provided.", ""));
 			} else {

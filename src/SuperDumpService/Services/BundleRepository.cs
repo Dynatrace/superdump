@@ -51,7 +51,7 @@ namespace SuperDumpService.Services {
 			return bundles.Values;
 		}
 
-		public BundleMetainfo Create(string filename, DumpAnalysisInput input) {
+		public BundleMetainfo Create(string filename, IDictionary<string, string> properties) {
 			lock (sync) {
 				string bundleId = CreateUniqueBundleId();
 				var bundleInfo = new BundleMetainfo() {
@@ -60,9 +60,7 @@ namespace SuperDumpService.Services {
 					Created = DateTime.Now,
 					Status = BundleStatus.Created
 				};
-				bundleInfo.CustomProperties = input.CustomProperties;
-				if (!string.IsNullOrEmpty(input.JiraIssue)) bundleInfo.CustomProperties["ref"] = input.JiraIssue;
-				if (!string.IsNullOrEmpty(input.FriendlyName)) bundleInfo.CustomProperties["note"] = input.FriendlyName;
+				bundleInfo.CustomProperties = properties;
 				bundles[bundleId] = bundleInfo;
 				storage.Store(bundleInfo);
 				return bundleInfo;
