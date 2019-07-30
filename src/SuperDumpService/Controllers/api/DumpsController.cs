@@ -109,6 +109,12 @@ namespace SuperDumpService.Controllers.Api {
 			}
 		}
 
+		/// <summary>
+		/// Upload a file and schedule for analysis
+		/// </summary>
+		/// <param name="file">file upload</param>
+		/// <param name="customProperties">custom properties for that file</param>
+		/// <returns>Created resource</returns>
 		[HttpPost("Upload")]
 		[ProducesResponseType(typeof(void), 201)]
 		[ProducesResponseType(typeof(string), 400)]
@@ -121,8 +127,7 @@ namespace SuperDumpService.Controllers.Api {
 				return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
 			} else {
 				// in case the input was just symbol files, we don't get a bundleid.
-				// TODO
-				throw new NotImplementedException();
+				return BadRequest("No dump was found in bundle.");
 			}
 		}
 
