@@ -130,6 +130,8 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 			new DebugSymbolResolver(filesystem, requestHandler, processHandler).Resolve(analysisResult.SystemContext.Modules);
 			Console.WriteLine("Unwinding stacktraces ...");
 			new UnwindAnalyzer(coredump, analysisResult).Analyze();
+			Console.WriteLine("Parsing ELF Header Info ...");
+			await new ElfHeaderAnalyzer(coredump, analysisResult).Analyze();
 			Console.WriteLine("Retrieving agent version if available ...");
 			new CoreLogAnalyzer(filesystem, coredump, analysisResult.SystemContext.Modules).Analyze();
 			Console.WriteLine("Fetching debug symbols ...");
