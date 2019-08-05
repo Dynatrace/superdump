@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace SuperDump.Common {
 	public class DynatraceSourceLink {
-		private static readonly Regex SprintPathRegex = new Regex(@"^.*\\oa-s(\d*)\\[^\\]*\\(.*)$");
+		private static readonly Regex SprintPathRegex = new Regex(@"^.*(?:\\|/)oa-s(\d*)(?:\\|/)[^\\/]*(?:\\|/)(.*)$");
 
 		public static string GetRepoPathIfAvailable(string sourcePath) {
 			Match match;
