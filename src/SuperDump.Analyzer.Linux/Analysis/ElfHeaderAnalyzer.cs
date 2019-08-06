@@ -46,7 +46,7 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 				return "Amd64";
 			}
 
-			return architecture;
+			return architecture + " (Unsupported)";
 		}
 	}
 }
