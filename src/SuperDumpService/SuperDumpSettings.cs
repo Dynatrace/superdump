@@ -40,6 +40,8 @@ namespace SuperDumpService {
 		public JiraIntegrationSettings JiraIntegrationSettings { get; set; }
 		public bool UseAllRequestLogging { get; set; }
 		public bool DuplicationDetectionEnabled { get; set; }
+		public int DownloadServiceRetry { get; set; } = 3;
+		public int DownloadServiceRetryTimeout { get; set; } = 500;
 
         public bool IsDumpRetentionEnabled () {
 			return !string.IsNullOrEmpty(DumpRetentionCron) && DumpRetentionDays > 0;

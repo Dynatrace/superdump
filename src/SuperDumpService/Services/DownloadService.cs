@@ -7,10 +7,14 @@ using System.Net.Http;
 
 namespace SuperDumpService.Services {
 	public class DownloadService {
-		private readonly PathHelper pathHelper;
+		public const string HttpClientName = "DownloadServiceClient";
 
-		public DownloadService(PathHelper pathHelper) {
+		private readonly PathHelper pathHelper;
+		private readonly IHttpClientFactory httpClientFactory;
+
+		public DownloadService(PathHelper pathHelper, IHttpClientFactory httpClientFactory) {
 			this.pathHelper = pathHelper;
+			this.httpClientFactory = httpClientFactory;
 		}
 
 		public async Task<TempFileHandle> Download(string bundleId, string url, string filename) {
@@ -26,12 +30,11 @@ namespace SuperDumpService.Services {
 						await Utility.CopyFile(new FileInfo(url), file);
 					} else {
 						// download
-						using (var client = new HttpClient()) {
-							using (var download = await client.GetAsync(url)) {
-								using (var stream = await download.Content.ReadAsStreamAsync()) {
-									using (var outfile = File.OpenWrite(file.FullName)) {
-										await stream.CopyToAsync(outfile);
-									}
+						var client = httpClientFactory.CreateClient(HttpClientName);
+						using (var download = await client.GetAsync(url)) {
+							using (var stream = await download.Content.ReadAsStreamAsync()) {
+								using (var outfile = File.OpenWrite(file.FullName)) {
+									await stream.CopyToAsync(outfile);
 								}
 							}
 						}
