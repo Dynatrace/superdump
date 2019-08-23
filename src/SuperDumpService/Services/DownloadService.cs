@@ -32,6 +32,7 @@ namespace SuperDumpService.Services {
 						// download
 						var client = httpClientFactory.CreateClient(HttpClientName);
 						using (var download = await client.GetAsync(url)) {
+							download.EnsureSuccessStatusCode();
 							using (var stream = await download.Content.ReadAsStreamAsync()) {
 								using (var outfile = File.OpenWrite(file.FullName)) {
 									await stream.CopyToAsync(outfile);
