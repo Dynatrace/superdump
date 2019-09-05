@@ -131,7 +131,7 @@ namespace SuperDumpService {
 			});
 
 			// Add HttpErrorPolicy for ObjectDisposedException when downloading a dump file using the DownloadService
-			services.AddHttpClient(DownloadService.HttpClientName, config => config.Timeout = TimeSpan.FromMinutes(superDumpSettings.DownloadServiceHttpClientTimeout))
+			services.AddHttpClient(DownloadService.HttpClientName, config => config.Timeout = superDumpSettings.DownloadServiceHttpClientTimeout)
 				.AddTransientHttpErrorPolicy(builder => builder
 					.OrInner<ObjectDisposedException>()
 					.WaitAndRetryAsync(superDumpSettings.DownloadServiceRetry,

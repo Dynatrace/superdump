@@ -126,9 +126,9 @@
 
       "JiraDumpRetentionTimeExtensionDays": "7"
     },
-    "DuplicationDetectionEnabled": "true" // if enabled, the same bundle (md5 hash check) does not get analyzed twice
+    "DuplicationDetectionEnabled": "true", // if enabled, the same bundle (md5 hash check) does not get analyzed twice
     "DownloadServiceRetry": "5", // Number of retries when trying to download a dump file from an URL
-    "DownloadServiceRetryTimeout": "500" //Time between download retries in milliseconds
-    "DownloadServiceHttpClientTimeout": 4 //HttpClient timeout in minutes
+    "DownloadServiceRetryTimeout": "500", //Time between download retries in milliseconds
+    "DownloadServiceHttpClientTimeout": "00:04:00"
   }
 }
