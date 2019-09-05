@@ -131,10 +131,11 @@ namespace SuperDumpService {
 			});
 
 			// Add HttpErrorPolicy for ObjectDisposedException when downloading a dump file using the DownloadService
-			services.AddHttpClient(DownloadService.HttpClientName).AddTransientHttpErrorPolicy(builder => builder
-				.OrInner<ObjectDisposedException>()
-				.WaitAndRetryAsync(superDumpSettings.DownloadServiceRetry,
-					_ => TimeSpan.FromMilliseconds(superDumpSettings.DownloadServiceRetryTimeout)));
+			services.AddHttpClient(DownloadService.HttpClientName, config => config.Timeout = superDumpSettings.DownloadServiceHttpClientTimeout)
+				.AddTransientHttpErrorPolicy(builder => builder
+					.OrInner<ObjectDisposedException>()
+					.WaitAndRetryAsync(superDumpSettings.DownloadServiceRetry,
+						_ => TimeSpan.FromMilliseconds(superDumpSettings.DownloadServiceRetryTimeout)));
 
 			// register repository as singleton
 			services.AddSingleton<SuperDumpRepository>();

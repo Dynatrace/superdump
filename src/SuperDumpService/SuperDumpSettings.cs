@@ -42,8 +42,9 @@ namespace SuperDumpService {
 		public bool DuplicationDetectionEnabled { get; set; }
 		public int DownloadServiceRetry { get; set; } = 3;
 		public int DownloadServiceRetryTimeout { get; set; } = 500;
+		public TimeSpan DownloadServiceHttpClientTimeout { get; set; } = TimeSpan.FromMinutes(4);
 
-        public bool IsDumpRetentionEnabled () {
+		public bool IsDumpRetentionEnabled () {
 			return !string.IsNullOrEmpty(DumpRetentionCron) && DumpRetentionDays > 0;
 		}
 	}
