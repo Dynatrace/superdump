@@ -158,6 +158,7 @@ namespace SuperDumpService.Services {
 					var response = await elasticClient.CreateAsync(new CreateDescriptor<ElasticSDResult>(ElasticSDResult.FromResult(result, bundleInfo, dumpInfo, pathHelper)));
 
 					if (response.Result != Result.Created) {
+						Console.WriteLine($"PushResultAsync failed for {dumpInfo.Id}. DebugInformation: {response.DebugInformation}");
 						return false;
 					}
 				}
@@ -169,40 +170,26 @@ namespace SuperDumpService.Services {
 		}
 
 		internal IEnumerable<ElasticSDResult> SearchDumpsByJson(string jsonQuery) {
-			var result = elasticClient.LowLevel.Search<SearchResponse<dynamic>>(jsonQuery);
+			var result = elasticClient.LowLevel.Search<SearchResponse<ElasticSDResult>>(jsonQuery);
 			if (!result.IsValid) {
 				throw new Exception($"elastic search query failed: {result.DebugInformation}");
 			}
+			
 			foreach (var res in result.Documents) {
-				ElasticSDResult deserialized = null;
-				try {
-					string str = Convert.ToString(res);
-					using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(str))) {
-						deserialized = elasticClient.RequestResponseSerializer.Deserialize<ElasticSDResult>(stream);
-					}
-				} catch (Exception e) {
-					Console.WriteLine("error deserializing elasticsearch result");
-				}
-				if (deserialized != null) yield return deserialized;
+				yield return res;
 			}
-			//SearchRequest searchRequest;
-			//using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonQuery))) {
-			//	searchRequest = elasticClient.RequestResponseSerializer.Deserialize<SearchRequest>(stream);
-			//}
-			//var result = elasticClient.Search<ElasticSDResult>(searchRequest);
-			//return Enumerable.Empty<ElasticSDResult>();
 		}
 
 		private bool IndexExists() {
-			return elasticClient.IndexExists(RESULT_IDX).Exists;
+			return elasticClient.Indices.Exists(RESULT_IDX).Exists;
 		}
 
 		private void CreateIndex() {
-			elasticClient.CreateIndex(RESULT_IDX, i => i.Mappings(m => m.Map<ElasticSDResult>(ms => ms.AutoMap())));
+			elasticClient.Indices.Create(RESULT_IDX, i => i.Map<ElasticSDResult>(m => m.AutoMap()));
 		}
 
 		private void DeleteIndex() {
-			elasticClient.DeleteIndex(Indices.Index("sdresults"));
+			elasticClient.Indices.Delete(Indices.Index(RESULT_IDX));
 		}
 
 		private IEnumerable<string> GetAllDocumentIds() {

@@ -36,7 +36,7 @@
     <PackageReference Include="Humanizer" Version="2.6.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink.Loader" Version="14.1.0" />
     <!--<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" /> ___ what do we need this for? it has a version clash with BenchmarkDotnet. can we remove it? -->
-    <PackageReference Include="NEST" Version="7.0.0-alpha1" />
+    <PackageReference Include="NEST" Version="7.3.0" />
     <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
     <PackageReference Include="Serilog" Version="2.9.0-dev-01091" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.0-dev-10240" />
