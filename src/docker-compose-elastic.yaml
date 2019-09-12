@@ -2,17 +2,30 @@ version: '2'
 
 services:
     elasticsearch:
-        image: elasticsearch:5.5.1
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.3.2
         ports:
             - 9200:9200
             - 9300:9300
+        networks:
+          - esnet
         volumes:
-            - ${ELASTIC_DIR}:/usr/share/elasticsearch/data
+          - esdata01:/usr/share/elasticsearch/data
+        environment:
+          - discovery.type=single-node
     
     kibana:
-        image: kibana:5.5.1
+        image: docker.elastic.co/kibana/kibana:7.3.2
         ports:
             - 5601:5601
+        networks:
+          - esnet
         environment:
             - ELASTICSEARCH_URL=http://elasticsearch:9200
-    
+        depends_on: ['elasticsearch']
+
+volumes:
+  esdata01:
+    driver: local
+
+networks:
+  esnet:
