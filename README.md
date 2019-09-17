@@ -143,7 +143,7 @@ We've open sourced SuperDump, because we believe it can be helpful for others. A
 Some high-level ideas we've been poking around: 
 
  * _Pluggable analyzers:_ Possibility to write your own analyzers, detached from the main project and pluggable.
- * _Duplication Detection:_ Find a way to detect if the same crash has already been reported.
+ * _Workers:_ Instead of directly invoking analysis by SuperDumpService, a worker should instead invoke those, after fetching jobs from a queue. It would enable to detach actual analysis from the web-frontend. After that step, it would be easier to deploy SuperDump into Kubernetes.
  * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. This is useful if a crash is entered as a bug in a ticket system.
 
 Credit
