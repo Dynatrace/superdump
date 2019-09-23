@@ -166,7 +166,7 @@ namespace SuperDumpService.Services {
 				swTotal.Stop();
 				Console.WriteLine($"CalculateSimilarity.Finished for all {allDumps.Count()} dumps (total elapsed: {swTotal.Elapsed}); {dumpA} (TID:{Thread.CurrentThread.ManagedThreadId})");
 			} catch (Exception e) {
-				Console.WriteLine(e.Message);
+				Console.Error.WriteLine($"CalculateSimilarity failed: {e}");
 			}
 		}
 

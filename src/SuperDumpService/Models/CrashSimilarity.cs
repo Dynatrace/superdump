@@ -163,7 +163,7 @@ namespace SuperDumpService.Models {
 		}
 
 		private static string StripNonAscii(string str) {
-			return new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
+			return str == null ? string.Empty : new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
 		}
 
 		public static DumpMiniInfo SDResultToMiniInfo(SDResult result) {
