@@ -1,27 +1,36 @@
-﻿using SuperDumpService.Helpers;
-using SuperDumpService.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.GZip;
+using ICSharpCode.SharpZipLib.Tar;
 
 namespace SuperDumpService.Services {
+	public enum ArchiveType {
+		Zip,
+		TarGz,
+		Tar
+	}
+
 	public class UnpackService {
-		private readonly PathHelper pathHelper;
 
-		public UnpackService(PathHelper pathHelper) {
-			this.pathHelper = pathHelper;
+		private static void ExtractTarGz(FileInfo file, DirectoryInfo outputDir) {
+			using (FileStream inputStream = file.OpenRead()) {
+				using (Stream gzipStream = new GZipInputStream(inputStream)) {
+					using (var tarArchive = TarArchive.CreateInputTarArchive(gzipStream)) {
+						tarArchive.ExtractContents(outputDir.FullName);
+					}
+				}
+			}
 		}
 
-		public DirectoryInfo UnZip(FileInfo file) {
-			var outputDir = FindUniqueTempDir(file.Directory, Path.GetFileNameWithoutExtension(file.Name));
-			ZipFile.ExtractToDirectory(file.FullName, outputDir.FullName);
-			return outputDir;
+		private static void ExtractTar(FileInfo file, DirectoryInfo outputDir) {
+			using (FileStream inputStream = file.OpenRead()) {
+				using (var tarArchive = TarArchive.CreateInputTarArchive(inputStream)) {
+					tarArchive.ExtractContents(outputDir.FullName);
+				}
+			}
 		}
 
-		private DirectoryInfo FindUniqueTempDir(DirectoryInfo dir, string dirname) {
+		private static DirectoryInfo FindUniqueTempDir(DirectoryInfo dir, string dirname) {
 			var subdir = new DirectoryInfo(Path.Combine(dir.FullName, dirname));
 			int i = 0;
 			while (subdir.Exists || File.Exists(subdir.FullName)) {
@@ -29,6 +38,22 @@ namespace SuperDumpService.Services {
 			}
 			subdir.Create();
 			return subdir;
+		}
+
+		public DirectoryInfo ExtractArchive(FileInfo file, ArchiveType type) {
+			DirectoryInfo outputDir = FindUniqueTempDir(file.Directory, Path.GetFileNameWithoutExtension(file.Name));
+			switch (type) {
+				case ArchiveType.Zip:
+					ZipFile.ExtractToDirectory(file.FullName, outputDir.FullName);
+					break;
+				case ArchiveType.TarGz:
+					ExtractTarGz(file, outputDir);
+					break;
+				case ArchiveType.Tar:
+					ExtractTar(file, outputDir);
+					break;
+			}
+			return outputDir;
 		}
 	}
 }
