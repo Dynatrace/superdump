@@ -8,4 +8,4 @@ RUN /bin/bash -c "g++ -c -x c++ /wrappersrc/LibunwindWrapper.cpp -I /usr/local/i
 # rsync returns exitcode 24 if a file that should be copied vanishes while the copy is in progress. 
 # This can happen quite often, since e.g. symbol resolving creates temporary files.
 # "|| [ $? == 24" checks if the exit code of rsync is 24 and continues with the command in that case.
-CMD ( rsync -a /dump /opt/ || [ $? == 24 ] ) && cd /opt/dump/ && dotnet /opt/SuperDump.Analyzer.Linux/SuperDump.Analyzer.Linux.dll /opt/dump/ /dump/superdump-result.json && cp /opt/dump/*.log /dump/
+CMD ( rsync -a /dump /opt/ || [ "$?" = "24" ] ) && cd /opt/dump/ && dotnet /opt/SuperDump.Analyzer.Linux/SuperDump.Analyzer.Linux.dll /opt/dump/ /dump/superdump-result.json && cp /opt/dump/*.log /dump/
