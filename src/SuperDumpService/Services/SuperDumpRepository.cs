@@ -128,7 +128,9 @@ namespace SuperDumpService.Services {
 		public async Task ProcessFile(string bundleId, FileInfo file) {
 			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
-			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessZip(bundleId, file); return; }
+			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.Zip); return; }
+			if (file.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.TarGz); return; }
+			if (file.Name.EndsWith(".tar", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.Tar); return; }
 			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
 			// ignore the file. it might still get picked up, if IncludeOtherFilesInReport is set.
 		}
@@ -144,8 +146,8 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		private async Task ProcessZip(string bundleId, FileInfo zipfile) {
-			DirectoryInfo dir = unpackService.UnZip(zipfile);
+		private async Task ProcessArchive(string bundleId, FileInfo archiveFile, ArchiveType type) {
+			DirectoryInfo dir = unpackService.ExtractArchive(archiveFile, type);
 			await ProcessDirRecursive(bundleId, dir);
 		}
 
