@@ -123,16 +123,13 @@ namespace SuperDumpService.Services {
 		}
 
 		/// <summary>
-		/// processes the file given.
+		/// Unpacks the given file if it is an archive and adds pdb files to the symbol store.
 		/// </summary>
 		public async Task ProcessFile(string bundleId, FileInfo file) {
-			if (file.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
-			if (file.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessDump(bundleId, file); return; }
 			if (file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.Zip); return; }
-			if (file.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.TarGz); return; }
+			if (file.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) && file.Name != "libs.tar.gz") { await ProcessArchive(bundleId, file, ArchiveType.TarGz); return; }
 			if (file.Name.EndsWith(".tar", StringComparison.OrdinalIgnoreCase)) { await ProcessArchive(bundleId, file, ArchiveType.Tar); return; }
 			if (file.Name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)) { ProcessSymbol(file); return; }
-			// ignore the file. it might still get picked up, if IncludeOtherFilesInReport is set.
 		}
 
 		private void ProcessSymbol(FileInfo file) {
@@ -151,24 +148,11 @@ namespace SuperDumpService.Services {
 			await ProcessDirRecursive(bundleId, dir);
 		}
 
-		private async Task ProcessDump(string bundleId, FileInfo file) {
-			// add dump
-			var dumpInfo = await dumpRepo.CreateDump(bundleId, file);
-
-			// add other files within the same directory
-			await IncludeOtherFiles(bundleId, file, dumpInfo);
-
-			// schedule analysis
-			analysisService.ScheduleDumpAnalysis(dumpInfo);
-		}
-
-		private async Task IncludeOtherFiles(string bundleId, FileInfo file, DumpMetainfo dumpInfo) {
+		private async Task IncludeOtherFiles(DirectoryInfo dir, DumpMetainfo dumpInfo, HashSet<string> foundPrimaryDumps) {
 			if (settings.Value.IncludeOtherFilesInReport) {
-				var dir = file.Directory;
-				foreach (var siblingFile in dir.EnumerateFiles()) {
-					if (siblingFile.FullName == file.FullName) continue; // don't add actual dump file twice
-					if (siblingFile.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
-					if (siblingFile.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) continue; // don't include other dumps from same dir
+				foreach (FileInfo siblingFile in dir.EnumerateFiles()) {
+					if (UnpackService.IsSupportedArchive(siblingFile.Name)) { continue; }
+					if (foundPrimaryDumps.Contains(siblingFile.Name)) { continue; }
 					await dumpRepo.AddFileCopy(dumpInfo.Id, siblingFile, SDFileType.SiblingFile);
 				}
 			}
@@ -229,11 +213,28 @@ namespace SuperDumpService.Services {
 			bundleRepo.SetBundleStatus(bundleId, BundleStatus.Analyzing);
 			try {
 				await ProcessFile(bundleId, tempFile.File);
+				IEnumerable<DumpMetainfo> dumps = await InitialAnalysis(bundleId, tempFile.File.Directory);
+				analysisService.ScheduleDumpAnalysis(dumps);
 
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Finished);
 			} catch (Exception e) {
 				bundleRepo.SetBundleStatus(bundleId, BundleStatus.Failed, e.ToString());
 			}
+		}
+
+		private async Task<IEnumerable<DumpMetainfo>> InitialAnalysis(string bundleId, DirectoryInfo directory) {
+			var dumpMetainfos = new List<DumpMetainfo>();
+
+			dumpMetainfos.AddRange(await analysisService.InitialAnalysis(bundleId, directory));
+			var primaryDumps = dumpMetainfos.Select(dump => Path.GetFileName(dump.DumpFileName)).ToHashSet();
+			foreach (var dump in dumpMetainfos) {
+				await IncludeOtherFiles(directory, dump, primaryDumps);
+			}
+
+			foreach (DirectoryInfo childDirectory in directory.GetDirectories()) {
+				dumpMetainfos.AddRange(await InitialAnalysis(bundleId, childDirectory));
+			}
+			return dumpMetainfos;
 		}
 
 		private bool SetHashAndCheckIfDuplicated(string bundleId, FileInfo archiveFile) {

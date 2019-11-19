@@ -82,6 +82,17 @@ namespace SuperDumpService.Services {
 			return bundles.ContainsKey(bundleId);
 		}
 
+		/// <summary>
+		/// Blocks until bundleRepo is fully populated.
+		/// </summary>
+		public async Task BlockIfBundleRepoNotReady(string sourcemethod) {
+			if (!IsPopulated) {
+				Console.WriteLine($"{sourcemethod} is blocked because dumpRepo is not yet fully populated...");
+				await Utility.BlockUntil(() => IsPopulated);
+				Console.WriteLine($"...continuing {sourcemethod}.");
+			}
+		}
+
 		internal void SetBundleStatus(string bundleId, BundleStatus status, string errorMessage = null) {
 			var bundleInfo = Get(bundleId);
 			bundleInfo.Status = status;

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
@@ -11,6 +12,11 @@ namespace SuperDumpService.Services {
 	}
 
 	public class UnpackService {
+		public static bool IsSupportedArchive(string filename) {
+			return filename.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+				filename.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) && filename != "libs.tar.gz" ||
+				filename.EndsWith(".tar", StringComparison.OrdinalIgnoreCase);
+		}
 
 		private static void ExtractTarGz(FileInfo file, DirectoryInfo outputDir) {
 			using (FileStream inputStream = file.OpenRead()) {

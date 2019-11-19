@@ -69,14 +69,27 @@ namespace SuperDumpService.Services {
 		/// </summary>
 		/// <returns></returns>
 		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
+			return await CreateDump(bundleId, sourcePath, DetermineDumpType(sourcePath));
+		}
+
+		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath, DumpType dumpType) {
+			DumpMetainfo dumpInfo = CreateDumpMetainfo(bundleId);
+
+			dumpInfo.DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath);
+			dumpInfo.DumpType = dumpType;
+
+			FileInfo destFile = await storage.AddFileCopy(dumpInfo.Id, sourcePath);
+			AddSDFile(dumpInfo.Id, destFile.Name, SDFileType.PrimaryDump);
+			return dumpInfo;
+		}
+
+		public DumpMetainfo CreateDumpMetainfo(string bundleId) {
 			DumpMetainfo dumpInfo;
 			string dumpId;
 			dumpId = CreateUniqueDumpId();
 			dumpInfo = new DumpMetainfo() {
 				BundleId = bundleId,
 				DumpId = dumpId,
-				DumpFileName = Utility.MakeRelativePath(pathHelper.GetUploadsDir(), sourcePath),
-				DumpType = DetermineDumpType(sourcePath),
 				Created = DateTime.Now,
 				Status = DumpStatus.Created
 			};
@@ -88,8 +101,6 @@ namespace SuperDumpService.Services {
 			dumps[bundleId][dumpId] = dumpInfo;
 			storage.Create(dumpInfo.Id);
 
-			FileInfo destFile = await storage.AddFileCopy(dumpInfo.Id, sourcePath);
-			AddSDFile(dumpInfo.Id, destFile.Name, SDFileType.PrimaryDump);
 			return dumpInfo;
 		}
 
@@ -110,6 +121,10 @@ namespace SuperDumpService.Services {
 			if (sourcePath.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) return DumpType.WindowsDump;
 			if (sourcePath.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) return DumpType.LinuxCoreDump;
 			throw new InvalidDataException($"cannot determine dumptype of {sourcePath.FullName}");
+		}
+
+		public void DeleteDumpFile(DumpIdentifier id) {
+			storage.DeleteDumpFile(id);
 		}
 
 		private void AddSDFile(DumpIdentifier id, string filename, SDFileType type) {
@@ -165,7 +180,9 @@ namespace SuperDumpService.Services {
 		public void SetDumpStatus(DumpIdentifier id, DumpStatus status, string errorMessage = null) {
 			var dumpInfo = Get(id);
 			dumpInfo.Status = status;
-			dumpInfo.ErrorMessage = errorMessage;
+			if (errorMessage != null) {
+				dumpInfo.ErrorMessage = errorMessage;
+			}
 			if (status == DumpStatus.Analyzing) {
 				dumpInfo.Started = DateTime.Now;
 				dumpInfo.Finished = DateTime.MinValue;
@@ -173,6 +190,12 @@ namespace SuperDumpService.Services {
 			if (status == DumpStatus.Finished || status == DumpStatus.Failed) {
 				dumpInfo.Finished = DateTime.Now;
 			}
+			storage.Store(dumpInfo);
+		}
+
+		public void SetErrorMessage(DumpIdentifier id, string errorMessage) {
+			var dumpInfo = Get(id);
+			dumpInfo.ErrorMessage = errorMessage;
 			storage.Store(dumpInfo);
 		}
 
