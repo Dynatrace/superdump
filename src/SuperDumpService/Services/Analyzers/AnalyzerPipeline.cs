@@ -22,6 +22,7 @@ namespace SuperDumpService.Services.Analyzers {
 
 			var analyzers = new List<AnalyzerJob>();
 			analyzers.Add(new DumpAnalyzerJob(dumpRepo, settings, pathHelper, dynatraceSdk));
+			analyzers.Add(new EmptyAnalyzerJob(dumpRepo));
 			analyzers.Add(new ElasticSearchJob(bundleRepo, dumpRepo, elasticSearch));
 			analyzers.Add(new SimilarityAnalyzerJob(similarityService, settings));
 

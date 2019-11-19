@@ -170,25 +170,28 @@
 				} else if (Model.DumpStatus == DumpStatus.Failed) {
 					<h2>Analysis failed with errors, no report avaliable.</h2>
 					<pre>Error: @Model.AnalysisError</pre>
-				} else if (Model.Result == null || Model.DumpStatus != DumpStatus.Finished) {
+				} else if (Model.DumpStatus != DumpStatus.Finished) {
+					<h2>hang tight, still processing</h2>
+					<script>
+						setTimeout(function () {
+							window.location.reload(1);
+						}, 5000);
+					</script>
+				} else if (Model.DumpType == DumpType.Empty) {
+					<p>No Dump found in Bundle</p>
+				} else if (Model.Result == null) {
+					@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
+						<p>SuperDump Model is null for unknown reason.</p>
+					} else {
+						<p>SuperDump Model is null, because of error:</p>
+						<pre>@Model.SDResultReadError</pre>
+					}
+
 					if (Model.CustomTextResult != null) {
-						@if (string.IsNullOrEmpty(Model.SDResultReadError)) {
-							<p>SuperDump Model is null for unknown reason. Falling back to CustomTextResult.</p>
-						} else {
-							<p>SuperDump Model is null, because of error:</p>
-							<pre>@Model.SDResultReadError</pre>
-							<p>Falling back to CustomTextResult.</p>
-						}
+						<p>Falling back to CustomTextResult.</p>
 						<section>
 							<pre>@Model.CustomTextResult</pre>
 						</section>
-					} else {
-						<h2>hang tight, still processing</h2>
-						<script>
-							setTimeout(function () {
-								window.location.reload(1);
-							}, 5000);
-						</script>
 					}
 				} else {
 					<section>

@@ -44,7 +44,10 @@ namespace SuperDumpService.Models {
 		WindowsDump,
 		
 		// *.core.gz    -> linux coredump file
-		LinuxCoreDump
+		LinuxCoreDump,
+
+		//Only show additional files if no Dump was found
+		Empty
 	}
 
 	public enum SDFileType {

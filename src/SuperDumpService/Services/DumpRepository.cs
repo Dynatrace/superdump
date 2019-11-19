@@ -104,6 +104,14 @@ namespace SuperDumpService.Services {
 			return dumpInfo;
 		}
 
+		public DumpMetainfo CreateEmptyDump(string bundleId) {
+			DumpMetainfo dumpInfo = CreateDumpMetainfo(bundleId);
+			dumpInfo.DumpType = DumpType.Empty;
+			dumpInfo.IsPrimaryDumpAvailable = false;
+			storage.Store(dumpInfo);
+			return dumpInfo;
+		}
+
 		public void UpdateIsDumpAvailable(DumpIdentifier id) {
 			DumpMetainfo dumpMetainfo = Get(id);
 			dumpMetainfo.IsPrimaryDumpAvailable = storage.ReadIsPrimaryDumpAvailable(dumpMetainfo);
