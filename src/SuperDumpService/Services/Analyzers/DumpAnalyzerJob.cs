@@ -44,19 +44,19 @@ namespace SuperDumpService.Services.Analyzers {
 
 		public override async Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
 			if (dumpInfo.DumpType != DumpType.WindowsDump && dumpInfo.DumpType != DumpType.LinuxCoreDump) {
-				return AnalyzerState.Failure;
+				return AnalyzerState.Failed;
 			}
 
 			try {
 				string dumpFilePath = dumpRepo.GetDumpFilePath(dumpInfo.Id);
 				if (!File.Exists(dumpFilePath)) {
 					dumpRepo.SetErrorMessage(dumpInfo.Id, $"Primary dump file not found (id: {dumpInfo.Id}, path: {dumpFilePath})");
-					return AnalyzerState.Failure;
+					return AnalyzerState.Failed;
 				}
 
 				if (new FileInfo(dumpFilePath).Length == 0) {
 					dumpRepo.SetErrorMessage(dumpInfo.Id, "The primary dump file is empty!");
-					return AnalyzerState.Failure;
+					return AnalyzerState.Failed;
 				}
 
 				if (dumpInfo.DumpType == DumpType.WindowsDump) {
@@ -71,14 +71,14 @@ namespace SuperDumpService.Services.Analyzers {
 				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);
 
 				if (result != null) {
-					return AnalyzerState.Success;
+					return AnalyzerState.Succeeded;
 				} else {
-					return AnalyzerState.Failure;
+					return AnalyzerState.Failed;
 				}
 			} catch (Exception e) {
 				Console.WriteLine(e.Message);
 				dumpRepo.SetErrorMessage(dumpInfo.Id, e.ToString());
-				return AnalyzerState.Failure;
+				return AnalyzerState.Failed;
 			} finally {
 				dumpInfo = dumpRepo.Get(dumpInfo.Id);
 				if (settings.Value.DeleteDumpAfterAnalysis) {

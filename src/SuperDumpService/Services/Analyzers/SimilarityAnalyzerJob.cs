@@ -17,7 +17,7 @@ namespace SuperDumpService.Services.Analyzers {
 		}
 
 		public override Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
-			if (previousState == AnalyzerState.Success) {
+			if (previousState == AnalyzerState.Succeeded) {
 				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
 			}
 			return Task.FromResult(previousState);

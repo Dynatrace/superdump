@@ -86,13 +86,13 @@ namespace SuperDumpService.Services {
 
 			AnalyzerState state = AnalyzerState.Initialized;
 			foreach (AnalyzerJob analyzerJob in analyzerPipeline.Analyzers) {
-				if (state == AnalyzerState.Cancel) {
+				if (state == AnalyzerState.Cancelled) {
 					break;
 				}
 				state = await analyzerJob.AnalyzeDump(dumpInfo, analysisWorkingDir, state);
 			}
 
-			if (state == AnalyzerState.Failure || state == AnalyzerState.Initialized) {
+			if (state == AnalyzerState.Failed || state == AnalyzerState.Initialized) {
 				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed);
 			} else {
 				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Finished);

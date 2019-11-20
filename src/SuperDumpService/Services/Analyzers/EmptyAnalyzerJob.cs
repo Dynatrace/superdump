@@ -23,7 +23,7 @@ namespace SuperDumpService.Services.Analyzers {
 
 		public override Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
 			if (dumpInfo.DumpType == DumpType.Empty) {
-				return Task.FromResult(AnalyzerState.Cancel);
+				return Task.FromResult(AnalyzerState.Cancelled);
 			} else {
 				return Task.FromResult(previousState);
 			}
