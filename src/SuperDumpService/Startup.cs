@@ -23,6 +23,7 @@ using SuperDump.Webterm;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
+using SuperDumpService.Services.Analyzers;
 using WebSocketManager;
 using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.OpenApi.Models;
@@ -144,6 +145,7 @@ namespace SuperDumpService {
 			services.AddSingleton<IBundleStorage, BundleStorageFilebased>();
 			services.AddSingleton<DumpRepository>();
 			services.AddSingleton<IDumpStorage, DumpStorageFilebased>();
+			services.AddSingleton<AnalyzerPipeline>();
 			services.AddSingleton<AnalysisService>();
 			services.AddSingleton<DownloadService>();
 			services.AddSingleton<SymStoreService>();

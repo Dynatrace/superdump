@@ -173,7 +173,8 @@ namespace SuperDumpService.Services {
 		private bool PreSelectOnMetadata(DumpMetainfo dumpA, DumpMetainfo dumpB) {
 			return !dumpA.Id.Equals(dumpB.Id) // don't compare the dump to itself
 				&& dumpA.Status == DumpStatus.Finished && dumpB.Status == DumpStatus.Finished // both analysis must be finished
-				&& dumpA.DumpType == dumpB.DumpType; // don't compare windows and linux dumps
+				&& dumpA.DumpType == dumpB.DumpType // don't compare windows and linux dumps
+				&& dumpA.DumpType != DumpType.Empty; // don't compare empty dumps
 		}
 
 		private bool PreSelectOnResults(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
