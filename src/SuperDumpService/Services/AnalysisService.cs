@@ -82,7 +82,7 @@ namespace SuperDumpService.Services {
 		public async Task AnalyzeAsync(DumpMetainfo dumpInfo, string analysisWorkingDir) {
 			await bundleRepo.BlockIfBundleRepoNotReady($"AnalysisService.Analyze for {dumpInfo.Id}");
 
-			dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Analyzing);
+			dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Analyzing, string.Empty);
 
 			AnalyzerState state = AnalyzerState.Initialized;
 			foreach (AnalyzerJob analyzerJob in analyzerPipeline.Analyzers) {

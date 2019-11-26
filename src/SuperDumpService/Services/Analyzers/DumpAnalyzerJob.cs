@@ -44,7 +44,7 @@ namespace SuperDumpService.Services.Analyzers {
 
 		public override async Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
 			if (dumpInfo.DumpType != DumpType.WindowsDump && dumpInfo.DumpType != DumpType.LinuxCoreDump) {
-				return AnalyzerState.Failed;
+				return previousState;
 			}
 
 			try {
