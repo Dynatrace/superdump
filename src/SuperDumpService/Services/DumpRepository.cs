@@ -68,10 +68,6 @@ namespace SuperDumpService.Services {
 		/// Does NOT start analysis
 		/// </summary>
 		/// <returns></returns>
-		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath) {
-			return await CreateDump(bundleId, sourcePath, DetermineDumpType(sourcePath));
-		}
-
 		public async Task<DumpMetainfo> CreateDump(string bundleId, FileInfo sourcePath, DumpType dumpType) {
 			DumpMetainfo dumpInfo = CreateDumpMetainfo(bundleId);
 
@@ -122,13 +118,10 @@ namespace SuperDumpService.Services {
 		}
 
 		public void ResetDumpTyp(DumpIdentifier id) {
-			SetDumpType(id, DetermineDumpType(new FileInfo(Get(id).DumpFileName)));
-		}
-
-		private DumpType DetermineDumpType(FileInfo sourcePath) {
-			if (sourcePath.Name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) return DumpType.WindowsDump;
-			if (sourcePath.Name.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) return DumpType.LinuxCoreDump;
-			throw new InvalidDataException($"cannot determine dumptype of {sourcePath.FullName}");
+			string filename = Get(id).DumpFileName;
+			if (filename.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) SetDumpType(id, DumpType.WindowsDump);
+			if (filename.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase)) SetDumpType(id, DumpType.LinuxCoreDump);
+			if (filename.EndsWith(".core", StringComparison.OrdinalIgnoreCase)) SetDumpType(id, DumpType.LinuxCoreDump);
 		}
 
 		public void DeleteDumpFile(DumpIdentifier id) {

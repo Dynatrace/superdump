@@ -16,7 +16,7 @@ namespace SuperDumpService.Services.Analyzers {
 		}
 
 		public override async Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
-			if (previousState == AnalyzerState.Failed) {
+			if (previousState != AnalyzerState.Succeeded) {
 				return previousState;
 			}
 
