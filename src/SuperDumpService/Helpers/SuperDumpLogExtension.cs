@@ -18,6 +18,8 @@ namespace SuperDumpService.Helpers {
 		private const string AccessDeniedText = DefaultLogText + ", Url: {Url}";
 		private const string RequestLogText = "Ip: {Ip}, User: {User}, Action: {action}, Path: {path}, Parameters: {params}";
 		private const string DumpComparisonText = DefaultLogText + ", BundleId1: {BundleId1}, DumpId1: {DumpId1}, BundleId1: {BundleId1}, DumpId1: {DumpId1}";
+		private const string AwsFileText = "File Url received from Amazon SQS, BundleId: {BundleId}, {customProperties}, Url: {Url}, SourceId: {SourceId}";
+		private const string AwsInvalidUrlText = "Invalid file Url received from Amazon SQS, {customProperties}, Url: {Url}, SourceId: {SourceId}";
 
 		public static void LogDumpAccess(this ILogger logger, string text, HttpContext context, BundleMetainfo bundleInfo, string dumpId) {
 			logger.LogInformation(DumpLogText, text, context.Connection.RemoteIpAddress.ToString(), context.User.Identity.Name,
@@ -79,6 +81,13 @@ namespace SuperDumpService.Helpers {
 		}
 		public static void LogSimilarityEvent(this ILogger logger, string text, HttpContext context, string bundleId1, string dumpId1, string bundleId2, string dumpId2) {
 			logger.LogInformation(DumpComparisonText, text, context.Connection.RemoteIpAddress.ToString(), context.User.Identity.Name, bundleId1, dumpId1, bundleId2, dumpId2);
+		}
+
+		public static void LogSqsFileUpload(this ILogger logger, string bundleId, AwsDumpAnalysisInput dumpInput) {
+			logger.LogInformation(AwsFileText, bundleId, GetCustomPropertyString(dumpInput.CustomProperties), dumpInput.Url, dumpInput.SourceId);
+		}
+		public static void LogSqsInvalidUrl(this ILogger logger, AwsDumpAnalysisInput dumpInput) {
+			logger.LogInformation(AwsInvalidUrlText, GetCustomPropertyString(dumpInput.CustomProperties), dumpInput.Url, dumpInput.SourceId);
 		}
 
 		private static string GetCustomPropertyString(IDictionary<string, string> customProperties) {

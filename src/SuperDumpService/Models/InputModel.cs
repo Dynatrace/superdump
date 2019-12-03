@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SuperDumpService.Controllers {
+namespace SuperDumpService.Models {
 	public class DumpAnalysisInput {
 
 		public DumpAnalysisInput() {
@@ -39,5 +39,12 @@ namespace SuperDumpService.Controllers {
 
 		// for compat. use CustomProperties instead!
 		public string FriendlyName { get; set; }
+	}
+
+	public class AwsDumpAnalysisInput : DumpAnalysisInput {
+		/// <summary>
+		/// This Id is used to correlate the dump input with the response that the dump was created.
+		/// </summary>
+		public string SourceId { get; set; }
 	}
 }

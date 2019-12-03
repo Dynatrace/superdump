@@ -163,6 +163,9 @@ namespace SuperDumpService {
 			services.AddSingleton<IJiraIssueStorage, JiraIssueStorageFilebased>();
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddSingleton<SearchService>();
+			if (superDumpSettings.UseAmazonSqs) {
+				services.AddSingleton<AmazonSqsService>();
+			}
 			
 			var sdk = OneAgentSdkFactory.CreateInstance();
 			sdk.SetLoggingCallback(new DynatraceSdkLogger(services.BuildServiceProvider().GetService<ILogger<DynatraceSdkLogger>>()));
@@ -248,6 +251,14 @@ namespace SuperDumpService {
 				jiraIssueRepository.StartBundleSearchHangfireJob();
 			}
 			app.ApplicationServices.GetService<DumpRetentionService>().StartService();
+			if (settings.Value.UseAmazonSqs) {
+				app.UseHangfireServer(new BackgroundJobServerOptions {
+					Queues = new[] { "amazon-sqs-poll" },
+					WorkerCount = 2
+				});
+				AmazonSqsService amazonSqsService = app.ApplicationServices.GetService<AmazonSqsService>();
+				amazonSqsService.StartHangfireJob();
+			}
 
 			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
