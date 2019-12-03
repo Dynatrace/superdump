@@ -100,7 +100,7 @@ namespace SuperDumpService.Services {
 
 		private bool ShallAuthenticate() {
 			// reauthenticate every 10 minutes
-			return Session == null || (DateTime.Now - Session.loginInfo.previousLoginTime).Minutes > 10;
+			return Session == null || Session.loginInfo == null || (DateTime.Now - Session.loginInfo.previousLoginTime).Minutes > 10;
 		}
 
 		public async Task<IEnumerable<JiraIssueModel>> GetJiraIssues(string bundleId) {
