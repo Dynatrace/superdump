@@ -47,19 +47,25 @@ namespace SuperDumpService.Services {
 		}
 
 		public DirectoryInfo ExtractArchive(FileInfo file, ArchiveType type) {
-			DirectoryInfo outputDir = FindUniqueTempDir(file.Directory, Path.GetFileNameWithoutExtension(file.Name));
-			switch (type) {
-				case ArchiveType.Zip:
-					ZipFile.ExtractToDirectory(file.FullName, outputDir.FullName);
-					break;
-				case ArchiveType.TarGz:
-					ExtractTarGz(file, outputDir);
-					break;
-				case ArchiveType.Tar:
-					ExtractTar(file, outputDir);
-					break;
+			try {
+				DirectoryInfo outputDir = FindUniqueTempDir(file.Directory, Path.GetFileNameWithoutExtension(file.Name));
+				switch (type) {
+					case ArchiveType.Zip:
+						ZipFile.ExtractToDirectory(file.FullName, outputDir.FullName);
+						break;
+					case ArchiveType.TarGz:
+						ExtractTarGz(file, outputDir);
+						break;
+					case ArchiveType.Tar:
+						ExtractTar(file, outputDir);
+						break;
+				}
+				return outputDir;
+			} catch (Exception e) {
+				Console.WriteLine($"Error extracting archive {file.Name}");
+				Console.WriteLine(e.ToString());
 			}
-			return outputDir;
+			return null;
 		}
 	}
 }

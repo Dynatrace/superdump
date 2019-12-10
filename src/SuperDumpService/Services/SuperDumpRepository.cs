@@ -157,7 +157,9 @@ namespace SuperDumpService.Services {
 
 		private async Task ProcessArchive(string bundleId, FileInfo archiveFile, ArchiveType type) {
 			DirectoryInfo dir = unpackService.ExtractArchive(archiveFile, type);
-			await ProcessDirRecursive(bundleId, dir);
+			if (dir != null) {
+				await ProcessDirRecursive(bundleId, dir);
+			}
 		}
 
 		private async Task IncludeOtherFiles(DirectoryInfo dir, DumpMetainfo dumpInfo, HashSet<string> foundPrimaryDumps) {
