@@ -90,6 +90,7 @@ namespace SuperDumpService.Services {
 					result = ProcessMessage(message);
 				} catch (Exception e) {
 					Console.WriteLine(e);
+					logger.LogSqsException(message.Body, e);
 				}
 
 				if (result != null) {

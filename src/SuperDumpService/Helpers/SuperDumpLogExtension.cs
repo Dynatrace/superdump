@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -88,6 +89,10 @@ namespace SuperDumpService.Helpers {
 		}
 		public static void LogSqsInvalidUrl(this ILogger logger, AwsDumpAnalysisInput dumpInput) {
 			logger.LogInformation(AwsInvalidUrlText, GetCustomPropertyString(dumpInput.CustomProperties), dumpInput.Url, dumpInput.SourceId);
+		}
+
+		public static void LogSqsException(this ILogger logger, string messageBody, Exception ex) {
+			logger.LogInformation($"Exception while processing Amazon Sqs Message - Message: \"{messageBody}\" Exception: {ex.ToString()}");
 		}
 
 		private static string GetCustomPropertyString(IDictionary<string, string> customProperties) {
