@@ -129,6 +129,18 @@
     "DuplicationDetectionEnabled": "true", // if enabled, the same bundle (md5 hash check) does not get analyzed twice
     "DownloadServiceRetry": "5", // Number of retries when trying to download a dump file from an URL
     "DownloadServiceRetryTimeout": "500", //Time between download retries in milliseconds
-    "DownloadServiceHttpClientTimeout": "00:04:00"
+    "DownloadServiceHttpClientTimeout": "00:04:00",
+    "UseAmazonSqs": "true",
+    "AmazonSqsSettings": {
+      "SuperDumpBaseUrl": "", // Url that is used for generating the response messages
+      "PollCron": "*/30 * * * *", //Hangfire cron expression which describes the schedule for polling the Aws Queue
+      "MessagesPerReceive": 10, // The maximum number of messages per receive message batch. This is limited to 10 by Amazon (https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-quotas.html#quotas-messages).
+      "MessageVisibilityTimeout": "00:00:30", //The time in which received messages remain locked as Timespan.
+      "Region": "", //The AWS region used e.g. "us-west-1"
+      "InputQueueUrl": "", //The url of the queue where superdump should check for new dumps
+      "OutputQueueUrl": "", //The url of the queue where superdump should push the results
+      "AccessKey": "",
+      "SecretKey": ""
+    }
   }
 }

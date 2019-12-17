@@ -104,6 +104,18 @@ namespace SuperDumpService.Services {
 			}
 		}
 
+		public string ProcessWebInputfile(DumpAnalysisInput input) {
+			string filename = input.UrlFilename;
+			//validate URL
+			if (Utility.ValidateUrl(input.Url, ref filename)) {
+				if (filename == null && Utility.IsLocalFile(input.Url)) {
+					filename = Path.GetFileName(input.Url);
+				}
+				return ProcessWebInputfile(filename, input);
+			}
+			return string.Empty;
+		}
+
 		/// <summary>
 		/// create bundle, process the file
 		/// </summary>

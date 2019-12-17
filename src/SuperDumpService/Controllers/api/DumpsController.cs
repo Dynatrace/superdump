@@ -84,21 +84,11 @@ namespace SuperDumpService.Controllers.Api {
 		public IActionResult Post([FromBody]DumpAnalysisInput input) {
 			if (ModelState.IsValid) {
 
-				string filename = input.UrlFilename;
+				string bundleId = superDumpRepo.ProcessWebInputfile(input);
 				//validate URL
-				if (Utility.ValidateUrl(input.Url, ref filename)) {
-					if (filename == null && Utility.IsLocalFile(input.Url)) {
-						filename = Path.GetFileName(input.Url);
-					}
-					string bundleId = superDumpRepo.ProcessWebInputfile(filename, input);
-					if (bundleId != null) {
-						logger.LogFileUpload("Api Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
-						return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
-					} else {
-						// in case the input was just symbol files, we don't get a bundleid.
-						// TODO
-						throw new NotImplementedException();
-					}
+				if (!string.IsNullOrEmpty(bundleId)) {
+					logger.LogFileUpload("Api Upload", HttpContext, bundleId, input.CustomProperties, input.Url);
+					return CreatedAtAction(nameof(HomeController.BundleCreated), "Home", new { bundleId = bundleId }, null);
 				} else {
 					logger.LogNotFound("Api Upload: File not found", HttpContext, "Url", input.Url);
 					return BadRequest("Invalid request, resource identifier is not valid or cannot be reached.");

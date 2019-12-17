@@ -23,6 +23,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="AWSSDK.Core" Version="3.3.103.71" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.3.102.38" />
     <PackageReference Include="Dynatrace.OneAgent.Sdk" Version="1.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="3.0.0" />
