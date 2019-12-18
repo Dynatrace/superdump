@@ -18,6 +18,7 @@ using SuperDump.Models;
 using Dynatrace.OneAgent.Sdk.Api;
 using Dynatrace.OneAgent.Sdk.Api.Infos;
 using Dynatrace.OneAgent.Sdk.Api.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace SuperDumpService.Services {
 	public class SuperDumpRepository {
@@ -35,6 +36,8 @@ namespace SuperDumpService.Services {
 		private readonly IOneAgentSdk dynatraceSdk;
 		private readonly IMessagingSystemInfo messagingSystemInfo;
 
+		private readonly ILogger<SuperDumpRepository> logger;
+
 		public SuperDumpRepository(
 				IOptions<SuperDumpSettings> settings,
 				BundleRepository bundleRepo,
@@ -45,7 +48,8 @@ namespace SuperDumpService.Services {
 				UnpackService unpackService,
 				PathHelper pathHelper,
 				IdenticalDumpRepository identicalRepository,
-				IOneAgentSdk dynatraceSdk) {
+				IOneAgentSdk dynatraceSdk,
+				ILoggerFactory loggerFactory) {
 			this.settings = settings;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -59,6 +63,8 @@ namespace SuperDumpService.Services {
 
 			this.dynatraceSdk = dynatraceSdk;
 			messagingSystemInfo = dynatraceSdk.CreateMessagingSystemInfo("Hangfire", "download", MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null);
+
+			this.logger = loggerFactory.CreateLogger<SuperDumpRepository>();
 		}
 
 		public async Task<SDResult> GetResultAndThrow(DumpIdentifier id) {
@@ -156,8 +162,15 @@ namespace SuperDumpService.Services {
 		}
 
 		private async Task ProcessArchive(string bundleId, FileInfo archiveFile, ArchiveType type) {
-			DirectoryInfo dir = unpackService.ExtractArchive(archiveFile, type);
-			await ProcessDirRecursive(bundleId, dir);
+			DirectoryInfo dir = null;
+			try {
+				dir = unpackService.ExtractArchive(archiveFile, type);
+			} catch (Exception e) {
+				logger.LogArchiveUnpackException(bundleId, archiveFile, e);
+			}
+			if (dir != null) {
+				await ProcessDirRecursive(bundleId, dir);
+			}
 		}
 
 		private async Task IncludeOtherFiles(DirectoryInfo dir, DumpMetainfo dumpInfo, HashSet<string> foundPrimaryDumps) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -93,6 +94,10 @@ namespace SuperDumpService.Helpers {
 
 		public static void LogSqsException(this ILogger logger, string messageBody, Exception ex) {
 			logger.LogInformation($"Exception while processing Amazon Sqs Message - Message: \"{messageBody}\" Exception: {ex.ToString()}");
+		}
+
+		public static void LogArchiveUnpackException(this ILogger logger, string bundleId, FileInfo file, Exception ex) {
+			logger.LogInformation($"Exception when extracting archive, bundleId: \"{bundleId}\", file: \"{file?.Name}\", exception: {ex.ToString()}");
 		}
 
 		private static string GetCustomPropertyString(IDictionary<string, string> customProperties) {
