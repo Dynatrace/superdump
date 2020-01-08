@@ -4,6 +4,7 @@ using SuperDumpService.Models;
 using SuperDumpService.Helpers;
 using System.IO;
 using System.Net.Http;
+using Microsoft.Extensions.Logging;
 
 namespace SuperDumpService.Services {
 	public class DownloadService {
@@ -11,10 +12,12 @@ namespace SuperDumpService.Services {
 
 		private readonly PathHelper pathHelper;
 		private readonly IHttpClientFactory httpClientFactory;
+		private readonly ILogger<DownloadService> logger;
 
-		public DownloadService(PathHelper pathHelper, IHttpClientFactory httpClientFactory) {
+		public DownloadService(PathHelper pathHelper, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory) {
 			this.pathHelper = pathHelper;
 			this.httpClientFactory = httpClientFactory;
+			logger = loggerFactory.CreateLogger<DownloadService>();
 		}
 
 		public async Task<TempFileHandle> Download(string bundleId, string url, string filename) {
@@ -41,7 +44,7 @@ namespace SuperDumpService.Services {
 						}
 					}
 				} catch(Exception e) {
-					Console.WriteLine($"Failed to download file from {url}. Deleting the download directory ...");
+					logger.LogDownloadException(bundleId, url, e);
 					dir.Delete(true);
 					throw e;
 				}
