@@ -146,6 +146,17 @@ Some high-level ideas we've been poking around:
  * _Workers:_ Instead of directly invoking analysis by SuperDumpService, a worker should instead invoke those, after fetching jobs from a queue. It would enable to detach actual analysis from the web-frontend. After that step, it would be easier to deploy SuperDump into Kubernetes.
  * _Descriptive summaries:_ The idea is to put the most likely crash-reason in a short descriptive summary text. This is useful if a crash is entered as a bug in a ticket system.
 
+Security
+========
+
+A word of caution: SuperDump is meant to be an internal tool to make crash dump diagnosis easier and faster. It is NOT designed to be used as a publicly hosted service. __If you deploy SuperDump, it's recommended to put access restrictions in place on top of the LDAP authentication that SuperDump provides to only allow access for trusted individuals, .__
+
+Known shortcomings:
+
+ * Especially the "Interactive Mode" is basically a window into a shell on the SuperDump server. So far, no effort has been made to properly sandbox that shell process, so a versatile user could break out of the debugger process (cdb/gdb) and gain shell access. Only users with the role `SuperDumpSettings:LdapAuthenticationSettings:GroupNames:User` can enter Interactive Mode.
+ * SuperDump allows to upload files that are supposed to contain dumps, logfiles, debug symbols or archives containing such files. Uploading executables is not detected or restricted, which opens to possibility for remote code execution.
+ * There is no access restriction between users that uploaded dumps. As soon as user permission `SuperDumpSettings:LdapAuthenticationSettings:GroupNames:User` is given, such a user can download other dumps or enter Interactive Mode. Memory dumps are may contain highly sensitive data, so such access must only be given to trusted individuals.
+
 Credit
 ======
 Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace]. [Dominik Steinbinder] also contributed large parts, such as Linux analysis, elastic search integration and much more. Thank you!
