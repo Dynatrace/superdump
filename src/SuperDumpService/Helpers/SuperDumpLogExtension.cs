@@ -100,6 +100,10 @@ namespace SuperDumpService.Helpers {
 			logger.LogInformation($"Exception when extracting archive, bundleId: \"{bundleId}\", file: \"{file?.Name}\", exception: {ex.ToString()}");
 		}
 
+		public static void LogDownloadException(this ILogger logger, string bundleId, string url, Exception ex) {
+			logger.LogInformation($"Exception in Download Service, bundleId: \"{bundleId}\", url: \"{url}\", exception: {ex.Message}");
+		}
+
 		private static string GetCustomPropertyString(IDictionary<string, string> customProperties) {
 			return string.Join(", ", customProperties.Select(entry => $"{entry.Key}: {entry.Value}"));
 		}
