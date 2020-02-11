@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services.Analyzers {
-	public class SimilarityAnalyzerJob : AnalyzerJob {
+	public class SimilarityAnalyzerJob : PostAnalysisJob {
 		private readonly SimilarityService similarityService;
 		private readonly IOptions<SuperDumpSettings> settings;
 
@@ -16,11 +16,8 @@ namespace SuperDumpService.Services.Analyzers {
 			this.settings = settings;
 		}
 
-		public override Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
-			if (previousState == AnalyzerState.Succeeded) {
-				similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
-			}
-			return Task.FromResult(previousState);
+		public override void AnalyzeDump(DumpMetainfo dumpInfo) {
+			similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
 		}
 	}
 }

@@ -4,7 +4,7 @@ using SuperDump.Models;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services.Analyzers {
-	public class ElasticSearchJob : AnalyzerJob {
+	public class ElasticSearchJob : PostAnalysisJob {
 		private readonly BundleRepository bundleRepo;
 		private readonly DumpRepository dumpRepo;
 		private readonly ElasticSearchService elasticSearch;
@@ -15,11 +15,7 @@ namespace SuperDumpService.Services.Analyzers {
 			this.elasticSearch = elasticSearch;
 		}
 
-		public override async Task<AnalyzerState> AnalyzeDump(DumpMetainfo dumpInfo, string analysisWorkingDir, AnalyzerState previousState) {
-			if (previousState != AnalyzerState.Succeeded) {
-				return previousState;
-			}
-
+		public override async void AnalyzeDump(DumpMetainfo dumpInfo) {
 			BundleMetainfo bundle = bundleRepo.Get(dumpInfo.BundleId);
 			try {
 				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);
@@ -29,7 +25,6 @@ namespace SuperDumpService.Services.Analyzers {
 			} catch (Exception ex) {
 				Console.WriteLine(ex.Message);
 			}
-			return previousState;
 		}
 	}
 }

@@ -96,6 +96,11 @@ namespace SuperDumpService.Services {
 				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Failed);
 			} else {
 				dumpRepo.SetDumpStatus(dumpInfo.Id, DumpStatus.Finished);
+
+				dumpInfo = dumpRepo.Get(dumpInfo.Id);
+				foreach(PostAnalysisJob job in analyzerPipeline.PostAnalysisJobs) {
+					job.AnalyzeDump(dumpInfo);
+				}
 			}
 
 			await notifications.NotifyDumpAnalysisFinished(dumpInfo);

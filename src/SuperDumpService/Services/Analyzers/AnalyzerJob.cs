@@ -42,4 +42,11 @@ namespace SuperDumpService.Services.Analyzers {
 	public abstract class InitalAnalyzerJob : AnalyzerJob {
 		public abstract Task<IEnumerable<DumpMetainfo>> CreateDumpInfos(string bundleId, DirectoryInfo directory);
 	}
+
+	/// <summary>
+	/// This analyzer steps depend on the sucessful analysis of previous steps. These steps are only executed if the main analyis was sucessful.
+	/// </summary>
+	public abstract class PostAnalysisJob {
+		public abstract void AnalyzeDump(DumpMetainfo dumpInfo);
+	}
 }
