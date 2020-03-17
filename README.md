@@ -32,7 +32,7 @@ Features
 ========
  * Dump analysis can be triggered via web-frontend (HTTP-upload) or via REST-API.
  * Windows-crash-dumps (Fulldump or Minidump) can be analyzed (`.dmp` files). Only process-dumps, not kernel-dumps.
- * Linux-crach-dumps can be analyzed (`.core` files).
+ * Linux-crash-dumps can be analyzed (`.core` files). See <a href="CORE_FORMAT.md">format for core dumps</a>
  * `.zip` files containing multiple crash-dumps are also supported. Each contained dump is processed.
  * Report results are stored as `.json` files and can be queried via REST-API. But they can also be viewed in SuperDump directly.
  * SuperDump report shows: 
@@ -103,11 +103,14 @@ Build
    * .NET Core Tooling 2.2 and 3.0
    * .NET Core 3.0
    * .NET Framework 4.8 (developer pack)
+   * NPM
+   * Bower (npm install -g bower)
+   * Git
    * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
    * DebugDiag (for automatic DebugDiag analysis)
    * Windows Debugging Tools (`cdb.exe`) (optional, for interactive mode)
- * Build via `building/build.cmd`
+ * Build via buildscript in `building/*.cmd` (see <a href="building/README.md">README.md</a>)
  * Run via `build/runsuperdump.cmd` (defaults to port 5000)
 
  Authentication
