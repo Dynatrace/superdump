@@ -81,12 +81,15 @@ namespace SuperDump.Analyzer.Linux.Analysis {
 
 		private async Task<Tuple<SDFileAndLineNumber, string>> Address2MethodSourceAsync(ulong instrPtr, SDCDModule module) {
 			ulong relativeIp = instrPtr;
-			string mainExecutable = ((SDCDSystemContext)analysisResult.SystemContext).FileName;
-			mainExecutable = Path.GetFileName(mainExecutable);
-			if (mainExecutable != module.FileName) {
-				// Subtract modules start address unless it's the main executable
-				relativeIp -= module.StartAddress + 1;
-			}
+			var systemContext = (SDCDSystemContext)analysisResult.SystemContext;
+
+			// Calculate the relative IP to the base module. 
+			// For this we must subtract the start address of the whole module from the IP
+			// The module start address from the parameter is only the start address of the segment.
+			// We get the real module start address by subtracting the page offset multiplied by the page size from the segment start.
+			ulong moduleStartAddress = module.StartAddress - (module.Offset * (uint)systemContext.PageSize);
+			relativeIp -= moduleStartAddress + 1;
+
 			string output = await processHandler.ExecuteProcessAndGetOutputAsync("addr2line", $"-f -C -e {module.LocalPath} 0x{relativeIp.ToString("X")}");
 			string[] lines = output.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
 			if(lines.Length < 2) {
