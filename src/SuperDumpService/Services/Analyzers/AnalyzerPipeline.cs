@@ -19,6 +19,7 @@ namespace SuperDumpService.Services.Analyzers {
 					IOptions<SuperDumpSettings> settings,
 					ElasticSearchService elasticSearch,
 					SimilarityService similarityService,
+					FaultReportingService faultReportingService,
 					IOneAgentSdk dynatraceSdk) {
 
 			var analyzers = new List<AnalyzerJob>();
@@ -28,6 +29,7 @@ namespace SuperDumpService.Services.Analyzers {
 			var postAnalyzers = new List<PostAnalysisJob>();
 			postAnalyzers.Add(new ElasticSearchJob(bundleRepo, dumpRepo, elasticSearch));
 			postAnalyzers.Add(new SimilarityAnalyzerJob(similarityService, settings));
+			postAnalyzers.Add(new FaultReportJob(faultReportingService, settings));
 
 			Analyzers = analyzers;
 			InitialAnalyzers = analyzers.Where(analyzerJob => analyzerJob is InitalAnalyzerJob).Cast<InitalAnalyzerJob>();

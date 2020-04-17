@@ -15,7 +15,7 @@ namespace SuperDumpService.Services.Analyzers {
 			this.elasticSearch = elasticSearch;
 		}
 
-		public override async void AnalyzeDump(DumpMetainfo dumpInfo) {
+		public override async Task AnalyzeDump(DumpMetainfo dumpInfo) {
 			BundleMetainfo bundle = bundleRepo.Get(dumpInfo.BundleId);
 			try {
 				SDResult result = await dumpRepo.GetResultAndThrow(dumpInfo.Id);

@@ -17,7 +17,7 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
-	public class AmazonSqsService {
+	public class AmazonSqsService : IFaultReportSender {
 		private readonly AmazonSqsSettings amazonSqsSettings;
 		private readonly IAmazonSQS sqsClient;
 		private readonly SuperDumpRepository superDumpRepo;
@@ -127,6 +127,10 @@ namespace SuperDumpService.Services {
 				logger.LogSqsInvalidUrl(dumpInput);
 				return null;
 			}
+		}
+
+		public async Task SendFaultReport(FaultReport faultReport) {
+			Console.WriteLine("SendFaultReport " + faultReport.ToString());
 		}
 	}
 }

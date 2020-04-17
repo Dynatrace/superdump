@@ -47,6 +47,6 @@ namespace SuperDumpService.Services.Analyzers {
 	/// This analyzer steps depend on the sucessful analysis of previous steps. These steps are only executed if the main analyis was sucessful.
 	/// </summary>
 	public abstract class PostAnalysisJob {
-		public abstract void AnalyzeDump(DumpMetainfo dumpInfo);
+		public abstract Task AnalyzeDump(DumpMetainfo dumpInfo);
 	}
 }

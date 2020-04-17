@@ -166,6 +166,13 @@ namespace SuperDumpService {
 			if (superDumpSettings.UseAmazonSqs) {
 				services.AddSingleton<AmazonSqsService>();
 			}
+
+			if (superDumpSettings.UseAmazonSqs) {
+				services.AddSingleton<IFaultReportSender, AmazonSqsService>();
+			} else {
+				services.AddSingleton<IFaultReportSender, ConsoleFaultReportingSender>();
+			}
+			services.AddSingleton<FaultReportingService>();
 			
 			var sdk = OneAgentSdkFactory.CreateInstance();
 			sdk.SetLoggingCallback(new DynatraceSdkLogger(services.BuildServiceProvider().GetService<ILogger<DynatraceSdkLogger>>()));
