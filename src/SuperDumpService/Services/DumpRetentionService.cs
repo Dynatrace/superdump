@@ -71,7 +71,10 @@ namespace SuperDumpService.Services {
 			}
 			// Delete all dump files in the dump directory
 			foreach (var file in Directory.EnumerateFiles(dumpDirectory)) {
-				if (file.EndsWith(".core.gz") || file.EndsWith("libs.tar.gz") || file.EndsWith(".dmp")) {
+				if (file.EndsWith(".core.gz", StringComparison.OrdinalIgnoreCase) 
+					|| file.EndsWith("libs.tar.gz", StringComparison.OrdinalIgnoreCase) 
+					|| file.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) {
+
 					File.Delete(file);
 				}
 			}
