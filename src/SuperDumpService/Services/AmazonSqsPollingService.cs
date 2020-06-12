@@ -17,27 +17,26 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
-	public class AmazonSqsService {
+	public class AmazonSqsPollingService {
 		private readonly AmazonSqsSettings amazonSqsSettings;
-		private readonly IAmazonSQS sqsClient;
 		private readonly SuperDumpRepository superDumpRepo;
+		private readonly AmazonSqsClientService amazonSqsClientService;
 		private readonly LinkGenerator linkGenerator;
-		private readonly ILogger<AmazonSqsService> logger;
+		private readonly ILogger<AmazonSqsPollingService> logger;
 		private readonly Uri baseUri;
 
-		public AmazonSqsService(IOptions<SuperDumpSettings> settings, SuperDumpRepository superDumpRepo, LinkGenerator linkGenerator, ILoggerFactory loggerFactory) {
+		public AmazonSqsPollingService(
+				IOptions<SuperDumpSettings> settings,
+				SuperDumpRepository superDumpRepo,
+				AmazonSqsClientService amazonSqsClientService,
+				LinkGenerator linkGenerator, 
+				ILoggerFactory loggerFactory
+			) {
 			this.amazonSqsSettings = settings.Value.AmazonSqsSettings;
 			this.superDumpRepo = superDumpRepo;
+			this.amazonSqsClientService = amazonSqsClientService;
 			this.linkGenerator = linkGenerator;
-
-			this.logger = loggerFactory.CreateLogger<AmazonSqsService>();
-
-			var credentials = new BasicAWSCredentials(amazonSqsSettings.AccessKey, amazonSqsSettings.SecretKey);
-			var config = new AmazonSQSConfig {
-				RegionEndpoint = RegionEndpoint.GetBySystemName(amazonSqsSettings.Region)
-			};
-			this.sqsClient = new AmazonSQSClient(credentials, config);
-
+			this.logger = loggerFactory.CreateLogger<AmazonSqsPollingService>();
 			this.baseUri = new Uri(amazonSqsSettings.SuperDumpBaseUrl);
 		}
 
@@ -60,7 +59,7 @@ namespace SuperDumpService.Services {
 			int received;
 
 			do {
-				ReceiveMessageResponse response = await sqsClient.ReceiveMessageAsync(request);
+				ReceiveMessageResponse response = await amazonSqsClientService.SqsClient.ReceiveMessageAsync(request);
 
 				received = response.Messages.Count;
 
@@ -102,10 +101,10 @@ namespace SuperDumpService.Services {
 			}
 
 			if (responseEntries.Count > 0) {
-				await sqsClient.SendMessageBatchAsync(new SendMessageBatchRequest(amazonSqsSettings.OutputQueueUrl, responseEntries));
+				await amazonSqsClientService.SqsClient.SendMessageBatchAsync(new SendMessageBatchRequest(amazonSqsSettings.OutputQueueUrl, responseEntries));
 			}
 			if (deleteEntries.Count > 0) {
-				await sqsClient.DeleteMessageBatchAsync(new DeleteMessageBatchRequest(amazonSqsSettings.InputQueueUrl, deleteEntries));
+				await amazonSqsClientService.SqsClient.DeleteMessageBatchAsync(new DeleteMessageBatchRequest(amazonSqsSettings.InputQueueUrl, deleteEntries));
 			}
 		}
 

@@ -45,6 +45,9 @@ namespace SuperDumpService.Models {
 		/// <summary>
 		/// This Id is used to correlate the dump input with the response that the dump was created.
 		/// </summary>
-		public string SourceId { get; set; }
+		public string SourceId {
+			get => CustomProperties["sourceId"];
+			set => CustomProperties["sourceId"] = value;
+		}
 	}
 }

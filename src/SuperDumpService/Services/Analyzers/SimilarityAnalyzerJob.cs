@@ -16,7 +16,7 @@ namespace SuperDumpService.Services.Analyzers {
 			this.settings = settings;
 		}
 
-		public override void AnalyzeDump(DumpMetainfo dumpInfo) {
+		public override async Task AnalyzeDump(DumpMetainfo dumpInfo) {
 			similarityService.ScheduleSimilarityAnalysis(dumpInfo, false, DateTime.Now - TimeSpan.FromDays(settings.Value.SimilarityDetectionMaxDays));
 		}
 	}

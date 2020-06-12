@@ -99,7 +99,7 @@ namespace SuperDumpService.Services {
 
 				dumpInfo = dumpRepo.Get(dumpInfo.Id);
 				foreach(PostAnalysisJob job in analyzerPipeline.PostAnalysisJobs) {
-					job.AnalyzeDump(dumpInfo);
+					await job.AnalyzeDump(dumpInfo);
 				}
 			}
 

@@ -12,6 +12,7 @@ namespace SuperDumpService {
 		public string Region { get; set; }
 		public string InputQueueUrl { get; set; }
 		public string OutputQueueUrl { get; set; }
+		public string FaultReportQueueUrl { get; set; }
 		public string AccessKey { get; set; }
 		public string SecretKey { get; set; }
 	}
