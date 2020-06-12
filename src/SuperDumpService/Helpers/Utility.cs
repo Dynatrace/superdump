@@ -251,6 +251,19 @@ namespace SuperDumpService.Helpers {
 			}
 		}
 
+		/// <summary>
+		/// frames sometimes contain addresses. let's just strip out all non-ascii characters. comparison should still be valid enough.
+		/// even modules contain addresses in some cases. also lastevent or exception text.
+		/// </summary>
+		public static bool EqualsIgnoreNonAlphanumeric(string s1, string s2) {
+			if (s1 == null && s2 == null) return true;
+			if (s1 == null || s2 == null) return false;
+			return StripNonAlphanumeric(s1).Equals(StripNonAlphanumeric(s2), StringComparison.OrdinalIgnoreCase);
+		}
+
+		public static string StripNonAlphanumeric(string str) {
+			return str == null ? string.Empty : new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
+		}
 	}
 
 	public static class StringExtensions {

@@ -129,7 +129,7 @@ namespace SuperDumpService.Services {
 			}
 		}
 
-		public async Task SendFaultReport(FaultReport faultReport) {
+		public async Task SendFaultReport(DumpMetainfo dumpInfo, FaultReport faultReport) {
 			Console.WriteLine("SendFaultReport " + faultReport.ToString());
 		}
 	}

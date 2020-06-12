@@ -135,7 +135,7 @@ namespace SuperDumpService.Models {
 
 		// relative similarity between two strings
 		private static double StringSimilarity(string description1, string description2) {
-			return Utility.LevenshteinSimilarity(StripNonAscii(description1), StripNonAscii(description2));
+			return Utility.LevenshteinSimilarity(Utility.StripNonAlphanumeric(description1), Utility.StripNonAlphanumeric(description2));
 		}
 
 		private static double? CalculateExceptionMessageSimilarity(in DumpMiniInfo resultA, in DumpMiniInfo resultB) {
@@ -152,20 +152,6 @@ namespace SuperDumpService.Models {
 			// omit comparison of StackTrace for now. maybe implement at later point if it makes sense.
 		}
 
-		/// <summary>
-		/// frames sometimes contain addresses. let's just strip out all non-ascii characters. comparison should still be valid enough.
-		/// even modules contain addresses in some cases. also lastevent or exception text.
-		/// </summary>
-		private static bool EqualsIgnoreNonAscii(string s1, string s2) {
-			if (s1 == null && s2 == null) return true;
-			if (s1 == null || s2 == null) return false;
-			return StripNonAscii(s1).Equals(StripNonAscii(s2), StringComparison.OrdinalIgnoreCase);
-		}
-
-		private static string StripNonAscii(string str) {
-			return str == null ? string.Empty : new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
-		}
-
 		public static DumpMiniInfo SDResultToMiniInfo(SDResult result) {
 			var miniinfo = new DumpMiniInfo();
 
@@ -173,8 +159,8 @@ namespace SuperDumpService.Models {
 			var faultingThread = result.GetErrorOrLastExecutingThread();
 			if (faultingThread != null) {
 				miniinfo.FaultingThread = new ThreadMiniInfo() {
-					DistinctModuleHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.ModuleName).GetStableHashCode()).Distinct().ToArray(),
-					DistinctFrameHashes = faultingThread.StackTrace.Select(x => StripNonAscii(x.MethodName).GetStableHashCode()).Distinct().ToArray()
+					DistinctModuleHashes = faultingThread.StackTrace.Select(x => Utility.StripNonAlphanumeric(x.ModuleName).GetStableHashCode()).Distinct().ToArray(),
+					DistinctFrameHashes = faultingThread.StackTrace.Select(x => Utility.StripNonAlphanumeric(x.MethodName).GetStableHashCode()).Distinct().ToArray()
 				};
 			}
 

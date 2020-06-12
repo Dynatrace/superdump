@@ -170,7 +170,7 @@ namespace SuperDumpService {
 			if (superDumpSettings.UseAmazonSqs) {
 				services.AddSingleton<IFaultReportSender, AmazonSqsService>();
 			} else {
-				services.AddSingleton<IFaultReportSender, ConsoleFaultReportingSender>();
+				services.AddSingleton<IFaultReportSender, ConsoleFaultReportSender>();
 			}
 			services.AddSingleton<FaultReportingService>();
 			
