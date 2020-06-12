@@ -264,6 +264,10 @@ namespace SuperDumpService.Helpers {
 		public static string StripNonAlphanumeric(string str) {
 			return str == null ? string.Empty : new string(str.ToLower().Where(c => c >= 'a' && c <= 'z').ToArray());
 		}
+
+		public static string GetDumpUrl(DumpIdentifier id) {
+			return $"/Home/Dump?id={id}";
+		}
 	}
 
 	public static class StringExtensions {

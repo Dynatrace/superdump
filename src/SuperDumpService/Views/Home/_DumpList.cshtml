@@ -16,10 +16,9 @@
 		@foreach (var dump in @Model.Paged.OrderByDescending(dump => dump.DumpInfo.Created)) {
 			<tr>
 				<td>
-
-					<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@dump.DumpInfo.BundleId" asp-route-dumpId="@dump.DumpInfo.DumpId">
+					<a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(dump.DumpInfo.Id)">
 						@(string.IsNullOrEmpty(dump.DumpInfo.DumpFileName) ? "Empty Dump" : System.IO.Path.GetFileName(dump.DumpInfo.DumpFileName))
-					</a> 
+					</a>
 					<span class="text-muted">(@dump.DumpInfo.BundleId:@dump.DumpInfo.DumpId)</span>
 					@if (dump.DumpInfo.Status != SuperDumpService.Models.DumpStatus.Finished) {
 						<span>(@dump.DumpInfo.Status)</span>

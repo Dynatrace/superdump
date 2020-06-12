@@ -17,6 +17,14 @@ namespace SuperDumpService.Models {
 
 		public static DumpIdentifier Create(string bundleId, string dumpId) => pool.Allocate(bundleId, dumpId);
 
+		public static DumpIdentifier Parse(string id) {
+			if (id == null) return null;
+			if (!id.Contains(":")) return null;
+			var parts = id.Split(":");
+			if (parts.Length != 2) return null;
+			return Create(parts[0], parts[1]);
+		}
+
 		public bool Equals(DumpIdentifier other) { // for IEquatable<Pair>
 			return Equals(BundleId, other.BundleId) && Equals(DumpId, other.DumpId);
 		}

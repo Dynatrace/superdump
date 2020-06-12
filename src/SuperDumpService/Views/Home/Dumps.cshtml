@@ -82,7 +82,7 @@
 	}
 	<p>Showing @Model.Filtered.Count() dumps.
 		@if (ViewData["duplBundleId"] != null) {
-			<span>(duplicates of <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@ViewData["duplBundleId"]" asp-route-dumpId="@ViewData["duplDumpId"]">@ViewData["duplBundleId"]:@ViewData["duplDumpId"]</a>)</span>
+			<span>(duplicates of <a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(SuperDumpService.Models.DumpIdentifier.Create(ViewData["duplBundleId"].ToString(), ViewData["duplDumpId"].ToString()))">@ViewData["duplBundleId"]:@ViewData["duplDumpId"]</a>)</span>
 		}
 	</p>
 	<div class="panel-body">

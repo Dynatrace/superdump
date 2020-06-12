@@ -12,6 +12,7 @@ using SuperDump.Models;
 using RazorLight;
 using SuperDumpService.ViewModels;
 using System.IO;
+using SuperDumpService.Helpers;
 
 namespace SuperDumpService.Services {
 	public class SlackNotificationService {
@@ -55,7 +56,7 @@ namespace SuperDumpService.Services {
 
 			model.TopProperties.Add(dumpInfo.DumpType == DumpType.WindowsDump ? "Windows" : "Linux");
 			model.DumpFilename = Path.GetFileName(dumpInfo.DumpFileName);
-			model.Url = $"{superDumpUrl}/Home/Report?bundleId={dumpInfo.BundleId}&dumpId={dumpInfo.DumpId}";
+			model.Url = $"{superDumpUrl}{Utility.GetDumpUrl(dumpInfo.Id)}";
 			if (res != null) {
 				if (res.SystemContext != null) {
 					model.TopProperties.Add(res.SystemContext.ProcessArchitecture);

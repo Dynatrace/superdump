@@ -8,7 +8,7 @@
 } else {
 
 	<h3>Compare Dumps</h3>
-	<p>Compared <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.DumpA.BundleId" asp-route-dumpId="@Model.DumpA.DumpId">@Model.DumpA</a> with <a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.DumpB.BundleId" asp-route-dumpId="@Model.DumpB.DumpId">@Model.DumpB</a>.</p>
+	<p>Compared <a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(Model.DumpA)">@Model.DumpA</a> with <a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(Model.DumpB)">@Model.DumpB</a>.</p>
 
 	<dl class="row compact">
 		<dt class="col-sm-3 text-right">Overall (average)</dt>
