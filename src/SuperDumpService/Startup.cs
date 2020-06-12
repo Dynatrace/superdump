@@ -164,11 +164,12 @@ namespace SuperDumpService {
 			services.AddSingleton<JiraIssueRepository>();
 			services.AddSingleton<SearchService>();
 			if (superDumpSettings.UseAmazonSqs) {
-				services.AddSingleton<AmazonSqsService>();
+				services.AddSingleton<AmazonSqsClientService>();
+				services.AddSingleton<AmazonSqsPollingService>();
 			}
 
 			if (superDumpSettings.UseAmazonSqs) {
-				services.AddSingleton<IFaultReportSender, AmazonSqsService>();
+				services.AddSingleton<IFaultReportSender, AmazonSqsFaultReportingSender>();
 			} else {
 				services.AddSingleton<IFaultReportSender, ConsoleFaultReportSender>();
 			}
@@ -263,7 +264,7 @@ namespace SuperDumpService {
 					Queues = new[] { "amazon-sqs-poll" },
 					WorkerCount = 2
 				});
-				AmazonSqsService amazonSqsService = app.ApplicationServices.GetService<AmazonSqsService>();
+				AmazonSqsPollingService amazonSqsService = app.ApplicationServices.GetService<AmazonSqsPollingService>();
 				amazonSqsService.StartHangfireJob();
 			}
 

@@ -89,8 +89,10 @@ namespace SuperDumpService.Services {
 		}
 	}
 
+	/// <summary>
+	/// A FaultReport is supposed to be a concise summary of the crash reason. Human readable.
+	/// </summary>
 	public class FaultReport {
-
 		public string FaultReason { get; set; }
 		public string FaultLocation { get; set; }
 		public string FaultModulePath { get; set; }
