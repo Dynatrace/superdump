@@ -149,8 +149,8 @@ namespace SuperDumpService.Services.Clustering {
 			var dumpInfos = dumpIds.Select(id => dumpRepository.Get(id));
 			return new DumpCluster(
 				dumpIds,
-				dumpInfos.Where(x => x != null).Max(x => x.Created),
 				dumpInfos.Where(x => x != null).Min(x => x.Created),
+				dumpInfos.Where(x => x != null).Max(x => x.Created),
 				await new DumpClusterCommonPropertiesBuilder(dumpIds).Create(dumpRepository),
 				dumpInfos.Where(x => x != null).OrderByDescending(x => x.Created).Take(10).ToList()
 			);
