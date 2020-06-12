@@ -6,6 +6,6 @@
 <p>You'll be redirected to the report in 3 seconds...</p>
 <script>
 	setTimeout(function () {
-		window.location.replace("/Home/Report?bundleId=@Model.Id.BundleId&dumpId=@Model.Id.DumpId");
+		window.location.replace("@SuperDumpService.Helpers.Utility.GetDumpUrl(Model.Id)");
 	}, 3000);
 </script>

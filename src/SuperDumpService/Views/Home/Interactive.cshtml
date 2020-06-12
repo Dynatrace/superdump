@@ -26,7 +26,7 @@
 	<div class="container-webterm" style="padding-top: 50px;">
 		<div style="display:inline-block; float: left; padding: 8px;">
 			Interactive debug session for <strong>@Model.DumpInfo.DumpFileName</strong>.
-			<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@Model.Id.BundleId" asp-route-dumpId="@Model.Id.DumpId">Back to Report</a>
+			<a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(Model.Id)">Back to Report</a>
 		</div>
 		<div style="display:inline-block; float: right; padding: 8px;">
 			<a href="http://windbg.info/doc/1-common-cmds.html">WinDbg Cheat Sheet</a>

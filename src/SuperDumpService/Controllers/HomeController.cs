@@ -107,7 +107,7 @@ namespace SuperDumpService.Controllers {
 
 		public async Task<IActionResult> BundleCreated(string bundleId) {
 			if (bundleRepo.ContainsBundle(bundleId)) {
-				return View(new BundleViewModel(bundleRepo.Get(bundleId), await GetDumpListViewModels(bundleId)));
+				return View("BundleCreated", new BundleViewModel(bundleRepo.Get(bundleId), await GetDumpListViewModels(bundleId)));
 			}
 			throw new Exception($"bundleid '{bundleId}' does not exist in repository");
 		}
@@ -218,6 +218,24 @@ namespace SuperDumpService.Controllers {
 			return View(new InteractiveViewModel() { Id = id, DumpInfo = dumpRepo.Get(id), Command = cmd });
 		}
 
+		/// <summary>
+		/// Generic view that shows either the dump report or the bundle overview. e.g.
+		/// Home/Dump?id=nlu7029:irb4329      // show dump report
+		/// Home/Dump?id=nlu7029              // show bundle report
+		/// </summary>
+		/// <param name="id"></param>
+		[HttpGet(Name = "Dump")]
+		public async Task<IActionResult> Dump(string id) {
+			var dumpIdentifier = DumpIdentifier.Parse(id);
+			if (dumpIdentifier != null) {
+				// valid identifier, show dump
+				return await Report(dumpIdentifier.BundleId, dumpIdentifier.DumpId);
+			} else {
+				// invalid identifier. assume only bundleid. try to show bundle info
+				return await BundleCreated(id);
+			}
+		}
+
 		[HttpGet(Name = "Report")]
 		public async Task<IActionResult> Report(string bundleId, string dumpId) {
 			ViewData["Message"] = "Get Report";
@@ -251,7 +269,7 @@ namespace SuperDumpService.Controllers {
 				(await relationshipRepo.GetRelationShips(DumpIdentifier.Create(bundleId, dumpId)))
 					.Select(x => new KeyValuePair<DumpMetainfo, double>(dumpRepo.Get(x.Key), x.Value)).Where(dump => dump.Key != null);
 
-			return base.View(new ReportViewModel(id) {
+			return base.View("Report", new ReportViewModel(id) {
 				BundleFileName = bundleInfo.BundleFileName,
 				DumpFileName = dumpInfo.DumpFileName,
 				Result = res,

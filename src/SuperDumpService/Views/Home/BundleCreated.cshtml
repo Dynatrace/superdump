@@ -23,17 +23,17 @@
 	} else if (Model.DumpInfos.Count() == 1) {
 		var item = Model.DumpInfos.First();
 		<h3>
-		Dump with id <strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.DumpInfo.BundleId" asp-route-dumpId="@item.DumpInfo.DumpId">@item.DumpInfo.DumpId</a></strong> successfully created.</h3>
+		Dump with id <strong><a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(item.DumpInfo.Id)">@item.DumpInfo.DumpId</a></strong> successfully created.</h3>
 
 		<p>You'll be redirected to the report...</p>
 		<script>
-			window.location.replace("/Home/Report?bundleId=@item.DumpInfo.BundleId&dumpId=@item.DumpInfo.DumpId");
+			window.location.replace("@SuperDumpService.Helpers.Utility.GetDumpUrl(item.DumpInfo.Id)");
 		</script>
 	} else {
 		<h3>You uploaded a zip file with several dumps.</h3>
 		<ul>
 			@foreach (var item in Model.DumpInfos) {
-				<li><strong><a asp-controller="Home" asp-action="Report" asp-route-bundleId="@item.DumpInfo.BundleId" asp-route-dumpId="@item.DumpInfo.DumpId">@item.DumpInfo.DumpId (@System.IO.Path.GetFileName(item.DumpInfo.DumpFileName))</a></strong> successfully created.</li>
+				<li><strong><a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(item.DumpInfo.Id)">@item.DumpInfo.DumpId (@System.IO.Path.GetFileName(item.DumpInfo.DumpFileName))</a></strong> successfully created.</li>
 			}
 		</ul>
 	}

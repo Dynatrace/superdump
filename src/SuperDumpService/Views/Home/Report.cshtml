@@ -79,7 +79,7 @@
 												<a asp-controller="Similarity" asp-action="CompareDumps" asp-route-bundleId1="@Model.Id.BundleId" asp-route-dumpId1="@Model.Id.DumpId" asp-route-bundleId2="@rel.Key.Id.BundleId" asp-route-dumpId2="@rel.Key.Id.DumpId">
 													<span class="font-weight-bold text-success">@Math.Round(rel.Value * 100.0, 0)&#37;</span>
 												</a>
-												<a asp-controller="Home" asp-action="Report" asp-route-bundleId="@rel.Key.BundleId" asp-route-dumpId="@rel.Key.DumpId">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
+												<a href="@SuperDumpService.Helpers.Utility.GetDumpUrl(rel.Key.Id)">@System.IO.Path.GetFileName(rel.Key.DumpFileName)</a>
 												@if (Model.UseJiraIntegration && Model.SimilarDumpIssues.TryGetValue(rel.Key.BundleId, out IEnumerable<JiraIssueModel> issues)) {
 													<div class="mt-2 small">
 														<partial class="col-sm-8" id="duplicateJiraIssues" name="_JiraIssues" model="issues" />
