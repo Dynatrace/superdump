@@ -16,6 +16,7 @@ using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
 using SuperDumpService.ViewModels;
+using SuperDumpService.Services.Clustering;
 
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]
@@ -34,6 +35,7 @@ namespace SuperDumpService.Controllers {
 		private readonly JiraIssueRepository jiraIssueRepository;
 		private readonly SearchService searchService;
 		private readonly DownloadService downloadService;
+		private readonly DumpClusterRepository dumpClusterRepository;
 
 		public HomeController( 
 				SuperDumpRepository superDumpRepo, 
@@ -49,7 +51,9 @@ namespace SuperDumpService.Controllers {
 				IAuthorizationHelper authorizationHelper,
 				JiraIssueRepository jiraIssueRepository,
 				SearchService searchService,
-				DownloadService downloadService) {
+				DownloadService downloadService,
+				DumpClusterRepository dumpClusterRepository
+			) {
 			this.superDumpRepo = superDumpRepo;
 			this.bundleRepo = bundleRepo;
 			this.dumpRepo = dumpRepo;
@@ -63,6 +67,7 @@ namespace SuperDumpService.Controllers {
 			this.jiraIssueRepository = jiraIssueRepository;
 			this.searchService = searchService;
 			this.downloadService = downloadService;
+			this.dumpClusterRepository = dumpClusterRepository;
 		}
 
 		public IActionResult Index() {
@@ -397,6 +402,11 @@ namespace SuperDumpService.Controllers {
             }
 
 			return RedirectToAction("Report", new { bundleId, dumpId });
+		}
+
+		[HttpGet]
+		public IActionResult Clusters() {
+			return View("Clusters", new DumpClusterHeapViewModel(dumpClusterRepository.DumpClusterHeap));
 		}
 	}
 }

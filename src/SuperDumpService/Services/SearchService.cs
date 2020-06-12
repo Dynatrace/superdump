@@ -47,7 +47,7 @@ namespace SuperDumpService.Services {
 		public async Task<IOrderedEnumerable<DumpViewModel>> SearchDuplicates(DumpIdentifier id, bool includeSimilarities = true) {
 			var similarDumps = new Similarities(await similarityService.GetSimilarities(id)).AboveThresholdSimilarities().Select(x => x.Key);
 			var dumpViewModels = await Task.WhenAll(similarDumps.Select(x => ToDumpViewModel(x, includeSimilarities)));
-			var dumpViewModelsOrdered = dumpViewModels.OrderByDescending(x => x.DumpInfo.Created);
+			var dumpViewModelsOrdered = dumpViewModels.Where(x => x != null).OrderByDescending(x => x.DumpInfo.Created);
 			return dumpViewModelsOrdered;
 		}
 

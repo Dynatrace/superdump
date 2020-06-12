@@ -15,6 +15,7 @@
 		<div class="navbar-collapse collapse">
 			<ul class="nav navbar-nav">
 				<li><a asp-area="" asp-controller="Home" asp-action="Dumps">Dumps</a></li>
+				<li><a asp-area="" asp-controller="Home" asp-action="Clusters">Clusters</a></li>
 				@if (AuthorizationHelper.CheckPolicy(User, LdapCookieAuthenticationExtension.AdminPolicy)) {
 					<li><a href="/hangfire">Hangfire</a></li>
 					<li><a asp-area="" asp-controller="Admin" asp-action="Overview">Admin</a></li>

@@ -1,0 +1,29 @@
+﻿@model SuperDumpService.ViewModels.DumpClusterViewModel
+<div class="row">
+	<div class="col-xs-9">
+		<a asp-controller="Home" asp-action="Dumps" asp-route-duplBundleId="@Model.Cluster.LastX.First().BundleId" asp-route-duplDumpId="@Model.Cluster.LastX.First().DumpId"><strong>@Model.Cluster.DumpIds.Count</strong> dumps</a> between <strong>@Model.Cluster.Latest</strong> and <strong>@Model.Cluster.First</strong>
+	</div>
+	@foreach (var property in Model.Cluster.CommonProperties.Properties) {
+		if (property.DistinctCount == 0) continue;
+		<div class="col-xs-6">
+
+			@if (property.TopX.First().Percentage > 0.9) {
+				<div>
+					<span class="font-weight-bold text-success">@(Math.Round(property.TopX.First().Percentage * 100, 0))%</span> of <strong>@property.Name</strong> is <code>@property.TopX.First().Value</code>.
+					@if (property.DistinctCount > 1) {
+						<span>@property.DistinctCount distinct values.</span>
+					}
+				</div>
+			} else {
+				<div>
+					Top @property.TopX.Count() <strong>@property.Name</strong> (out of @property.DistinctCount distinct values):
+					<ul>
+						@foreach (var entry in property.TopX) {
+							<li><span class="font-weight-bold text-success">@(Math.Round(entry.Percentage * 100, 0))%</span> is <code>@entry.Value</code></li>
+						}
+					</ul>
+				</div>
+			}
+		</div>
+	}
+</div>

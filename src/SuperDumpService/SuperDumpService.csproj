@@ -27,9 +27,11 @@
     <PackageReference Include="AWSSDK.SQS" Version="3.3.102.38" />
     <PackageReference Include="Dynatrace.OneAgent.Sdk" Version="1.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.0.3" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="3.0.0" /><!-- required since the update to .net core 3.0 because of a missing dependency -->
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
     <PackageReference Include="ByteSize" Version="2.0.0-beta1" />
     <PackageReference Include="Hangfire" Version="1.7.6" />
@@ -37,6 +39,7 @@
     <PackageReference Include="Hangfire.MemoryStorage.Core" Version="1.4.0" />
     <PackageReference Include="Humanizer" Version="2.7.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink.Loader" Version="14.1.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
     <!--<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" /> ___ what do we need this for? it has a version clash with BenchmarkDotnet. can we remove it? -->
     <PackageReference Include="NEST" Version="7.3.0" />
     <PackageReference Include="RazorLight" Version="2.0.0-beta1" />

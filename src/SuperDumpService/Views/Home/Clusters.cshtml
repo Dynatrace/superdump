@@ -1,0 +1,23 @@
+﻿@model SuperDumpService.ViewModels.DumpClusterHeapViewModel
+
+@{
+	ViewData["Title"] = "Clusters";
+}
+
+<h1>Clusters</h1>
+<table class="table table-striped table-word-break">
+	<thead>
+		<tr>
+			<th>Cluster</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model.Paged.OrderByDescending(cluster => cluster.Cluster.Latest)) {
+			<tr>
+				<td>
+					@await Html.PartialAsync("_Cluster", item)
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>

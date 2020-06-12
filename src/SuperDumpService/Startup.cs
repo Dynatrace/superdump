@@ -28,6 +28,7 @@ using WebSocketManager;
 using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.OpenApi.Models;
 using Polly;
+using SuperDumpService.Services.Clustering;
 
 namespace SuperDumpService {
 	public class Startup {
@@ -174,12 +175,15 @@ namespace SuperDumpService {
 				services.AddSingleton<IFaultReportSender, ConsoleFaultReportSender>();
 			}
 			services.AddSingleton<FaultReportingService>();
+			services.AddSingleton<DumpClusterRepository>();
 			
 			var sdk = OneAgentSdkFactory.CreateInstance();
 			sdk.SetLoggingCallback(new DynatraceSdkLogger(services.BuildServiceProvider().GetService<ILogger<DynatraceSdkLogger>>()));
 			services.AddSingleton<IOneAgentSdk>(sdk);
 
 			services.AddWebSocketManager();
+
+			services.AddControllersWithViews().AddRazorRuntimeCompilation();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -268,7 +272,12 @@ namespace SuperDumpService {
 				amazonSqsService.StartHangfireJob();
 			}
 
-			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
+			var dumpClusterRepository = app.ApplicationServices.GetService<DumpClusterRepository>();
+			dumpClusterRepository.UpdateClusterHeapSync();
+			dumpClusterRepository.StartHangfireJob();
+		
+
+		GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 0 });
 
 			app.UseSwagger();
 			app.UseSwaggerUI(c => {
