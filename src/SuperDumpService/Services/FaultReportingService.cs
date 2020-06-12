@@ -26,7 +26,8 @@ namespace SuperDumpService.Services {
 		public async Task PublishFaultReport(DumpMetainfo dumpInfo) {
 			var result = await dumpRepository.GetResult(dumpInfo.Id);
 			var faultReport = FaultReportCreator.CreateFaultReport(result);
-			faultReport.SourceId = bundleRepository.Get(dumpInfo.BundleId).CustomProperties["sourceId"];
+			var bundleInfo = bundleRepository.Get(dumpInfo.BundleId);
+			if (bundleInfo.CustomProperties.ContainsKey("sourceId")) faultReport.SourceId = bundleRepository.Get(dumpInfo.BundleId).CustomProperties["sourceId"];
 			await faultReportSender.SendFaultReport(dumpInfo, faultReport);
 		}
 	}
