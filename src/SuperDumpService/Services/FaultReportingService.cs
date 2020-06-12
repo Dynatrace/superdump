@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using SuperDump.Models;
 using SuperDumpService.Models;
 
@@ -14,18 +15,20 @@ namespace SuperDumpService.Services {
 	public class FaultReportingService {
 		private readonly IFaultReportSender faultReportSender;
 		private readonly DumpRepository dumpRepository;
+		private readonly BundleRepository bundleRepository;
 
-		public FaultReportingService(IFaultReportSender faultReportSender, DumpRepository dumpRepository) {
+		public FaultReportingService(IFaultReportSender faultReportSender, DumpRepository dumpRepository, BundleRepository bundleRepository) {
 			this.faultReportSender = faultReportSender;
 			this.dumpRepository = dumpRepository;
+			this.bundleRepository = bundleRepository;
 		}
 
 		public async Task PublishFaultReport(DumpMetainfo dumpInfo) {
 			var result = await dumpRepository.GetResult(dumpInfo.Id);
 			var faultReport = FaultReportCreator.CreateFaultReport(result);
+			faultReport.SourceId = bundleRepository.Get(dumpInfo.BundleId).CustomProperties["sourceId"];
 			await faultReportSender.SendFaultReport(dumpInfo, faultReport);
 		}
-
 	}
 
 	public static class FaultReportCreator {
@@ -93,10 +96,9 @@ namespace SuperDumpService.Services {
 	/// A FaultReport is supposed to be a concise summary of the crash reason. Human readable.
 	/// </summary>
 	public class FaultReport {
+		public string SourceId { get; set; }
 		public string FaultReason { get; set; }
 		public string FaultLocation { get; set; }
-		public string FaultModulePath { get; set; }
-		public string FaultModuleVersion { get; set; }
 
 		public List<string> FaultingFrames { get; set; }
 		

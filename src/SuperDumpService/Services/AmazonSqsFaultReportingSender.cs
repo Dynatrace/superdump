@@ -12,13 +12,14 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SuperDumpService.Controllers;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 
 namespace SuperDumpService.Services {
 	public class AmazonSqsFaultReportingSender : IFaultReportSender {
-		private readonly AmazonSqsSettings amazonSqsSettings;
+		private readonly string queueUrl;
 		private readonly AmazonSqsClientService amazonSqsClientService;
 		private readonly ILogger<AmazonSqsFaultReportingSender> logger;
 
@@ -27,16 +28,22 @@ namespace SuperDumpService.Services {
 				AmazonSqsClientService amazonSqsClientService,
 				ILoggerFactory loggerFactory
 			) {
-			this.amazonSqsSettings = settings.Value.AmazonSqsSettings;
+			this.queueUrl = settings.Value.AmazonSqsSettings.FaultReportQueueUrl;
 			this.amazonSqsClientService = amazonSqsClientService;
 			this.logger = loggerFactory.CreateLogger<AmazonSqsFaultReportingSender>();
 		}
 
 		public async Task SendFaultReport(DumpMetainfo dumpInfo, FaultReport faultReport) {
-			var faultReportJson = JsonConvert.SerializeObject(faultReport);
-			logger.LogInformation($"Sending to {amazonSqsSettings.FaultReportQueueUrl}: \n{faultReportJson}");
-			var messageRequest = new SendMessageRequest(amazonSqsSettings.FaultReportQueueUrl, faultReportJson);
-			await amazonSqsClientService.SqsClient.SendMessageAsync(messageRequest);
+			var faultReportJson = JsonConvert.SerializeObject(faultReport, new JsonSerializerSettings {
+				ContractResolver = new CamelCasePropertyNamesContractResolver(),
+			});
+			logger.LogInformation($"Sending to {queueUrl}: \n{faultReportJson}");
+			var messageRequest = new SendMessageRequest(queueUrl, faultReportJson);
+			try {
+				await amazonSqsClientService.SqsClient.SendMessageAsync(messageRequest);
+			} catch (Exception e) {
+				logger.LogWarning($"Could not send message to queue {queueUrl}. Error: {e}");
+			}
 		}
 	}
 }
