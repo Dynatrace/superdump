@@ -24,4 +24,13 @@
     <ProjectReference Include="..\SuperDumpService\SuperDumpService.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="samples\invalid_character_test.tar.gz">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="samples\invalid_character_test.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
