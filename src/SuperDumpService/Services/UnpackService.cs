@@ -28,13 +28,12 @@ namespace SuperDumpService.Services {
 		private static void ExtractZip(FileInfo file, DirectoryInfo outputDir) {
 			using (ZipArchive zipArchive = ZipFile.OpenRead(file.FullName)) {
 				foreach (ZipArchiveEntry entry in zipArchive.Entries) {
-					if (Path.EndsInDirectorySeparator(entry.FullName)) {
-						continue;
-					}
-
 					string outName = Path.Combine(outputDir.FullName, RemoveInvalidChars(entry.FullName));
 					Directory.CreateDirectory(Path.GetDirectoryName(outName));
-					entry.ExtractToFile(outName);
+
+					if (!Path.EndsInDirectorySeparator(outName)) {
+						entry.ExtractToFile(outName);
+					}
 				}
 			}
 		}
@@ -57,21 +56,21 @@ namespace SuperDumpService.Services {
 			using (var tarIn = new TarInputStream(inputStream)) {
 				TarEntry tarEntry;
 				while ((tarEntry = tarIn.GetNextEntry()) != null) {
-					if (tarEntry.IsDirectory)
-						continue;
-
-					string name = tarEntry.Name;
+					string entryName = tarEntry.Name;
 
 					// Remove any root e.g. '\' because a PathRooted filename defeats Path.Combine
-					if (Path.IsPathRooted(name))
-						name = name.Substring(Path.GetPathRoot(name).Length);
+					if (Path.IsPathRooted(entryName))
+						entryName = entryName.Substring(Path.GetPathRoot(entryName).Length);
 
-					string outName = Path.Combine(outputDir.FullName, RemoveInvalidChars(name));
-
-					Directory.CreateDirectory(Path.GetDirectoryName(outName));
-
-					using (var outStr = new FileStream(outName, FileMode.Create)) {
-						tarIn.CopyEntryContents(outStr);
+					string outName = Path.Combine(outputDir.FullName, RemoveInvalidChars(entryName));
+		
+					if (tarEntry.IsDirectory) {
+						Directory.CreateDirectory(outName);
+					} else {
+						Directory.CreateDirectory(Path.GetDirectoryName(outName));
+						using (var outStr = new FileStream(outName, FileMode.Create)) {
+							tarIn.CopyEntryContents(outStr);
+						}
 					}
 				}
 			}
