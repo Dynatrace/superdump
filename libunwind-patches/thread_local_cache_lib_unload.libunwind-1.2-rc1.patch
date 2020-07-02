@@ -1,0 +1,24 @@
+diff -Naur a/src/x86_64/Gtrace.c b/src/x86_64/Gtrace.c
+--- src/x86_64/Gtrace.c	2016-02-22 19:48:57.000000000 +0100
++++ src/x86_64/Gtrace.c	2017-03-09 17:20:57.105107108 +0100
+@@ -29,6 +29,7 @@
+ 
+ #pragma weak pthread_once
+ #pragma weak pthread_key_create
++#pragma weak pthread_key_delete
+ #pragma weak pthread_getspecific
+ #pragma weak pthread_setspecific
+ 
+@@ -82,6 +83,12 @@
+   trace_cache_once_happen = 1;
+ }
+ 
++__attribute__((destructor)) void
++trace_cache_library_unloaded (void)
++{
++  if (trace_cache_once_happen) pthread_key_delete (trace_cache_key); /* this will leak but at least not crash */
++}
++
+ static unw_tdep_frame_t *
+ trace_cache_buckets (size_t n)
+ {

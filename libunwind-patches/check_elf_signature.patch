@@ -1,0 +1,16 @@
+diff -ur src/coredump/_UCD_create.c src/coredump/_UCD_create.c
+--- src/coredump/_UCD_create.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_create.c	2014-07-16 16:40:08.405104653 +0200
+@@ -329,6 +329,12 @@
+   phdr->backing_fd = fd;
+   phdr->backing_filename = strdup(filename);
+ 
++  unsigned char signature[4];
++  ssize_t bytes_read = read(fd, signature, 4);
++  if (bytes_read != 4 || signature[1] != 'E' || signature[2] != 'L' || signature[3] != 'F')
++    goto err;
++  lseek(fd, 0, SEEK_SET);
++
+   struct stat statbuf;
+   if (fstat(fd, &statbuf) != 0)
+     {
