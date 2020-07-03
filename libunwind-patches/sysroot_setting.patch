@@ -1,0 +1,72 @@
+diff -ur include/libunwind-coredump.h include/libunwind-coredump.h
+--- include/libunwind-coredump.h	2012-10-06 06:54:38.000000000 +0200
++++ include/libunwind-coredump.h	2014-07-23 09:02:15.029524909 +0200
+@@ -44,6 +44,7 @@
+ extern void _UCD_select_thread(struct UCD_info *, int);
+ extern pid_t _UCD_get_pid(struct UCD_info *);
+ extern int _UCD_get_cursig(struct UCD_info *);
++extern void _UCD_set_backing_files_sysroot(struct UCD_info *ui, const char *sysroot);
+ extern int _UCD_add_backing_file_at_segment(struct UCD_info *, int phdr_no, const char *filename);
+ extern int _UCD_add_backing_file_at_vaddr(struct UCD_info *,
+ 				          unsigned long vaddr,
+diff -ur src/coredump/_UCD_create.c src/coredump/_UCD_create.c
+--- src/coredump/_UCD_create.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_create.c	2014-07-23 09:16:39.179190484 +0200
+@@ -304,6 +304,14 @@
+   return ui->prstatus->pr_cursig;
+ }
+ 
++void _UCD_set_backing_files_sysroot(struct UCD_info *ui, const char *sysroot)
++{
++  free(ui->sysroot);
++  ui->sysroot = NULL;
++  if (sysroot)
++    ui->sysroot = strdup(sysroot);
++}
++
+ int _UCD_add_backing_file_at_segment(struct UCD_info *ui, int phdr_no, const char *filename)
+ {
+   if ((unsigned)phdr_no >= ui->phdrs_count)
+@@ -319,7 +327,19 @@
+       return -1;
+     }
+ 
+-  int fd = open(filename, O_RDONLY);
++  const char *inputfile = filename;
++  if (ui->sysroot)
++    {
++	  char *sysrootfilename = (char*)malloc(strlen(ui->sysroot) + strlen(filename) + 1);
++	  if (!sysrootfilename)
++        return -1;
++	  strcpy(sysrootfilename, ui->sysroot);
++	  strcat(sysrootfilename, filename); /* filename needs to be absolute */
++	  inputfile = sysrootfilename;
++    }
++  int fd = open(inputfile, O_RDONLY);
++  if (ui->sysroot)
++	free(inputfile);
+   if (fd < 0)
+     {
+       Debug(0, "Can't open '%s'\n", filename);
+diff -ur src/coredump/_UCD_destroy.c src/coredump/_UCD_destroy.c
+--- src/coredump/_UCD_destroy.c	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_destroy.c	2014-07-23 09:04:02.331191558 +0200
+@@ -32,6 +32,7 @@
+   if (ui->coredump_fd >= 0)
+     close(ui->coredump_fd);
+   free(ui->coredump_filename);
++  free(ui->sysroot);
+ 
+   invalidate_edi (&ui->edi);
+ 
+diff -ur src/coredump/_UCD_internal.h src/coredump/_UCD_internal.h
+--- src/coredump/_UCD_internal.h	2012-10-06 06:54:38.000000000 +0200
++++ src/coredump/_UCD_internal.h	2014-07-23 09:15:25.494022147 +0200
+@@ -87,6 +87,7 @@
+     int big_endian;  /* bool */
+     int coredump_fd;
+     char *coredump_filename; /* for error meesages only */
++    const char *sysroot;
+     coredump_phdr_t *phdrs; /* array, allocated */
+     unsigned phdrs_count;
+     void *note_phdr; /* allocated or NULL */
