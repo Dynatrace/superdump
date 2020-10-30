@@ -100,8 +100,7 @@ Build
 
  * Prerequisites:
    * Visual Studio 2019
-   * .NET Core Tooling 2.2 and 3.0
-   * .NET Core 3.0
+   * .NET 5
    * .NET Framework 4.8 (developer pack)
    * NPM
    * Bower (npm install -g bower)
@@ -109,6 +108,7 @@ Build
    * Docker for Windows (for building the docker image for linux analysis)
    * LocalDB (optional, see `UseInMemoryHangfireStorage` setting)
    * DebugDiag (for automatic DebugDiag analysis)
+   * When building the first time, remember to create `conf/appsettings.json`
    * Windows Debugging Tools (`cdb.exe`) (optional, for interactive mode)
  * Build via buildscript in `building/*.cmd` (see <a href="building/README.md">README.md</a>)
  * Run via `build/runsuperdump.cmd` (defaults to port 5000)
