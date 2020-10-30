@@ -5,7 +5,7 @@ There are different scripts that can be used to build SuperDump:
    This script builds the SuperDump Service and the Windows Analysis components. For this all required Programs have to be installed on the system. 
    The basic requirements are:
 	* Visual Studio 2019
-	* .Net Core SDK 3.0
+	* .Net Core SDK 5.0
 	* .Net Framework 4.8
   * DebugDiag
 
