@@ -1,19 +1,19 @@
-FROM microsoft/dotnet-framework:4.6.2
+FROM mcr.microsoft.com/dotnet/framework/runtime:4.8
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Install .NET Core SDK
-ENV ASPNETCORE_VERSION 2.2.0
-ENV ASPNETCORE_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/aspnetcore/Runtime/$ASPNETCORE_VERSION/aspnetcore-runtime-$ASPNETCORE_VERSION-win-x64.zip
-ENV ASPNETCORE_DOWNLOAD_SHA 0159f27762a0dd1fb7f7e4f85259c145d8e6964289f7477d6e9d5c03898afb38dca010f900e3ccb28e282514835a66d5546bbc1542b9da8c92dd3d2759c507de
+# Install .NET Core SDK (x86)
+ENV DOTNET_DOWNLOAD_URL https://download.visualstudio.microsoft.com/download/pr/4503f532-215f-4300-b3b4-eb3ccd3c6ff3/79045e530ca8368c02ba9a2b764be28a/dotnet-sdk-5.0.100-rc.2.20479.15-win-x86.zip
+
+RUN Invoke-WebRequest $Env:DOTNET_DOWNLOAD_URL -OutFile dotnet.zip; \
+    Expand-Archive dotnet.zip -DestinationPath 'C:\Program Files (x86)\dotnet'; \
+    Remove-Item -Force dotnet.zip
+
+# Install .NET Core SDK (x64)
+ENV ASPNETCORE_DOWNLOAD_URL https://download.visualstudio.microsoft.com/download/pr/5208bb4a-0704-44c2-b8c1-95871f23f2c9/7c0c1fded168bb35ff4ddd5c3fb85736/aspnetcore-runtime-5.0.0-rc.2.20475.17-win-x64.zip
 
 RUN Invoke-WebRequest $Env:ASPNETCORE_DOWNLOAD_URL -OutFile dotnet.zip; \
-    if ((Get-FileHash dotnet.zip -Algorithm sha512).Hash -ne $Env:ASPNETCORE_DOWNLOAD_SHA) { \
-        Write-Host 'CHECKSUM VERIFICATION FAILED!'; \
-        exit 1; \
-    }; \
-    \
-    Expand-Archive dotnet.zip -DestinationPath $Env:ProgramFiles\dotnet; \
+    Expand-Archive -Force dotnet.zip -DestinationPath $Env:ProgramFiles\dotnet; \
     Remove-Item -Force dotnet.zip
 
 RUN setx /M PATH $($Env:PATH + ';' + $Env:ProgramFiles + '\dotnet')
