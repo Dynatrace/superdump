@@ -41,11 +41,11 @@ namespace SuperDumpService.Services {
 		}
 
 		public async Task<string> GetMessage(DumpMetainfo dumpInfo) {
-			//var engine = new RazorLightEngineBuilder()
-				//.UseEmbeddedResourcesProject(typeof(SlackMessageViewModel))
-				//.UseMemoryCachingProvider()
-				//.Build();
-			var engine = new EngineFactory().ForEmbeddedResources(typeof(SlackMessageViewModel));
+			var engine = new RazorLightEngineBuilder()
+				.UseEmbeddedResourcesProject(typeof(SlackMessageViewModel))
+				.UseMemoryCachingProvider()
+				.Build();
+			//var engine = new EngineFactory().ForEmbeddedResources(typeof(SlackMessageViewModel));
 			return await engine.CompileRenderAsync("SlackMessage", await GetMessageModel(dumpInfo));
 		}
 

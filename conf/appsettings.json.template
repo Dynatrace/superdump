@@ -130,7 +130,7 @@
     "DownloadServiceRetry": "5", // Number of retries when trying to download a dump file from an URL
     "DownloadServiceRetryTimeout": "500", //Time between download retries in milliseconds
     "DownloadServiceHttpClientTimeout": "00:04:00",
-    "UseAmazonSqs": "true",
+    "UseAmazonSqs": "false",
     "AmazonSqsSettings": {
       "SuperDumpBaseUrl": "", // Url that is used for generating the response messages
       "PollCron": "*/30 * * * *", //Hangfire cron expression which describes the schedule for polling the Aws Queue
