@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 
 namespace SuperDump {
 	/// <summary>
+	/// Original source of this code: https://github.com/goldshtn/msos/blob/master/msos/MixedStack.cs
+	///
 	/// Represents a combined stack trace, which can consist of native and managed frames
 	/// </summary>
 	[Serializable]

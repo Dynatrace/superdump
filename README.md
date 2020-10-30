@@ -162,12 +162,17 @@ Known shortcomings:
 
 Credit
 ======
-Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace]. [Dominik Steinbinder] also contributed large parts, such as Linux analysis, elastic search integration and much more. Thank you!
+Most of the initial code base was written by [Andreas Lobmaier] in his summer internship of 2016. It's been maintained and further developed since then by [Christoph Neumüller] and other folks at [Dynatrace]. [Dominik Steinbinder] also contributed large parts, such as Linux analysis, elastic search integration and much more.
+
+Some of the thread analysis code is based on Sasha Goldshtein's work in https://github.com/goldshtn/msos.
+
+Thank you!
 
 [Andreas Lobmaier]: https://github.com/alobmaier
 [Christoph Neumüller]: https://github.com/discostu105
 [Dominik Steinbinder]: https://github.com/dotstone
 [Dynatrace]: https://www.dynatrace.com
+[Sasha Goldshtein]: https://github.com/goldshtn
 
 License
 =======

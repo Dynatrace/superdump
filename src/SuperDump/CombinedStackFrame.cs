@@ -10,6 +10,8 @@ using System.Text;
 
 namespace SuperDump {
 	/// <summary>
+	/// Original source of this code: https://github.com/goldshtn/msos/blob/master/msos/MixedStack.cs
+	///
 	/// Represents a frame of a thread's stack trace, can be native and managed
 	/// </summary>
 	[Serializable]
