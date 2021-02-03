@@ -1,7 +1,7 @@
 @echo off
 cd /d %~dp0
 
-set MSBUILD="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Current\Bin\amd64\MSBuild.exe"
+set MSBUILD="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe"
 set target="Windows"
 if not "%1" == "" ( set target="%1" )
 
