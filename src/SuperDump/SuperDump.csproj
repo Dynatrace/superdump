@@ -56,7 +56,7 @@
 		<PackageReference Include="Microsoft.NETCore.Platforms" Version="5.0.0" />
 		<PackageReference Include="morelinq" Version="3.3.2" />
 		<PackageReference Include="NETStandard.Library" Version="2.0.3" />
-		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="System.Collections" Version="4.3.0" />
 		<PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
 		<PackageReference Include="System.Console" Version="4.3.1" />
