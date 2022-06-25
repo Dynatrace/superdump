@@ -52,7 +52,7 @@
     <PackageReference Include="System.Net.Http.Formatting.Extension" Version="5.2.3" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" /> <!-- needed to reference this directly because of a "package downgrade problem" introduced by "Slack.Webhooks.Core" -->
     <PackageReference Include="WebSocketManager" Version="1.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.9" />
     <PackageReference Include="X.PagedList.Mvc.Core" Version="8.0.7" />
   </ItemGroup>
   <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
