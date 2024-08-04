@@ -10,12 +10,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using X.PagedList;
 using SuperDump.Models;
 using SuperDumpService.Helpers;
 using SuperDumpService.Models;
 using SuperDumpService.Services;
 using SuperDumpService.ViewModels;
+using X.PagedList.Extensions;
 
 namespace SuperDumpService.Controllers {
 	[AutoValidateAntiforgeryToken]

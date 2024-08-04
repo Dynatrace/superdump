@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PreserveCompilationContext>true</PreserveCompilationContext>
@@ -53,7 +53,7 @@
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" /> <!-- needed to reference this directly because of a "package downgrade problem" introduced by "Slack.Webhooks.Core" -->
     <PackageReference Include="WebSocketManager" Version="1.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.9" />
-    <PackageReference Include="X.PagedList.Mvc.Core" Version="8.0.7" />
+    <PackageReference Include="X.Web.PagedList" Version="10.1.2" />
   </ItemGroup>
   <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
     <Exec Command="bower install" />
