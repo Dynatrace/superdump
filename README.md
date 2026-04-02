@@ -1,6 +1,8 @@
 SuperDump
 =========
 
+> **Note:** This repository is no longer maintained.
+
 *SuperDump* is a service for **_automated crash-dump analysis_**. It has a web- as well as a REST-interface to upload Windows crash dumps or Linux coredumps.
 
 SuperDump was made with these goals in mind: 
